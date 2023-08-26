@@ -58,6 +58,8 @@ define Package/wifi-profile/install
 	$(INSTALL_DIR) $(1)/lib/wifi/
 	$(INSTALL_DIR) $(1)/etc/wireless/mediatek/
 	$(INSTALL_DIR) $(1)/sbin/
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/common/kick.sh $(1)/etc/init.d/
 	$(INSTALL_BIN) ./files/common/wifi_jedi $(1)/sbin/wifi
 	$(INSTALL_BIN) ./files/common/mtwifi.lua $(1)/lib/wifi/
 

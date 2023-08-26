@@ -5,4 +5,5 @@ START=99
 boot() {
         /sbin/smp.sh
         wifi up
+        /etc/init.d/kick.sh start
 }
