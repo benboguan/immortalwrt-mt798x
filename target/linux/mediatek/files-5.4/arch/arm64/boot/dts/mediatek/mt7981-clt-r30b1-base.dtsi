@@ -325,9 +325,3 @@
 		};
 	};
 };
-
-&pwm {
-	pinctrl-names = "default";
-	pinctrl-0 = <&two_pwm_pins>;
-	status = "okay";
-};
