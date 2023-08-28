@@ -11,10 +11,10 @@
 	compatible = "clt,r30b1", "mediatek,mt7981";
 
 	aliases {
-		led-boot = &led_power_red;
+		led-boot = &led_system_green;
 		led-failsafe = &led_system_red;
-		led-running = &led_system_green;
-		led-upgrade = &led_system_blue;
+		led-running = &led_system_blue;
+		led-upgrade = &led_power_red;
 	};
 
 	chosen {
@@ -44,12 +44,12 @@
 			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
 		};
 
-		led_network_blue: wifi_green {
+		led_wifi_green: wifi_green {
 			label = "led_wifi";
 			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
 		};
 
-		led_network_green: internet_blue {
+		led_internet_blue: internet_blue {
 			label = "led_internet";
 			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
 		};
@@ -57,13 +57,13 @@
 		led_power_red: power_red {
 			label = "led_power";
 			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
-			default-state = "on";
+			linux,default-trigger = "default-on";
 		};
 
 		ctrl: all_ctrl {
 			label = "ctrl_led_all";
 			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
-			default-state = "on";
+			linux,default-trigger = "default-on";
 		};
 	};
 
