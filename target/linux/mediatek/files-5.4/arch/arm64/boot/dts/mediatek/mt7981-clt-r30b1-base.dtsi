@@ -11,10 +11,10 @@
 	compatible = "clt,r30b1", "mediatek,mt7981";
 
 	aliases {
-		led-boot = &red_led;
-		led-failsafe = &red_led;
-		led-running = &green_led;
-		led-upgrade = &blue_led;
+		led-boot = &led_power_red;
+		led-failsafe = &led_system_red;
+		led-running = &led_system_green;
+		led-upgrade = &led_system_blue;
 	};
 
 	chosen {
@@ -29,19 +29,34 @@
 	leds {
 		compatible = "gpio-leds";
 
-		red_led: red {
-			label = "r30b1:red";
+		led_power_red: power_red {
+			label = "red:power";
 			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
 		};
 
-		green_led: green {
-			label = "r30b1:green";
+		led_system_red: wan_red {
+			label = "red:wan";
 			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
 		};
 
-		blue_led: blue {
-			label = "r30b1:blue";
-			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
+		led_system_green: wan_green {
+			label = "green:wan";
+			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		led_system_blue: mesh_blue {
+			label = "blue:mesh";
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+		};
+
+		led_network_blue {
+			label = "blue:network";
+			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led_network_green {
+			label = "green:network";
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -157,17 +172,6 @@
 	interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
 	status = "okay";
 
-	port5: port@5 {
-		compatible = "mediatek,mt753x-port";
-		reg = <5>;
-		phy-mode = "sgmii";
-
-		fixed-link {
-			speed = <2500>;
-			full-duplex;
-		};
-	};
-
 	port6: port@6 {
 		compatible = "mediatek,mt753x-port";
 		mediatek,ssc-on;
@@ -184,7 +188,9 @@
 &hnat {
 	mtketh-wan = "eth1";
 	mtketh-lan = "eth0";
+	mtketh-ppd = "eth0";
 	mtketh-max-gmac = <2>;
+	mtketh-ppe-num = <2>;
 	status = "okay";
 };
 
@@ -305,8 +311,4 @@
 			groups = "uart2_1";
 		};
 	};
-};
-
-&xhci {
-	status = "disabled";
 };
