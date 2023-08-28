@@ -57,13 +57,13 @@
 		led_power_red: power_red {
 			label = "led_power";
 			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "default-on";
+			default-state = "on";
 		};
 
 		ctrl: all_ctrl {
 			label = "ctrl_led_all";
 			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "default-on";
+			default-state = "on";
 		};
 	};
 
