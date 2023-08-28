@@ -713,6 +713,7 @@ setup_model()
 	*7986*)
 		MT7986_whnat $num_of_wifi
 		;;
+	*clt,r30b1* |\
 	*mt3000* |\
 	glinet,x3000-emmc |\
 	*xe3000* |\

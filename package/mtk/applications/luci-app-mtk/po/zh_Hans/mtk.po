@@ -205,6 +205,18 @@ msgstr "接收空间流"
 msgid "TX Power"
 msgstr "发射功率"
 
+msgid "Kick StaRssiLow"
+msgstr "弱信号剔除"
+
+msgid "2.4G Kick StaRssiHigh"
+msgstr "2.4G强信号剔除"
+
+msgid "Acceptable values: -100~0.Value '-100' means least easy to remove."
+msgstr "范围0到-100，-100最不容易剔除。"
+
+msgid "Acceptable values: -100~0.When dual-band is combined, set-50 to guide strong signal terminals to 5G. Only valid for ra1 interface."
+msgstr "范围0到-100，双频合一时可设置-50将强信号终端引导至5G.仅对ra1接口生效。"
+
 msgid "DFS"
 msgstr "动态频率选择(DFS)"
 
@@ -261,6 +273,12 @@ msgstr "启用终端直通(DLS)"
 
 msgid "802.11k RRM"
 msgstr "启用 802.11k"
+
+msgid "802.11v WNM"
+msgstr "启用 802.11v"
+
+msgid "802.11r FT"
+msgstr "启用 802.11r"
 
 msgid "APSD Capable"
 msgstr "启用节能模式(APSD)"
@@ -340,14 +358,14 @@ msgstr "扫描无线网络"
 msgid "ApClient Mode"
 msgstr "ApClient模式"
 
-msgid "MAC Repeater Mode"
-msgstr "启用MAC Repeater模式"
+msgid "ApCliBridge Mode"
+msgstr "无线AP透明组网(启用前请修改本路由器管理IP为同网段)"
 
 msgid "Root AP SSID"
 msgstr "上级AP SSID"
 
 msgid "Root AP Channel"
-msgstr "上级AP信道"
+msgstr "上级AP信道(填写0则自动搜索)"
 
 msgid "Root AP Authentication Mode"
 msgstr "上级AP认证方式"

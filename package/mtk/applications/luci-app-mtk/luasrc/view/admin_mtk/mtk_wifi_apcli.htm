@@ -113,10 +113,10 @@ var waiting_count = 0;
                     </tr>
                     <tbody id="apcli_cfg" <% if cfgs.ApCliEnable ~= "1" then %> style="display:none;" <% end %> >
                         <tr>
-                            <td><%:MAC Repeater Mode%></td>
+                            <td><%:ApCliBridge Mode%></td>
                             <td>
-                                <input type="radio" name="MACRepeaterEn" value="1" <% if cfgs.MACRepeaterEn == "1" then %> checked="checked"<% end %>/> <%:Enable%>
-                                <input type="radio" name="MACRepeaterEn" value="0" <% if cfgs.MACRepeaterEn ~= "1" then %> checked="checked"<% end %>/> <%:Disable%>
+                                <input type="radio" name="ApCliBridge" value="1" <% if cfgs.ApCliBridge == "1" then %> checked="checked"<% end %>/> <%:Enable%>
+                                <input type="radio" name="ApCliBridge" value="0" <% if cfgs.ApCliBridge ~= "1" then %> checked="checked"<% end %>/> <%:Disable%>
                             </td>
                         </tr>
                         <tr>
