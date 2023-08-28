@@ -26,6 +26,23 @@
 		reg = <0 0x40000000 0 0x10000000>;
 	};
 
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		reset-button {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+		};
+
+		mesh-button {
+			label = "mesh";
+			linux,code = <BTN_9>;
+			linux,input-type = <EV_SW>;
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -67,21 +84,21 @@
 		};
 	};
 
-	gpio-keys {
-		compatible = "gpio-keys";
+	gsw: gsw@0 {
+		compatible = "mediatek,mt753x";
+		mediatek,ethsys = <&ethsys>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
 
-		reset-button {
-			label = "reset";
-			linux,code = <KEY_RESTART>;
-			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
-		};
+	nmbm_spim_nand: nmbm_spim_nand {
+		compatible = "generic,nmbm";
 
-		mesh-button {
-			label = "mesh";
-			linux,code = <BTN_9>;
-			linux,input-type = <EV_SW>;
-			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
-		};
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		lower-mtd-device = <&spi_nand>;
+		forced-create;
 	};
 
 	sound_wm8960 {
@@ -100,13 +117,6 @@
 		mediatek,platform = <&afe>;
 		mediatek,ext-codec = <&proslic_spi>;
 		status = "disabled";
-	};
-
-	gsw: gsw@0 {
-		compatible = "mediatek,mt753x";
-		mediatek,ethsys = <&ethsys>;
-		#address-cells = <1>;
-		#size-cells = <0>;
 	};
 };
 
