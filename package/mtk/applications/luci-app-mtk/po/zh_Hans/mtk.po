@@ -212,10 +212,10 @@ msgid "2.4G Kick StaRssiHigh"
 msgstr "2.4G强信号剔除"
 
 msgid "Acceptable values: -100~0.Value '-100' means least easy to remove."
-msgstr "范围0到-100，-100最不容易剔除"
+msgstr "范围0到-100，-100最不容易剔除。"
 
 msgid "Acceptable values: -100~0.When dual-band is combined, set-50 to guide strong signal terminals to 5G. Only valid for ra1 interface."
-msgstr "范围0到-100，双频合一时可设置-50将强信号终端引导至5G.仅对ra1接口生效"
+msgstr "范围0到-100，双频合一时可设置-50将强信号终端引导至5G.仅对ra1接口生效。"
 
 msgid "DFS"
 msgstr "动态频率选择(DFS)"
