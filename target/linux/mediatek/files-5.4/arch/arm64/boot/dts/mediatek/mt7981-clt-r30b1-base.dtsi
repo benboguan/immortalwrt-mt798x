@@ -11,10 +11,13 @@
 	compatible = "clt,r30b1", "mediatek,mt7981";
 
 	aliases {
-		led-boot = &led_power_green;
-		led-failsafe = &led_power_red;
-		led-running = &led_system_green;
-		led-upgrade = &led_system_blue;
+		led-wan-connect = &wan_green;
+		led-wan-unconnect = &wan_red;
+		led-mesh = &mesh_blue;
+		led-wifi = &wifi_green;
+		led-internet = &internet_blue;
+		led-power = &power_red;
+		led-all-ctrl = &all_ctrl;
 		label-mac-device = &gmac0;
 	};
 
@@ -47,39 +50,39 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_power_green: wan_green {
+		wan_green {
 			label = "led_wan_green";
 			gpios = <&pio 6 GPIO_ACTIVE_LOW>;
 		};
 
-		led_wan_red: wan_red {
+		wan_red {
 			label = "led_wan_red";
 			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
 		};
 
-		led_system_blue: mesh_blue {
+		mesh_blue {
 			label = "led_mesh";
 			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
 		};
 
-		led_system_green: wifi_green {
+		wifi_green {
 			label = "led_wifi";
 			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
 		};
 
-		led_internet_blue: internet_blue {
+		internet_blue {
 			label = "led_internet";
 			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
 		};
 
-		led_power_red: power_red {
+		power_red {
 			label = "led_power";
 			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 			linux,default-trigger = "default-on";
 		};
 
-		ctrl: all_ctrl {
+		all_ctrl {
 			label = "ctrl_led_all";
 			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
 			default-state = "on";
