@@ -91,16 +91,6 @@
 		#size-cells = <0>;
 	};
 
-	nmbm_spim_nand: nmbm_spim_nand {
-		compatible = "generic,nmbm";
-
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		lower-mtd-device = <&spi_nand>;
-		forced-create;
-	};
-
 	sound_wm8960 {
 		compatible = "mediatek,mt79xx-wm8960-machine";
 		mediatek,platform = <&afe>;
@@ -141,12 +131,6 @@
 	status = "okay";
 };
 
-&uart1 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&uart1_pins>;
-	status = "disabled";
-};
-
 &watchdog {
 	status = "okay";
 };
@@ -180,7 +164,6 @@
 		phy0: ethernet-phy@0 {
 			compatible = "ethernet-phy-id03a2.9461";
 			reg = <0>;
-			phy-mode = "gmii";
 			nvmem-cells = <&phy_calibration>;
 			nvmem-cell-names = "phy-cal-data";
 		};
@@ -194,6 +177,17 @@
 	interrupt-parent = <&pio>;
 	interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
 	status = "okay";
+
+	port5: port@5 {
+		compatible = "mediatek,mt753x-port";
+		reg = <5>;
+		phy-mode = "sgmii";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+		};
+	};
 
 	port6: port@6 {
 		compatible = "mediatek,mt753x-port";
