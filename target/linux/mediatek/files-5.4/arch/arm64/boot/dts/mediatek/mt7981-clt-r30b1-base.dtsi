@@ -50,38 +50,36 @@
 		power_led: power_red {
 			label = "led_power";
 			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
-			default-state = "on";
-			linux,default-trigger = "default-on";
 		};
 
-		system_led: led-1 {
+		system_led: wan_green {
 			label = "led_wan_green";
 			gpios = <&pio 6 GPIO_ACTIVE_LOW>;
 		};
 
-		led-2 {
+		wan_red {
 			label = "led_wan_red";
 			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
 		};
 
-		led-3 {
+		mesh_blue {
 			label = "led_mesh";
 			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
 		};
 
-		led-4 {
+		wifi_green {
 			label = "led_wifi";
 			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
 		};
 
-		led-5 {
+		internet_blue {
 			label = "led_internet";
-			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
+			gpios = <&pio 11 GPIO_ACTIVE_HIGH>;
 		};
 
-		led-6 {
+		all_ctrl {
 			label = "ctrl_led_all";
-			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
+			gpios = <&pio 8 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 			linux,default-trigger = "default-on";
 		};
