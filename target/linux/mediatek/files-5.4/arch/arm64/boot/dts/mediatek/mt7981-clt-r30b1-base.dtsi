@@ -11,10 +11,11 @@
 	compatible = "clt,r30b1", "mediatek,mt7981";
 
 	aliases {
-		led-boot = &led_power_red;
-		led-failsafe = &led_system_red;
-		led-running = &led_system_green;
-		led-upgrade = &led_system_blue;
+		led-boot = &power_led;
+		led-failsafe = &power_led;
+		led-running = &system_led;
+		led-upgrade = &system_led;
+		#label-mac-device = &gmac0;
 	};
 
 	chosen {
@@ -24,47 +25,6 @@
 
 	memory {
 		reg = <0 0x40000000 0 0x10000000>;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		led_system_green: wan_green {
-			label = "led_wan_green";
-			gpios = <&pio 6 GPIO_ACTIVE_LOW>;
-		};
-
-		led_system_red: wan_red {
-			label = "led_wan_red";
-			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
-		};
-
-		led_system_blue: mesh_blue {
-			label = "led_mesh";
-			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
-		};
-
-		led_network_blue: wifi_green {
-			label = "led_wifi";
-			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
-		};
-
-		led_network_green: internet_blue {
-			label = "led_internet";
-			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
-		};
-
-		led_power_red: power_red {
-			label = "led_power";
-			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
-			default-state = "on";
-		};
-
-		ctrl: all_ctrl {
-			label = "ctrl_led_all";
-			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
-			default-state = "on";
-		};
 	};
 
 	gpio-keys {
@@ -84,6 +44,54 @@
 		};
 	};
 
+	leds {
+		compatible = "gpio-leds";
+
+		power_led: power_red {
+			label = "led_power";
+			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
+		};
+
+		system_led: wan_green {
+			label = "led_wan_green";
+			gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+		};
+
+		wan_red {
+			label = "led_wan_red";
+			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
+		};
+
+		mesh_blue {
+			label = "led_mesh";
+			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi_green {
+			label = "led_wifi";
+			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
+		};
+
+		internet_blue {
+			label = "led_internet";
+			gpios = <&pio 11 GPIO_ACTIVE_HIGH>;
+		};
+
+		all_ctrl {
+			label = "ctrl_led_all";
+			gpios = <&pio 8 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+			linux,default-trigger = "default-on";
+		};
+	};
+
+	gsw: gsw@0 {
+		compatible = "mediatek,mt753x";
+		mediatek,ethsys = <&ethsys>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
 	sound_wm8960 {
 		compatible = "mediatek,mt79xx-wm8960-machine";
 		mediatek,platform = <&afe>;
@@ -100,13 +108,6 @@
 		mediatek,platform = <&afe>;
 		mediatek,ext-codec = <&proslic_spi>;
 		status = "disabled";
-	};
-
-	gsw: gsw@0 {
-		compatible = "mediatek,mt753x";
-		mediatek,ethsys = <&ethsys>;
-		#address-cells = <1>;
-		#size-cells = <0>;
 	};
 };
 
@@ -129,12 +130,6 @@
 
 &uart0 {
 	status = "okay";
-};
-
-&uart1 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&uart1_pins>;
-	status = "disabled";
 };
 
 &watchdog {
@@ -170,7 +165,6 @@
 		phy0: ethernet-phy@0 {
 			compatible = "ethernet-phy-id03a2.9461";
 			reg = <0>;
-			phy-mode = "gmii";
 			nvmem-cells = <&phy_calibration>;
 			nvmem-cell-names = "phy-cal-data";
 		};
@@ -184,6 +178,17 @@
 	interrupt-parent = <&pio>;
 	interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
 	status = "okay";
+
+	port5: port@5 {
+		compatible = "mediatek,mt753x-port";
+		reg = <5>;
+		phy-mode = "sgmii";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+		};
+	};
 
 	port6: port@6 {
 		compatible = "mediatek,mt753x-port";
