@@ -345,6 +345,7 @@ if [ "$$(CONFIG_MTK_WIFI_FW_BIN_LOAD)" = "y" ]; then \
 			$(INSTALL_BIN) ./files/$$(MT7981_FW_DIR)/WIFI_RAM_CODE_MT7981.bin \
 			./files/$$(MT7981_FW_DIR)/7981_WACPU_RAM_CODE_release.bin \
 			./files/$$(MT7981_FW_DIR)/mt7981_patch_e1_hdr.bin \
+			./files/$$(MT7981_FW_DIR)/e2p \
 			$(1)/lib/firmware/; \
 		else \
 			$(INSTALL_BIN) $(PKG_BUILD_DIR)/bin/mt7981/rebb/WIFI_RAM_CODE_MT7981.bin \
