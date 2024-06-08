@@ -69,13 +69,21 @@
 #define MAX_LEN_OF_SSID 32
 #define MAX_NUM_OF_CHANNELS		59 // 14 channels @2.4G +  12@UNII(lower/middle) + 16@HiperLAN2 + 11@UNII(upper) + 0@Japan + 1 as NULL termination
 #define ASSOC_REQ_LEN 154
+#ifdef MTK_MLO_MAP_SUPPORT
+#define ASSOC_REQ_LEN_MAX 1024
+#else
 #define ASSOC_REQ_LEN_MAX 512
+#endif
 #define PREQ_IE_LEN 200
 #define BCN_RPT_LEN 200
 #define IWSC_MAX_SUB_MASK_LIST_COUNT	3
 #define WMODE_CAP_N(_x)                        (((_x) & (WMODE_GN | WMODE_AN)) != 0)
 #define WMODE_CAP_AC(_x)               (((_x) & (WMODE_AC)) != 0)
 #define WMODE_CAP_AX(_x)	((_x) & (WMODE_AX_24G | WMODE_AX_5G | WMODE_AX_6G))
+#if defined(MTK_HOSTAPD_SUPPORT) || defined(MTK_MLO_MAP_SUPPORT)
+#define WMODE_CAP_BE(_x) \
+((_x) & (WMODE_BE_24G | WMODE_BE_5G | WMODE_BE_6G))
+#endif
 #define WMODE_CAP(_x, _mode)   (((_x) & (_mode)) != 0)
 
 #define MAX_SUPPORT_INF_NUM 17 * MAX_NUM_OF_RADIO /* 16MBSS+1APCLI */
@@ -83,10 +91,20 @@
 #define MAX_PROFILE_CNT 4
 #define PER_EVENT_LIST_MAX_NUM 		5
 #define	DAEMON_NEIGHBOR_REPORT_MAX_NUM 128
-#define VERSION_WAPP_CMM "v3.0.1.2"
+#define VERSION_WAPP_CMM "v5.0.0.0"
 #ifdef MAP_R3_WF6
 #define MAX_TID 4
 #endif
+
+#ifdef MTK_MLO_MAP_SUPPORT
+#define MAX_MLO_LINK 3
+#endif
+
+/* If this value is passed during map set channel
+ * then no need to parse that argument
+ */
+#define SET_CH_ARG_NOT_REQ 255
+
 typedef enum {
 	WAPP_STA_INVALID,
 	WAPP_STA_DISCONNECTED,
@@ -139,6 +157,14 @@ typedef enum {
 	WAPP_APCLI_ASSOCIATED,
 } WAPP_APCLI_ASSOC_STATE;
 
+enum WAPP_WSC_STATUS {
+	WAPP_WSC_STATUS_OFF = 0,
+	WAPP_WSC_STATUS_IDLE = 1,
+	WAPP_WSC_STATUS_FAIL = 2,
+	WAPP_WSC_STATUS_START = 3,
+	WAPP_WSC_STATUS_CONFIGURED = 34,
+};
+
 typedef enum {
 	WAPP_DEV_QUERY_RSP = 1,
 	WAPP_HT_CAP_QUERY_RSP,
@@ -169,6 +195,7 @@ typedef enum {
 	WAPP_TX_POWER_CHANGE,
 	WAPP_APCLI_ASSOC_STATE_CHANGE,
 	WAPP_STA_RSSI_RSP,
+	WAPP_COSR_STA_RSSI_RSP,
 	WAPP_CLI_ACTIVE_CHANGE,
 	WAPP_CSA_EVENT,
 	WAPP_STA_CNNCT_REJ,
@@ -206,6 +233,15 @@ typedef enum {
 	WAPP_SELF_SRG_BITMAP_EVENT,
 	WAPP_UPLINK_TRAFFIC_EVENT,
 	WAPP_CONFIG_WPS_EVENT,
+	WAPP_STA_MODE_RPT_EVENT,
+	WAPP_CONFIG_NR_EVENT,
+	WAPP_COSR_FOUND_COAP,
+	WAPP_COSR_ACTION_FRAME_RECEIVED,
+	WAPP_COSR_STA_RSSI_CHANGE,
+	WAPP_COSR_COAP_UPDATE,
+	WAPP_AP_JOIN_EVENT,
+	WAPP_EHT_OP_PUNCTURED_BITMAP, /*MAP_R6*/
+	WAPP_CLI_ALL_LEAVE_EVENT,
 } WAPP_EVENT_ID;
 
 typedef enum {
@@ -231,6 +267,7 @@ typedef enum {
 	WAPP_BSSLOAD_QUERY_REQ,
 	WAPP_HECAP_QUERY_REQ,
 	WAPP_STA_RSSI_QUERY_REQ,
+	WAPP_COSR_STA_RSSI_QUERY_REQ,
 	WAPP_APCLI_RSSI_QUERY_REQ,
 	WAPP_GET_SCAN_RESULTS,
 	WAPP_SEND_NULL_FRAMES,
@@ -278,6 +315,80 @@ typedef struct GNU_PACKED _wapp_dev_info {
 	u8 dev_active;
 } wapp_dev_info;
 
+#ifdef MTK_HOSTAPD_SUPPORT
+struct GNU_PACKED wdev_eht_cap {
+	u8      tx_stream;
+	u8      rx_stream;
+	u8      eht_ch_width;
+	u8      ccfs0;
+	u8      ccfs1;
+};
+#endif
+#ifdef MAP_R6
+struct GNU_PACKED mlo_record
+{
+	u8 identifier[MAC_ADDR_LEN];
+	u8 freq_separation;
+};
+
+struct GNU_PACKED mlo_capability
+{
+	u8 max_num_mld;
+	u8 ap_max_link;
+	u8 bsta_max_link;
+	u8 tid_to_link_map;
+	u8 legacy;
+	u8 ap_str_support;
+	u8 ap_nstr_support;
+	u8 ap_emlsr_support;
+	u8 ap_emlmr_support;
+	u8 sta_str_support;
+	u8 sta_nstr_support;
+	u8 sta_emlsr_support;
+	u8 sta_emlmr_support;
+	u8 num_ap_str_records;
+	u8 num_ap_nstr_records;
+	u8 num_ap_emlsr_records;
+	u8 num_ap_emlmr_records;
+	u8 num_sta_str_records;
+	u8 num_sta_nstr_records;
+	u8 num_sta_emlsr_records;
+	u8 num_sta_emlmr_records;
+	u8 total_ap_sta_records;
+	struct mlo_record record[0];
+};
+
+struct GNU_PACKED wdev_wifi7_mlo_caps {
+	struct mlo_capability mlo_cap;
+};
+#endif
+#define MAX_ROLE_NUM 2
+struct GNU_PACKED eml_caps_info {
+	u8 emlsr_supp;
+	u8 emlsr_padding;
+	u8 emlsr_trans_delay;
+	u8 emlmr_supp;
+	u8 emlmr_delay;
+	u8 trans_to;
+};
+struct GNU_PACKED mld_caps_info {
+	u8 max_simul_link;
+	u8 srs_supp;
+	u8 t2l_nego_supp;
+	u8 freq_sep_str;
+	u8 aar_supp;
+};
+struct GNU_PACKED mlo_cap_per_role {
+	unsigned char DeviceRole;
+	unsigned char StatPunctureSupport;
+	unsigned char MloEnable;
+	struct eml_caps_info EmlCap;
+	struct mld_caps_info MldCap;
+};
+struct GNU_PACKED wdev_mlo_caps {
+	unsigned char RoleNum;
+	struct mlo_cap_per_role MloCapPerRole[MAX_ROLE_NUM];
+};
 typedef struct GNU_PACKED _wdev_ht_cap {
 	u8	tx_stream;
 	u8	rx_stream;
@@ -316,6 +427,19 @@ typedef struct GNU_PACKED _wdev_he_cap {
 	unsigned char gi; /* 0:auto;1:800;2:1600;3:3200 */
 } wdev_he_cap;
 
+#ifdef MAP_R6
+struct GNU_PACKED wdev_extended_ap_metrics_mlo {
+	u32 mlo_pkts_tx;
+	u32 mlo_pkts_rx;
+	u32 mlo_tx_error_count;
+	u32 mlo_uc_tx;
+	u32 mlo_uc_rx;
+	u32 mlo_mc_tx;
+	u32 mlo_mc_rx;
+	u32 mlo_bc_tx;
+	u32 mlo_bc_rx;
+};
+#endif
 
 #ifdef MAP_R2
 typedef struct GNU_PACKED _wdev_extended_ap_metrics {
@@ -358,6 +482,7 @@ typedef enum cac_mode
 	CONTINUOUS_CAC,
 	DEDICATED_CAC,
 	REDUCED_MIMO_CAC,
+	DISABLE_CAC = 255,
 } CAC_MODE;
 #endif
 
@@ -378,7 +503,11 @@ struct GNU_PACKED he_nss{
 struct GNU_PACKED map_cli_cap {
 	u16 bw:2;
 	u16 phy_mode:3;
+#ifdef MTK_HOSTAPD_SUPPORT
+	u16 nss:4;
+#else
 	u16 nss:2;
+#endif
 	u16 btm_capable:1;
 	u16 rrm_capable:1;
 	u16 mbo_capable:1;
@@ -388,7 +517,7 @@ struct GNU_PACKED map_cli_cap {
 #ifdef MAP_R3_WF6
 struct GNU_PACKED assoc_wifi6_sta_info {
 	unsigned char tid;
-	unsigned char tid_q_size;
+	unsigned short tid_q_size;
 };
 
 typedef struct GNU_PACKED _wdev_wf6_cap {
@@ -426,6 +555,47 @@ typedef struct GNU_PACKED _wdev_wf6_cap_roles {
 	wdev_wf6_cap wf6_role[2];
 } wdev_wf6_cap_roles;
 #endif
+
+#ifdef MTK_MLO_MAP_SUPPORT
+#ifdef MAP_R6
+struct GNU_PACKED mlo_non_setup_info {
+	u8 affiliated_ap_bssid[MAC_ADDR_LEN];
+};
+#endif
+struct GNU_PACKED eht_link_info {
+	uint8_t link_id;
+	uint8_t tid_bitmap;
+};
+
+struct GNU_PACKED mld_entry_info {
+	/* mld */
+	u8 addr[MAC_ADDR_LEN];
+	u16  mld_sta_idx;
+	u8 nsep;
+	u16 emlmr;
+	u16 emlsr;
+	u16 eml_cap;
+	/* overall links info of mld */
+	u16 setup_link_wcid;
+	u8 setup_link_id;
+	u8 link_num;
+	/* others */
+	u8 valid;
+};
+
+struct GNU_PACKED mld_data {
+	u8 mlo_en;
+	u8 is_setup_link_entry;
+	struct mld_entry_info mld_info;
+	struct eht_link_info link_info;
+#ifdef MAP_R6
+	u8 sta_mld_addr[MAC_ADDR_LEN];
+	u8 ap_mld_addr[MAC_ADDR_LEN];
+	u8 affiliated_ap_num;
+	struct mlo_non_setup_info affiliated_info[MAX_MLO_LINK];
+#endif
+};
+#endif /* MTK_MLO_MAP_SUPPORT */
 
 typedef struct GNU_PACKED _wapp_client_info {
 	u8 mac_addr[MAC_ADDR_LEN];
@@ -467,6 +637,11 @@ typedef struct GNU_PACKED _wapp_client_info {
 	u8 tid_cnt;
 	struct assoc_wifi6_sta_info status_tlv[MAX_TID];
 #endif
+#ifdef MTK_MLO_MAP_SUPPORT
+	u8 mlo_join; /* only for auth use */
+	struct mld_data mlo;
+	u8   EmlsrBitmap;
+#endif
 } wapp_client_info;
 
 struct GNU_PACKED chnList {
@@ -482,7 +657,7 @@ typedef struct GNU_PACKED _wdev_chn_info {
 	u8		ch_list_num;
 	u8		non_op_chn_num;
 	u16		dl_mcs;
-	struct chnList ch_list[32];
+	struct chnList ch_list[MAX_NUM_OF_CHANNELS + 1];
 	u8		non_op_ch_list[32];
 	u8		AutoChannelSkipListNum;
 	u8		AutoChannelSkipList[MAX_NUM_OF_CHANNELS + 1];
@@ -523,6 +698,44 @@ typedef struct GNU_PACKED _wdev_bss_info {
 	u8 hidden_ssid;
 } wdev_bss_info;
 
+#ifdef MTK_MLO_MAP_SUPPORT
+struct GNU_PACKED _wdev_mlo_info {
+	u8 mld_addr[MAC_ADDR_LEN];
+	u8 mld_idx;
+	u8 link_id;
+	u8 ap_str_support;
+	u8 ap_nstr_support;
+	u8 ap_emlsr_support;
+	u8 ap_emlmr_support;
+};
+
+struct GNU_PACKED mlo_non_setup_linkinfo {
+	u8 mac_addr[MAC_ADDR_LEN];
+	u8 connected_bssid[MAC_ADDR_LEN];
+	u8 mlo_enable;
+	u8 is_setup_link_entry;
+	u8 phymode;
+	u8 channel;
+#ifdef MAP_R6
+	u32 ifindex;
+#endif
+};
+
+#ifdef MAP_R6
+struct GNU_PACKED mlo_bh_sta_info {
+	u8 mld_mac_valid;
+	u8 bss_mld_mac_valid;
+	u8 mld_mac[MAC_ADDR_LEN];
+	u8 bss_mld_mac[MAC_ADDR_LEN];
+	u8 str_en_dis;
+	u8 nstr_en_dis;
+	u8 emlsr_en_dis;
+	u8 emlmr_en_dis;
+};
+#endif
+
+#endif
+
 typedef struct GNU_PACKED _wsc_apcli_config {
 	char ssid[MAX_LEN_OF_SSID + 1];
 	u8 SsidLen;
@@ -547,6 +760,9 @@ typedef struct GNU_PACKED _wdev_ap_metric {
 	u8 		ESPI_AC[AC_NUM][3];
 #ifdef MAP_R2
 	wdev_extended_ap_metric ext_ap_metric;
+#endif
+#ifdef MAP_R6
+	struct wdev_extended_ap_metrics_mlo mlo_ext_ap_metric;
 #endif
 } wdev_ap_metric;
 
@@ -600,6 +816,16 @@ typedef struct GNU_PACKED wapp_bhsta_info {
 	u8 mac_addr[MAC_ADDR_LEN];
 	u8 connected_bssid[MAC_ADDR_LEN];
 	u8 peer_map_enable;
+#ifdef MTK_MLO_MAP_SUPPORT
+	unsigned char setup_link_num;
+	struct mlo_non_setup_linkinfo linkinfo[MAX_MLO_LINK];
+#ifdef MAP_R6
+	struct mlo_bh_sta_info sta;
+	char ssid[MAX_LEN_OF_SSID + 1];
+	u8 ssid_len;
+	u8 sta_mld_addr[MAC_ADDR_LEN];
+#endif
+#endif
 } wapp_bhsta_info;
 
 typedef struct GNU_PACKED _wdev_steer_policy {
@@ -726,12 +952,49 @@ struct GNU_PACKED cce_vendor_ie
 };
 
 #define MAX_CCE_CHANNEL 128
+#define MAX_RNR_CHANNEL 30
 
 struct GNU_PACKED cce_vendor_ie_result {
 	u8 num;
 	u8 cce_ch[MAX_CCE_CHANNEL];//channel list, on which beacon includes cce ie
+#ifdef MAP_R3_6E_SUPPORT
+	u8 rnr_6e_num;
+	u8 rnr_6e_ch[MAX_RNR_CHANNEL];
+#endif
 };
 #endif
+
+#ifdef MTK_MLO_MAP_SUPPORT
+enum IEEE80211_BAND_INFO {
+	IEEE80211_BAND_INFO_2G,
+	IEEE80211_BAND_INFO_5G,
+	IEEE80211_BAND_INFO_60G,
+	IEEE80211_BAND_INFO_NUMS
+};
+
+struct GNU_PACKED sta_profile_info {
+	uint8_t link_id;
+	uint8_t link_addr[MAC_ADDR_LEN];
+	enum IEEE80211_BAND_INFO rfband;
+	uint8_t channel;
+	uint8_t s1;
+	uint8_t s2;
+	uint8_t bw;
+	uint8_t change_seq;
+	uint8_t valid;
+	uint8_t he_ch_width;
+	wdev_ht_cap ht_cap;
+	wdev_vht_cap vht_cap;
+	wdev_he_cap he_cap;
+	struct wdev_eht_cap eht_cap;
+};
+
+struct GNU_PACKED multi_link_bss_info {
+	uint8_t mld_addr[MAC_ADDR_LEN];
+	uint8_t link_num;
+	struct sta_profile_info sta_profiles[MAX_MLO_LINK];
+};
+#endif /* MTK_MLO_MAP_SUPPORT */
 
 struct GNU_PACKED scan_bss_info {
 	u8 Bssid[MAC_ADDR_LEN];
@@ -757,12 +1020,23 @@ struct GNU_PACKED scan_bss_info {
 #ifdef MAP_6E_SUPPORT
 	struct map_rnr rnr_6e;
 #endif
+#ifdef MTK_HOSTAPD_SUPPORT
+	struct wdev_eht_cap eht_cap;
+#endif
+#ifdef MTK_MLO_MAP_SUPPORT
+	uint8_t ml_capable;
+	struct multi_link_bss_info ml_info;
+#endif
 };
 struct GNU_PACKED wapp_scan_info {
 	u32 interface_index;
 	u8 more_bss;
 	u8 bss_count;
+#ifdef MTK_MLO_MAP_SUPPORT
+	struct scan_bss_info bss;
+#else
 	struct scan_bss_info bss[0];
+#endif
 };
 
 struct GNU_PACKED wapp_wsc_scan_info {
@@ -791,7 +1065,7 @@ struct GNU_PACKED band_status_change {
 typedef struct GNU_PACKED _NDIS_802_11_SSID {
 	u32 SsidLength;	/* length of SSID field below, in bytes; */
 	/* this can be zero. */
-	char Ssid[MAX_LEN_OF_SSID];	/* SSID information field */
+	char Ssid[MAX_LEN_OF_SSID + 1];	/* SSID information field */
 } NDIS_802_11_SSID, *PNDIS_802_11_SSID;
 struct GNU_PACKED nop_channel_list_s
 {
@@ -895,6 +1169,40 @@ struct GNU_PACKED pmk_req {
 	size_t ssidlen;
 };
 #endif /*DPP_SUPPORT*/
+
+struct GNU_PACKED bss_color {
+	u8 wdev_id;
+	u8 action;
+	u8 bss_color_val;
+};
+
+struct GNU_PACKED mnt_sta {
+	u32 ifindex;
+	u8 sta_mac[MAC_ADDR_LEN];
+	u8 sta_id;
+};
+
+struct GNU_PACKED mnt_max_pkt {
+	u32 ifindex;
+	u32 pkt_number;
+};
+
+struct GNU_PACKED map_ch {
+	u32 ifindex;
+	u8 ch_num;
+#ifdef MAP_R2
+	u8 cac_req;
+	u8 map_dev_role;
+#endif /* MAP_R2 */
+};
+
+struct GNU_PACKED mld_group {
+	u32 ifindex;
+	u8 mld_group_idx;
+	u8 mld_addr[MAC_ADDR_LEN];
+	u8 mld_type;
+};
+
 #ifdef MAP_R3
 struct GNU_PACKED wapp_sta_info {
         u8 src[MAC_ADDR_LEN];
@@ -924,6 +1232,7 @@ struct GNU_PACKED wapp_srg_bitmap {
 struct GNU_PACKED wapp_mesh_sr_info {
 	u8 sr_mode;
 	u8 ul_traffic_status;
+	u8 bss_color;
 	struct wapp_srg_bitmap bm_info;
 };
 
@@ -937,6 +1246,137 @@ struct GNU_PACKED wapp_mesh_sr_topology {
 	unsigned char ssid_len;
 	unsigned char ssid[MAX_LEN_OF_SSID + 1];
 };
+
+#ifdef COSR_SUPPORT
+struct GNU_PACKED cosr_apinfo_data {
+	u16 tag;
+	u16 length;
+	u8  apId;
+	u8  CoorAPStatus;
+	u8  aCoorAPBSSID[MAC_ADDR_LEN];
+	u8  Rssi;
+	u8  Rsv[3];
+};
+
+struct GNU_PACKED cosr_stainfo_data {
+	u32	ifindex;
+	u16 length;
+	u16 wcid;
+	u8 sta_mac[MAC_ADDR_LEN];
+	u8 MLDid;
+	int Pldiff[3];
+	u8 Candstaid;
+	u8 u180211ksupport;
+	u8 status;
+	u8 Rsv[3];
+};
+
+struct GNU_PACKED cosr_info_set {
+	struct cosr_stainfo_data sta_info;
+	struct cosr_apinfo_data  ap_info;
+};
+
+struct GNU_PACKED wapp_cosr_action_frame {
+	u8 target_bssid[MAC_ADDR_LEN];
+	u8 sta_mac[MAC_ADDR_LEN];
+	u32 wapp_cosr_frame_id_no;
+	u32 chan;
+	u32 frm_len;
+	u8 frm[0];
+};
+
+struct cosr_change_info {
+	unsigned char ap_bssid[MAC_ADDR_LEN];
+	unsigned char sta_mac[MAC_ADDR_LEN];
+};
+#endif
+
+struct GNU_PACKED eht_mcs_nss {
+	u8 max_tx_rx_mcs0_7_nss;   /*rx bit 0-3,tx bit 4-7*/
+	u8 max_tx_rx_mcs8_9_nss;   /*rx bit 08-11,tx bit 12-15*/
+	u8 max_tx_rx_mcs10_11_nss; /*rx bit 16-19,tx bit 20-23*/
+	u8 max_tx_rx_mcs12_13_nss; /*rx bit 24-27,tx bit 28-31*/
+};
+struct GNU_PACKED wapp_eht_operations_info {
+	u32 interface_index;
+	u8 eht_operation_information_valid;
+	u8 eht_default_pe_duration;
+	u8 group_addressed_BU_indication_limit;
+	u8 group_addressed_BU_indication_exponent;
+	struct eht_mcs_nss eht_mcs_nss_set;
+	u8 control;
+	u8 ccfs0;
+	u8 ccfs1;
+	u16 dscb_bitmap;
+};
+
+typedef struct GNU_PACKED _wapp_req_data {
+	u32	ifindex;
+	u8 mac_addr[MAC_ADDR_LEN];
+	u32 value;
+	bssload_threshold bssload_thrd;
+	wdev_steer_policy str_policy;
+	wdev_ap_config ap_conf;
+	WSC_CREDENTIAL bh_wsc_profile;
+	struct scan_BH_ssids scan_bh_ssids;
+#ifdef MAP_R3
+	struct wapp_srg_bitmap bm_info;
+	u8 band_index;
+	struct wapp_mesh_sr_topology topology_update;
+#endif /* MAP_R3 */
+} wapp_req_data;
+
+struct GNU_PACKED wapp_req {
+	u8 req_id;
+	u8 data_len;
+	wapp_req_data data;
+};
+
+
+typedef struct GNU_PACKED _tbtt_info_set {
+	u8 NrAPTbttOffset;
+	u32 ShortBssid;
+} tbtt_info_set;
+
+typedef struct GNU_PACKED _wapp_nr_info
+{
+	u8 	Bssid[MAC_ADDR_LEN];
+	u32 BssidInfo;
+	u8  RegulatoryClass;
+	u8  ChNum;
+	u8  PhyType;
+	u8  CandidatePrefSubID;
+	u8  CandidatePrefSubLen;
+	u8  CandidatePref;
+	/* extra sec info */
+	u32 akm;
+	u32 cipher;
+	u8  TbttInfoSetNum;
+	tbtt_info_set TbttInfoSet;
+	u8  Rssi;
+} wapp_nr_info;
+
+/* for NR IE , append Bssid ~ CandidatePref */
+#define NEIGHBOR_REPORT_IE_SIZE 	sizeof(wapp_nr_info) - 15
+
+
+typedef struct daemon_nr_list {
+	u8 	CurrListNum;
+	wapp_nr_info NRInfo[DAEMON_NEIGHBOR_REPORT_MAX_NUM];
+} DAEMON_NR_LIST, *P_DAEMON_NR_LIST;
+
+typedef struct GNU_PACKED daemon_neighbor_report_list {
+	u8	Newlist;
+	u8 	TotalNum;
+	u8 	CurrNum;
+	u8 	reserved;
+	wapp_nr_info EvtNRInfo[PER_EVENT_LIST_MAX_NUM];
+} DAEMON_EVENT_NR_LIST, *P_DAEMON_EVENT_NR_LIST;
+
+
+typedef struct GNU_PACKED neighbor_report_msg {
+	DAEMON_EVENT_NR_LIST evt_nr_list;
+} DAEMON_NR_MSG, *P_DAEMON_NR_MSG;
 
 typedef union GNU_PACKED _wapp_event_data {
 	wapp_dev_info dev_info;
@@ -971,7 +1411,7 @@ typedef union GNU_PACKED _wapp_event_data {
 #ifdef WPS_UNCONFIG_FEATURE_SUPPORT
 	struct wapp_wps_config_info wps_conf_info;
 #endif
-        wapp_cac_info cac_info;
+	wapp_cac_info cac_info;
 #ifdef MAP_R2
 	wdev_extended_ap_metric ext_ap_metrics;
 	wdev_radio_metric radio_metrics;
@@ -991,7 +1431,7 @@ typedef union GNU_PACKED _wapp_event_data {
 #endif
 #ifdef MAP_R3
 	struct wapp_sta_info sta_info;
-        struct wapp_uri_info uri_info;
+	struct wapp_uri_info uri_info;
 #endif /* MAP_R3 */
 #ifdef QOS_R1
 	u8 *qos_frm;
@@ -1000,6 +1440,16 @@ typedef union GNU_PACKED _wapp_event_data {
 #ifdef MAP_R3
 	struct wapp_mesh_sr_info mesh_sr_info;
 #endif /* MAP_R3 */
+	DAEMON_EVENT_NR_LIST NeighborRepList;
+#ifdef COSR_SUPPORT
+	struct wapp_cosr_action_frame cosr_frame;
+	u32 wapp_cosr_frame_id_no;
+	struct cosr_change_info sta_event;
+#endif /* COSR_SUPPORT */
+#ifdef MTK_HOSTAPD_SUPPORT
+	u8 eht_ch_change;
+#endif
+	struct wapp_eht_operations_info eht_op_info;
 } wapp_event_data;
 struct GNU_PACKED _wapp_event2_data {
 	wapp_client_info cli_info;
@@ -1027,7 +1477,11 @@ struct GNU_PACKED wapp_req {
 };
 
 struct GNU_PACKED wapp_event {
+#ifdef MTK_MLO_MAP_SUPPORT
+	u16 len;
+#else
 	u8 len;
+#endif
 	u8 event_id;
 	u32 ifindex;
 	wapp_event_data data;
@@ -1096,7 +1550,14 @@ enum WIFI_MODE {
 	WMODE_AX_24G = 1 << 6,
 	WMODE_AX_5G = 1 << 7,
 	WMODE_AX_6G = 1 << 8,
+#if defined(MTK_HOSTAPD_SUPPORT) || defined(MTK_MLO_MAP_SUPPORT)
+	WMODE_BE_24G = 1 << 9,
+	WMODE_BE_5G = 1 << 10,
+	WMODE_BE_6G = 1 << 11,
+	WMODE_COMP = 12, /* total types of supported wireless mode, add this value once yow add new type */
+#else
 	WMODE_COMP = 9, /* total types of supported wireless mode, add this value once yow add new type */
+#endif
 };
 typedef union GNU_PACKED _RRM_BSSID_INFO
 {
