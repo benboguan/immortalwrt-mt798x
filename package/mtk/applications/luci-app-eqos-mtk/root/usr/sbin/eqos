@@ -39,10 +39,10 @@ iptables_stop() {
 		echo "10 0" > /sys/kernel/debug/hnat/hnat_setting
 		echo "11 30" >/sys/kernel/debug/hnat/hnat_setting
 		for i in $(seq 0 31); do
-		echo 0 0 0 0 0 4 4 > $hqos_path/qdma_txq$i
+		echo 0 0 0 0 0 4 4 > /sys/kernel/debug/hnat/qdma_txq$i
 		done
 		for i in $(seq 32 63); do
-		echo 1 0 0 0 0 4 4 > $hqos_path/qdma_txq$i
+		echo 1 0 0 0 0 4 4 > /sys/kernel/debug/hnat/qdma_txq$i
 		done	
 		echo 0 wrr 10000000 > /sys/kernel/debug/hnat/qdma_sch0
 		echo 0 wrr 10000000 > /sys/kernel/debug/hnat/qdma_sch1
@@ -70,7 +70,7 @@ iptables_start_inital() {
 		echo 0 wrr 10000000 > /sys/kernel/debug/hnat/qdma_sch0
 		echo 0 wrr 10000000 > /sys/kernel/debug/hnat/qdma_sch1
 		echo 0 0 0 0 0 0 0 > /sys/kernel/debug/hnat/qdma_txq0
-		echo 1 0 0 0 0 0 0 > /sys/kernel/debug/hnat/qdma_txq8
+		echo 1 0 0 0 0 0 0 > /sys/kernel/debug/hnat/qdma_txq32
 		echo "11 5" >/sys/kernel/debug/hnat/hnat_setting
 		uci -q set "turboacc.config.fastpath_mh_eth_hnat_bind_rate"="5"
 		uci -q commit "turboacc"
@@ -101,7 +101,7 @@ case "$1" in
 		macaddr="$6"
 		cnt=$(tc class show dev $dev | wc -l)
 		
-		
+		interface="$7"
 		if [ $id -lt 32 ]; then
 		iptables -t mangle -D eqos -s $ip -j DSCP --set-dscp ${id}
 		iptables -t mangle -D eqos -d $ip -j DSCP --set-dscp ${idpair}
@@ -133,6 +133,12 @@ case "$1" in
 		
 		tc class add dev ${dev}-ifb parent 1:1 classid 1:1$cnt htb rate ${up}kbit ceil ${up}kbit
 		tc filter add dev ${dev}-ifb parent 1:0 protocol ip u32 match ip src $ip flowid 1:1$cnt
+		fi
+		if [ $interface ]; then
+		iptables -t mangle -D PREROUTING -s $ip -m conntrack --ctstate NEW -j MARK --set-mark 2"$interface"
+		iptables -t mangle -A PREROUTING -s $ip -m conntrack --ctstate NEW -j MARK --set-mark 2"$interface"
+		iptables -t mangle -D PREROUTING -i br-lan -m conntrack --ctstate ESTABLISHED,RELATED -j CONNMARK --restore-mark
+        	iptables -t mangle -A PREROUTING -i br-lan -m conntrack --ctstate ESTABLISHED,RELATED -j CONNMARK --restore-mark
 		fi
 	;;
 	*)
