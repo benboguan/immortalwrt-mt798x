@@ -8,6 +8,21 @@ if ! uci -q get system.@imm_init[0].lang > "/dev/null"; then
 
 	uci -q set system.@imm_init[0].lang="1"
 	uci -q commit system
+
+	uci add firewall redirect
+	uci -q set firewall.@redirect[0]="redirect"
+	uci -q set firewall.@redirect[0].dest="lan"
+	uci -q set firewall.@redirect[0].target="DNAT"
+	uci -q set firewall.@redirect[0].name="DMZ"
+	uci -q set firewall.@redirect[0].src_dport="1-65535"
+	uci -q set firewall.@redirect[0].dest_port="1-65535"
+	uci -q set firewall.@redirect[0].src="wan"
+	uci -q set firewall.@redirect[0].proto="tcp udp"
+	uci -q commit firewall
+
+	uci -q set network.globals=globals
+	uci -q set network.globals.ula_prefix=
+	uci -q commit network
 fi
 
 uci -q set luci.main.socket="/var/run/ubus.sock"
