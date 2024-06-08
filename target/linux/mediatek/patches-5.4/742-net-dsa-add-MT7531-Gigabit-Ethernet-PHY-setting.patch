@@ -25,7 +25,7 @@ Index: linux-5.4.124/drivers/net/dsa/mt7531_phy.c
 ===================================================================
 --- /dev/null
 +++ linux-5.4.124/drivers/net/dsa/mt7531_phy.c
-@@ -0,0 +1,1378 @@
+@@ -0,0 +1,1385 @@
 +// SPDX-License-Identifier:	GPL-2.0+
 +/*
 + * Common part for MediaTek MT753x gigabit switch
@@ -1351,6 +1351,13 @@ Index: linux-5.4.124/drivers/net/dsa/mt7531_phy.c
 +	 * increase current.
 +	 */
 +	tc_phy_write_dev_reg(ds, port, PHY_DEV1F, PHY_DEV1F_REG_26A, 0x3333);
++	// add by litao
++	tc_phy_write_dev_reg(ds, port, PHY_DEV1F, 0x21, 0x8009);
++	tc_phy_write_dev_reg(ds, port, PHY_DEV1F, 0x24, 0xc007);
++	tc_phy_write_dev_reg(ds, port, PHY_DEV1F, 0x25, 0x0);
++	tc_phy_write_dev_reg(ds, port, PHY_DEV1F, 0x21, 0x8009);
++	tc_phy_write_dev_reg(ds, port, PHY_DEV1F, 0x26, 0xc007);
++	tc_phy_write_dev_reg(ds, port, PHY_DEV1F, 0x27, 0x3);
 +}
 +
 +static void mt7531_eee_setting(struct dsa_switch *ds, u32 port)
