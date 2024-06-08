@@ -7,7 +7,9 @@
 #define UINT8	unsigned char
 #define UINT16	unsigned short
 #define UINT32	unsigned int
+#define UINT64	unsigned long long
 #define INT32	int
+#define INT64	long long
 #define INT 	int
 
 typedef union _HTTRANSMIT_SETTING_FIX {
@@ -16,6 +18,7 @@ typedef union _HTTRANSMIT_SETTING_FIX {
 		unsigned short ldpc:1;
 		unsigned short BW:2;
 		unsigned short ShortGI:2;
+		unsigned short GILTF:2;
 		unsigned short STBC:1;
 		unsigned short eTxBF:1;
 		unsigned short iTxBF:1;
@@ -39,8 +42,12 @@ typedef struct _RT_802_11_MAC_ENTRY_FIX {
 	HTTRANSMIT_SETTING      LastRxRate;
 	short                   StreamSnr[3];
 	short                   SoundingRespSnr[3];
-	unsigned int			EncryMode;
-	unsigned int			AuthMode;
+	unsigned long long      TxPackets; //TxPackets.QuadPart
+	unsigned long long      RxPackets; //RxPackets.QuadPart
+	unsigned long long      TxBytes;
+	unsigned long long      RxBytes;
+	unsigned int            EncryMode;
+	unsigned int            AuthMode;
 } RT_802_11_MAC_ENTRY;
 
 #define MAX_NUMBER_OF_MAC               544
@@ -58,11 +65,12 @@ typedef struct _RT_802_11_MAC_TABLE_FIX {
 #define RTPRIV_IOCTL_GSITESURVEY            (SIOCIWFIRSTPRIV + 0x0D)
 #define RTPRIV_IOCTL_PHY_STATE              (SIOCIWFIRSTPRIV + 0x21)
 #define RTPRIV_IOCTL_GET_DRIVER_INFO        (SIOCIWFIRSTPRIV + 0x1D)
+#define OID_802_11_GET_COUNTRY_CODE			0x0716
 #define OID_802_11_COUNTRYCODE				0x1907
 #define OID_802_11_BW						0x1903
 #define OID_GET_CHAN_LIST					0x0998
 #define OID_GET_WIRELESS_BAND				0x09B4
-#define OID_802_11_SECURITY_TYPE                0x093e
+#define OID_802_11_SECURITY_TYPE            0x093e
 #define RT_OID_802_11_PHY_MODE				0x050C
 #define GET_MAC_TABLE_STRUCT_FLAG_RAW_SSID	0x1
 
@@ -230,11 +238,12 @@ typedef enum _SEC_AKM_MODE {
 	SEC_AKM_WAICERT, /* WAI certificate authentication */
 	SEC_AKM_WAIPSK, /* WAI pre-shared key */
 	SEC_AKM_OWE,
+	SEC_AKM_DPP,
 	SEC_AKM_FILS_SHA256,
 	SEC_AKM_FILS_SHA384,
 	SEC_AKM_WPA3, /* WPA3(ent) = WPA2(ent) + PMF MFPR=1 => WPA3 code flow is same as WPA2, the usage of SEC_AKM_WPA3 is to force pmf on */
 	SEC_AKM_MAX /* Not a real mode, defined as upper bound */
-} SEC_AKM_MODE;
+} SEC_AKM_MODE, *PSEC_AKM_MODE;
 
 #define IS_AKM_OPEN(_AKMMap)                           ((_AKMMap & (1 << SEC_AKM_OPEN)) > 0)
 #define IS_AKM_SHARED(_AKMMap)                       ((_AKMMap & (1 << SEC_AKM_SHARED)) > 0)
@@ -257,12 +266,18 @@ typedef enum _SEC_AKM_MODE {
 #define IS_AKM_WPA3(_AKMMap)	 ((_AKMMap & (1 << SEC_AKM_WPA3)) > 0)
 #define IS_AKM_WPA3PSK(_AKMMap) (IS_AKM_SAE_SHA256(_AKMMap))
 #define IS_AKM_WPA3_192BIT(_AKMMap)	(IS_AKM_SUITEB_SHA384(_AKMMap))
+#define IS_AKM_WAICERT(_AKMMap)                      ((_AKMMap & (1 << SEC_AKM_WAICERT)) > 0)
+#define IS_AKM_WPIPSK(_AKMMap)                        ((_AKMMap & (1 << SEC_AKM_WAIPSK)) > 0)
 #define IS_AKM_OWE(_AKMMap) ((_AKMMap & (1 << SEC_AKM_OWE)) > 0)
+#define IS_AKM_DPP(_AKMMap) ((_AKMMap & (1 << SEC_AKM_DPP)) > 0)
+#define IS_AKM_FILS_SHA256(_AKMMap)                ((_AKMMap & (1 << SEC_AKM_FILS_SHA256)) > 0)
+#define IS_AKM_FILS_SHA384(_AKMMap)                ((_AKMMap & (1 << SEC_AKM_FILS_SHA384)) > 0)
 
 #define MTK_L1_PROFILE_PATH		"/etc/wireless/l1profile.dat"
 
 void getRate(HTTRANSMIT_SETTING HTSetting, ULONG *fLastTxRxRate);
 void get_rate_he(UINT8 mcs, UINT8 bw, UINT8 nss, UINT8 dcm, ULONG *last_tx_rate);
 UINT32 cck_to_mcs(UINT32 mcs);
+int mtk_get_assoclist(const char *ifname, char *buf, int *len);
 
 #endif
