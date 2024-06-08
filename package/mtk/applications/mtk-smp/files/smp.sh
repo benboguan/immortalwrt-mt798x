@@ -36,13 +36,13 @@ MT7986_whnat()
 	eth_rx0=230
 	usb=205
 	if [ -d "/proc/warp_ctrl/warp0" ]; then
-	wifi1_irq=237
-	wifi2_irq=237
-	wifi3_irq=
+		wifi1_irq=237
+		wifi2_irq=237
+		wifi3_irq=
 	else
-        wifi1_irq=245
-        wifi2_irq=245
-        wifi3_irq=
+        	wifi1_irq=245
+        	wifi2_irq=245
+        	wifi3_irq=
 	fi
 
 	# Please update the CPU binding in each cases.
@@ -586,11 +586,11 @@ get_wifi_if_name()
 		wifi1_apcli="apcli"
 		wifi1_wds="wds"
 		wifi1_mesh="mesh"
-		wifi2="rai0"
-		wifi2_prefix="rai"
-		wifi2_apcli="apclii"
-		wifi2_wds="wdsi"
-		wifi2_mesh="meshi"
+		wifi2="rax0"
+		wifi2_prefix="rax"
+		wifi2_apcli="apclix"
+		wifi2_wds="wdsx"
+		wifi2_mesh="meshx"
 		wifi3="rae0"
 		wifi3_prefix="rae"
 		wifi3_apcli="apclie"
