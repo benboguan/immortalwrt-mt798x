@@ -195,6 +195,10 @@ BOOLEAN hs_read_from_config(char *prefix_name, struct rtapd_config *conf)
 		file = fopen(HS_CONFIG_FILE_RA, "r");
 	} else if (os_strcmp(prefix_name, "rax") == 0) {
 		file = fopen(HS_CONFIG_FILE_RAX, "r");
+	} else if (os_strcmp(prefix_name, "rai") == 0) {
+		file = fopen(HS_CONFIG_FILE_RAI, "r");
+	} else if (os_strcmp(prefix_name, "raix") == 0) {
+		file = fopen(HS_CONFIG_FILE_RAIX, "r");
 	} else {
 		DBGPRINT(RT_DEBUG_ERROR, "hs_read_from_config failed!\n");
 		return FALSE;

@@ -1343,6 +1343,65 @@ static void ieee802_1x_get_keys(rtapd *rtapd, struct sta_info *sta,
 	free(keys);
 }
 
+#if HOTSPOT_R2
+static u8 *Radius_msg_get_wfa_attr(struct radius_msg *msg, u8 wfa_subtype, size_t *alen)
+{
+	u8 *data, *pos;
+	int i;
+	size_t len;
+
+	if (msg == NULL)
+		return NULL;
+
+	for (i = 0; i < msg->attr_used; i++) {
+		struct radius_attr_hdr *attr = msg->attrs[i];
+		int left;
+		u32 vendor_id;
+		struct radius_attr_vendor_wfa *wfa;
+
+		if (attr->type != RADIUS_ATTR_VENDOR_SPECIFIC)
+			continue;
+
+		left = attr->length - sizeof(*attr);
+		if (left < 4)
+			continue;
+
+		pos = (u8 *) (attr + 1);
+
+		memcpy(&vendor_id, pos, 4);
+		pos += 4;
+		left -= 4;
+
+		if (ntohl(vendor_id) != RADIUS_VENDOR_ID_WFA)
+			continue;
+
+		while (left >= sizeof(*wfa)) {
+			wfa = (struct radius_attr_vendor_wfa *) pos;
+			if (wfa->vendor_sublength > left) {
+				left = 0;
+				continue;
+			}
+			if (wfa->vendor_subtype != wfa_subtype) {
+				pos += wfa->vendor_sublength;
+				left -= wfa->vendor_sublength;
+				continue;
+			}
+
+			len = wfa->vendor_sublength - sizeof(*wfa);
+			data = (u8 *) malloc(len);
+			if (data == NULL)
+				return NULL;
+			memcpy(data, pos + sizeof(*wfa), len);
+			if (alen)
+				*alen = len;
+			return data;
+		}
+	}
+
+	return NULL;
+}
+#endif
+
 /* Process the RADIUS frames from Authentication Server */
 static RadiusRxResult
 ieee802_1x_receive_auth(rtapd *rtapd, struct radius_msg *msg, struct radius_msg *req,
@@ -1451,7 +1510,7 @@ ieee802_1x_receive_auth(rtapd *rtapd, struct radius_msg *msg, struct radius_msg 
 				struct wnm_req_data wnmreq;
 				struct btm_req_data btmreq;
 				u32	session_len = 0;
-				char *buf;
+				u8 *buf;
 				//char tt[] = "https:// remediation-server.R2-testbed.wi-fi.org";
 				buf = Radius_msg_get_wfa_attr(msg, RADIUS_VENDOR_ATTR_WFA_REMEDIATION, &wnmreq.req_len);
 

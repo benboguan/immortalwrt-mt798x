@@ -6,6 +6,8 @@
 #define TC_SERVER_URL_LEN
 #define HS_CONFIG_FILE_RA "/etc/wapp_ap_ra0.conf"
 #define HS_CONFIG_FILE_RAX "/etc/wapp_ap_rax0.conf"
+#define HS_CONFIG_FILE_RAI "/etc/wapp_ap_rai0.conf"
+#define HS_CONFIG_FILE_RAIX "/etc/wapp_ap_raix0.conf"
 #endif
 
 #include "utils/list.h"

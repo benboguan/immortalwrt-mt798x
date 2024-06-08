@@ -76,6 +76,9 @@ int wpabuf_resize(struct wpabuf **_buf, size_t add_len)
 			memset(nbuf + buf->used, 0, add_len);
 			buf->buf = nbuf;
 		} else {
+			size_t old_len = 0;
+
+			old_len = buf->used;
 #ifdef WPA_TRACE
 			nbuf = os_realloc(trace, sizeof(struct wpabuf_trace) +
 					  sizeof(struct wpabuf) +
@@ -85,7 +88,7 @@ int wpabuf_resize(struct wpabuf **_buf, size_t add_len)
 			trace = (struct wpabuf_trace *) nbuf;
 			buf = (struct wpabuf *) (trace + 1);
 			os_memset(nbuf + sizeof(struct wpabuf_trace) +
-				  sizeof(struct wpabuf) + buf->used, 0,
+				  sizeof(struct wpabuf) + old_len, 0,
 				  add_len);
 #else /* WPA_TRACE */
 			nbuf = os_realloc(buf, sizeof(struct wpabuf) +
@@ -93,7 +96,7 @@ int wpabuf_resize(struct wpabuf **_buf, size_t add_len)
 			if (nbuf == NULL)
 				return -1;
 			buf = (struct wpabuf *) nbuf;
-			memset(nbuf + sizeof(struct wpabuf) + buf->used, 0,
+			memset(nbuf + sizeof(struct wpabuf) + old_len, 0,
 				  add_len);
 #endif /* WPA_TRACE */
 			buf->buf = (u8 *) (buf + 1);
