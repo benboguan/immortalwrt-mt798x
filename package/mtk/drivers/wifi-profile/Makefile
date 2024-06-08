@@ -60,6 +60,44 @@ if PACKAGE_wifi-profile
 endif
 endef
 
+define Package/wifi-script
+  SECTION:=MTK Properties
+  CATEGORY:=MTK Properties
+  SUBMENU:=Drivers
+  DEPENDS:=+wifi-dats
+  TITLE:=LUCI WiFi scripts
+  VERSION:=$(PKG_RELEASE)
+  MENU:=1
+endef
+
+define Package/wifi-script/description
+  This package install luci wifi scripts.
+endef
+
+define Package/wifi-script/config
+if PACKAGE_wifi-script
+	menuconfig first_card
+		bool "1st card"
+		default y
+
+	if first_card
+	config first_card_name
+		string "1st card name"
+		default "MT7981"
+	endif
+
+	menuconfig second_card
+		bool "2nd card"
+		default n
+
+	if second_card
+	config second_card_name
+		string "2nd card name"
+		default "MT7981"
+	endif
+endif
+endef
+
 define Package/wifi-dats
   SECTION:=MTK Properties
   CATEGORY:=MTK Properties
@@ -126,6 +164,18 @@ define Package/wifi-profile/install
 	fi
 endef
 
+define Package/wifi-script/install
+	$(INSTALL_DIR) $(1)/lib/wifi/
+	$(INSTALL_DIR) $(1)/lib/netifd/wireless/
+	$(INSTALL_DIR) $(1)/etc/uci-defaults/
+
+	if [ "$$(CONFIG_first_card_name)" = "MT7981" -o "$$(CONFIG_second_card_name)" = "MT7981" ] ; then \
+		$(INSTALL_DATA) ./files/common/mt7981/lib/wifi/mtk.sh $(1)/lib/wifi/; \
+		$(INSTALL_BIN) ./files/common/mt7981/lib/netifd/wireless/mtk.sh $(1)/lib/netifd/wireless/; \
+		$(INSTALL_DATA) ./files/common/mt7981/etc/uci-defaults/10_mt798x_dbdc $(1)/etc/uci-defaults/10_mt798x_dbdc ; \
+	fi
+endef
+
 define Package/wifi-dats/install
 	$(INSTALL_DIR) $(1)/etc/wireless/mediatek/
 	if [ "$$(CONFIG_first_card_name)" = "MT7986" -o "$$(CONFIG_second_card_name)" = "MT7986" ] ; then \
@@ -146,4 +196,5 @@ define Package/wifi-dats/install
 endef
 
 $(eval $(call BuildPackage,wifi-dats))
+$(eval $(call BuildPackage,wifi-script))
 $(eval $(call BuildPackage,wifi-profile))
