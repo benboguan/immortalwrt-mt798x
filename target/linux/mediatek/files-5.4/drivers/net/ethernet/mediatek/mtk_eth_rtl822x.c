@@ -168,7 +168,7 @@ static int rtl822x_init(struct mtk_eth *eth, int addr)
 	mtk_mmd_write(eth, addr, 31, 0xd044, 0xf8);
 
 	msleep(500);
-    	
+
 	dev_info(eth->dev, "RTL822x init success!\n");
 
 	Rtl8226b_phy_init((HANDLE){eth, addr}, NULL, 1);
