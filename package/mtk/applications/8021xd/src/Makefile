@@ -133,6 +133,11 @@ clean:
 $(OBJS): %.o : %.c
 	$(CC) $(EXTRA_CFLAGS) -c $< -o $@
 
+
+install: all
+        install -D $(EXE) $(INSTALLDIR)/bin/$(EXE)
+        $(STRIP) $(INSTALLDIR)/bin/$(EXE)
+        cd $(INSTALLDIR)/bin && ln -sf $(EXE) rtinicapd 
 else
 
 #PLATFORM = 5VT

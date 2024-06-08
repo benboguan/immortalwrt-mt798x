@@ -31,8 +31,8 @@ MAKE_FLAGS += \
 	CFLAGS="$(TARGET_CFLAGS)"
 
 define Package/8021xd/install
-	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/8021xd $(1)/usr/bin
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/8021xd $(1)/usr/sbin
 endef
 
 $(eval $(call BuildPackage,8021xd))
