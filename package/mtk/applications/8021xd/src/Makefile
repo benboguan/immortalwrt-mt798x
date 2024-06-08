@@ -135,9 +135,9 @@ $(OBJS): %.o : %.c
 
 
 install: all
-        install -D $(EXE) $(INSTALLDIR)/bin/$(EXE)
-        $(STRIP) $(INSTALLDIR)/bin/$(EXE)
-        cd $(INSTALLDIR)/bin && ln -sf $(EXE) rtinicapd 
+	install -D $(EXE) $(INSTALLDIR)/bin/$(EXE)
+	$(STRIP) $(INSTALLDIR)/bin/$(EXE)
+	cd $(INSTALLDIR)/bin && ln -sf $(EXE) rtinicapd
 else
 
 #PLATFORM = 5VT
