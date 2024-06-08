@@ -39,7 +39,8 @@ echo 0 > /proc/sys/net/bridge/bridge-nf-call-ip6tables
 echo 0 > /proc/sys/net/bridge/bridge-nf-filter-pppoe-tagged
 echo 0 > /proc/sys/net/bridge/bridge-nf-filter-vlan-tagged
 echo 0 > /proc/sys/net/bridge/bridge-nf-pass-vlan-input-dev
-
+echo 1035876 >/proc/sys/net/core/rmem_max
+echo 1035876 >/proc/sys/net/core/wmem_max
 if [ ! -d $hqos_path ]; then
 	modprobe mtkhnat
 	if [ "$?" != "0" ]; then
