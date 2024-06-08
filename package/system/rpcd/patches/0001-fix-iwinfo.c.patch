@@ -1,6 +1,6 @@
 --- a/iwinfo.c
 +++ b/iwinfo.c
-@@ -808,6 +808,7 @@ static int rpc_iwinfo_phyname
+@@ -808,7 +808,8 @@ static int rpc_iwinfo_phyname
  	const char *backends[] = {
  		"nl80211",
  		"madwifi",
