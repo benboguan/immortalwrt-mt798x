@@ -1,0 +1,154 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "Enable 1024-QAM"
+msgstr "启用 1024-QAM"
+
+msgid "802.11ac/ax 5Ghz Only"
+msgstr "只适合 802.11ac/ax 5Ghz"
+
+msgid "Target Wake Time"
+msgstr "目标唤醒时间（TWT）"
+
+msgid "MU-MIMO DL"
+msgstr "下行 MU-MIMO"
+
+msgid "MU-MIMO UL"
+msgstr "上行 MU-MIMO"
+
+msgid "OFDMA DL"
+msgstr "下行 OFDMA"
+
+msgid "OFDMA UL"
+msgstr "上行 OFDMA"
+
+msgid "A-MSDU"
+msgstr "MSDU聚合（A-MSDU）"
+
+msgid "Auto Block ACK"
+msgstr "自动块确认"
+
+msgid "U-APSD"
+msgstr "U-APSD 省电模式"
+
+msgid "Force GCMP256"
+msgstr "强制 GCMP256"
+
+msgid "Dynamic Frequency Selection(DFS)"
+msgstr "动态频率选择（DFS）"
+
+msgid "Kick low RSSI station threshold"
+msgstr "弱信号剔除阈值"
+
+msgid "Station associate threshold"
+msgstr "弱信号接入阈值"
+
+msgid "Wireless HWNAT"
+msgstr "无线硬件加速"
+
+msgid "Enable for MTK Repeater mode"
+msgstr "MTK 无线中继时启用"
+
+msgid "Configure AP its own IP address"
+msgstr "配置 AP 自己的IP地址"
+
+msgid "Configure AP its own Port"
+msgstr "配置 AP 自己的端口"
+
+msgid "own_ip_addr is global setting ,in this point, let all mbss set the same own_ip_addr for safe."
+msgstr "own_ip_addr是全局设置，基于这一点，为了安全起见，所有的MBSS都设置相同的own_ip_addr。"
+
+msgid "own_radius_port is global setting , let all mbss set the same own_radius_port."
+msgstr "own_radius_port是全局设置，所有的MBSS设置相同的own_radius _port。"
+
+msgid "Connection Limit"
+msgstr "连接数限制"
+
+msgid "The default number of single frequency connections for drivers is 64"
+msgstr "驱动默认单频连接数为64个"
+
+msgid "Mesh Mode"
+msgstr "Mesh 模式"
+
+msgid "Short Preamble"
+msgstr "短前导码"
+
+msgid "Multi To Unicast"
+msgstr "多播到单播"
+
+msgid "UTC time at which the TSF timer is 0"
+msgstr "TSF计时器为0的UTC时间"
+
+msgid "driver default (%s)"
+msgstr "驱动默认（%s）"
+
+msgid "no override"
+msgstr "非绕过"
+
+msgid "randomly generated"
+msgstr "随机生成"
+
+msgid "WFA 802.11v Spec"
+msgstr "WFA 802.11v 规范"
+
+msgid "WDS Mode"
+msgstr "WDS 模式"
+
+msgid "Repeater Mode"
+msgstr "中继模式（WDS)"
+
+msgid "Bridge Mode"
+msgstr "桥接模式（WDS)"
+
+msgid "Lazy Mode"
+msgstr "懒惰模式（WDS)"
+
+msgid "WDS mode is only available between MTK devices."
+msgstr "WDS 模式仅在 MTK 设备之间可用。"
+
+msgid "WDS PHY Mode"
+msgstr "WDS PHY 模式"
+
+msgid "If GREENFIELD seems to be unstable,try to use OFDM instead.VHT/HE is only available for 11AC/11AX devices."
+msgstr "如果 GREENFIELD 看起来不稳定，请尝试改用 OFDM。VHT/HE 仅适用于 11AC/11AX 设备。"
+
+msgid "RSN Preauth"
+msgstr "RSN 预认证"
+
+msgid "APCLI interface Random MAC"
+msgstr "APCLI 接口随机MAC"
+
+msgid "When enabled, the ApCli interface Mac address changes randomly."
+msgstr "当开启时，APCLI 接口 MAC 地址随机变更。"
+
+msgid ""
+"WFA 802.11v Spec - If one of the Dot11vMbssid is enabled "
+"the whole MBSSID will follow the 802.11v Spec "
+msgstr ""
+"WFA 802.11v规范-如果启用了其中一个Dot11vMbssid"
+"则整个MBSSID将遵循802.11v规范"
+
+msgid ""
+"Robust Security Network (RSN): Allow roaming preauth for WPA2-EAP networks "
+"(and advertise it in WLAN beacons). Only works if the specified network "
+"interface is a bridge. Shortens the time-critical reassociation process."
+msgstr ""
+"健壮安全网络 (RSN)：允许 WPA2-EAP 网络的漫游预认证 (并在 WLAN 信标中发布它)。"
+"只有当指定的网络接口是网桥时才有效。缩短时序要求严格的再关联过程。"
+
+msgid ""
+"ARP, IPv4 and IPv6 (even 802.1Q) with multicast destination MACs are unicast "
+"to the STA MAC address. Note: This is not Directed Multicast Service (DMS) "
+"in 802.11v. Note: might break receiver STA multicast expectations."
+msgstr ""
+"带组播目的地 MAC 的ARP、IPv4 和 IPv6 (甚至 802.1Q) 是对 STA MAC 地址的单播。"
+"注意：这不是 802.11v 中的定向多播服务 (DMS)。注意：可能会破坏接收端 STA 多播"
+"预期。"
+
+msgid ""
+"Override default MAC address - the range of usable addresses might be "
+"limited by the driver"
+msgstr "覆盖默认 MAC 地址 - 可用地址的范围可能受限于驱动"
+
+msgid "802.11v: BSS Max Idle. Units: seconds."
+msgstr "802.11v: BSS 最长空闲时间。 单位：秒。"
