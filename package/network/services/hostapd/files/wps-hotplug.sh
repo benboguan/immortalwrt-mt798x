@@ -38,7 +38,11 @@ wps_catch_credentials() {
 	done
 }
 
-if [ "$ACTION" = "released" ] && [ "$BUTTON" = "wps" ]; then
+if [ -f /etc/wireless/l1profile.dat ]; then
+	DAT_PATH=/etc/wireless/l1profile.dat
+fi
+
+if [ "$ACTION" = "released" -o "$ACTION" = "pressed" ] && [ "$BUTTON" = "wps" -o "$BUTTON" = "mesh" ]; then
 	# If the button was pressed for 3 seconds or more, trigger WPS on
 	# wpa_supplicant only, no matter if hostapd is running or not.  If
 	# was pressed for less than 3 seconds, try triggering on
@@ -51,6 +55,13 @@ if [ "$ACTION" = "released" ] && [ "$BUTTON" = "wps" ]; then
 			ubus -S call $ubusobj wps_start && wps_done=1
 		done
 		[ $wps_done = 0 ] || return 0
+	else
+		echo "WPS Button Pressed........." > /dev/console
+		wifi1_ifname=`cat $DAT_PATH | grep -r INDEX0_main_ifname | awk -F = '{printf $2}'`
+		iwpriv $wifi1_ifname set WscConfMode=4
+		iwpriv $wifi1_ifname set WscMode=2
+		iwpriv $wifi1_ifname set WscConfStatus=2
+		iwpriv $wifi1_ifname set WscGetConf=1
 	fi
 	wps_done=0
 	ubusobjs="$( ubus -S list wpa_supplicant.* )"
