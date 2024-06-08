@@ -1,0 +1,70 @@
+--- a/mt_wifi/embedded/ap/ap_cfg.c
++++ b/mt_wifi/embedded/ap/ap_cfg.c
+@@ -80,7 +80,7 @@ COUNTRY_CODE_TO_COUNTRY_REGION allCountry[] = {
+ 	{100,	"BG",	"BULGARIA",				TRUE,	A_BAND_REGION_1,	TRUE,	G_BAND_REGION_1},
+ 	{124,	"CA",	"CANADA",				TRUE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_0},
+ 	{152,	"CL",	"CHILE",				TRUE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
+-	{156,	"CN",	"CHINA",				TRUE,	A_BAND_REGION_4,	TRUE,	G_BAND_REGION_1},
++	{156,	"CN",	"CHINA",				TRUE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
+ 	{170,	"CO",	"COLOMBIA",				TRUE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_0},
+ 	{188,	"CR",	"COSTA RICA",			FALSE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
+ 	{191,	"HR",	"CROATIA",				TRUE,	A_BAND_REGION_2,	TRUE,	G_BAND_REGION_1},
+@@ -156,7 +156,7 @@ COUNTRY_CODE_TO_COUNTRY_REGION allCountry[] = {
+ 	{804,	"UA",	"UKRAINE",				FALSE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
+ 	{784,	"AE",	"UNITED ARAB EMIRATES",	FALSE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
+ 	{826,	"GB",	"UNITED KINGDOM",		TRUE,	A_BAND_REGION_1,	TRUE,	G_BAND_REGION_1},
+-	{840,	"US",	"UNITED STATES",		TRUE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_0},
++	{840,	"US",	"UNITED STATES",		TRUE,	A_BAND_REGION_7,	TRUE,	G_BAND_REGION_5},
+ 	{858,	"UY",	"URUGUAY",				TRUE,	A_BAND_REGION_5,	TRUE,	G_BAND_REGION_1},
+ 	{860,	"UZ",	"UZBEKISTAN",			TRUE,	A_BAND_REGION_1,	TRUE,	G_BAND_REGION_0},
+ 	{862,	"VE",	"VENEZUELA",			TRUE,	A_BAND_REGION_5,	TRUE,	G_BAND_REGION_1},
+--- a/mt_wifi/embedded/common/rt_channel.c
++++ b/mt_wifi/embedded/common/rt_channel.c
+@@ -174,11 +174,14 @@ UINT16 const Country_Region_GroupNum_2GHZ = sizeof(Country_Region_ChDesc_2GHZ) /
+ CH_DESC Country_Region1_ChDesc_5GHZ[] = {
+ 	{36, 8, CHANNEL_DEFAULT_PROP},
+ 	{100, 11, CHANNEL_DEFAULT_PROP},
++	{149, 5, CHANNEL_DEFAULT_PROP},
+ 	{}
+ };
+ 
+ CH_DESC Country_Region2_ChDesc_5GHZ[] = {
+ 	{36, 8, CHANNEL_DEFAULT_PROP},
++	{100, 11, CHANNEL_DEFAULT_PROP},
++	{149, 5, CHANNEL_DEFAULT_PROP},
+ 	{}
+ };
+ 
+@@ -204,8 +207,8 @@ UINT16 const Country_Region_GroupNum_2GHZ = sizeof(Country_Region_ChDesc_2GHZ) /
+ 
+ CH_DESC Country_Region7_ChDesc_5GHZ[] = {
+ 	{36, 8, CHANNEL_DEFAULT_PROP},
+-	{100, 11, CHANNEL_DEFAULT_PROP},
+-	{149, 5, CHANNEL_DEFAULT_PROP},
++	{100, 12, CHANNEL_DEFAULT_PROP},
++	{149, 8, CHANNEL_DEFAULT_PROP},
+ 	/* {100, 14, CHANNEL_DEFAULT_PROP}, */
+ 	/* {149, 7, CHANNEL_DEFAULT_PROP}, */
+ 	{}
+@@ -749,9 +752,9 @@ /*China*/
+ };
+ /*China*/
+ CH_DESP Country_CN_ChDesp[] = {
+-	{ 1,   13, 20, BOTH, FALSE},	/*2402~2482MHz, Ch 1~13,   Max BW: 40 */
+-	{ 36,   4, 23, BOTH, FALSE},	/*5170~5250MHz, Ch 36~48, Max BW: 40 */
+-	{ 52,   4, 23, BOTH, TRUE},	/*5250~5330MHz, Ch 52~64, Max BW: 40 */
++	{ 1,   13, 36, BOTH, FALSE},	/*2402~2482MHz, Ch 1~13,   Max BW: 40 */
++	{ 36,   4, 36, BOTH, FALSE},	/*5170~5250MHz, Ch 36~48, Max BW: 40 */
++	{ 52,   4, 30, BOTH, TRUE},	/*5250~5330MHz, Ch 52~64, Max BW: 40 */
+ 	{ 149,  5, 33, BOTH, FALSE},	/*5735~5835MHz, Ch 149~165, Max BW: 40 */
+ 	{ 0},			/* end*/
+ };
+@@ -1887,7 +1890,7 @@ /*United States*/
+ };
+ /*United States*/
+ CH_DESP Country_US_ChDesp[] = {
+-	{ 1,   11, 36, BOTH, FALSE},	/*2402~2472MHz, Ch 1~11,   Max BW: 40 */
++	{ 1,   13, 36, BOTH, FALSE},	/*2402~2482MHz, Ch 1~14,   Max BW: 40 */
+ 	{ 36,   4, 36, BOTH, FALSE},	/*5170~5250MHz, Ch 36~48, Max BW: 40 */
+ 	{ 52,   4, 30, BOTH, TRUE},	/*5250~5330MHz, Ch 52~64, Max BW: 40 */
+ 	{ 100, 12, 30, BOTH, TRUE},	/*5490~5730MHz, Ch 100~144, Max BW: 40 */

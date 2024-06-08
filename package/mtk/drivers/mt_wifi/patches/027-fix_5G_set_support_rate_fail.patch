@@ -1,0 +1,20 @@
+--- a/mt_wifi/embedded/common/cmm_profile.c
++++ b/mt_wifi/embedded/common/cmm_profile.c
+@@ -4607,7 +4607,7 @@ static VOID read_eaprate_param_from_file(struct _RTMP_ADAPTER *pAd, RTMP_STRING
+ 	}
+ 
+ /* SupRateSet */
+-	if (RTMPGetKeyParameter("suprateset", tmpbuf, 32, buf, TRUE)) {
++	if (RTMPGetKeyParameter("suprateset", tmpbuf, 128, buf, TRUE)) {
+ 		for (i = 0, macptr = rstrtok(tmpbuf, ";"); macptr; macptr = rstrtok(NULL, ";"), i++) {
+ 			INT supratesetbitmap = 0, j = 0;
+ 			UCHAR rate[] = {
+@@ -4649,7 +4649,7 @@ static VOID read_eaprate_param_from_file(struct _RTMP_ADAPTER *pAd, RTMP_STRING
+ 								wdev->eap.eapsupportratemode |= SUPPORT_OFDM_MODE;
+ 							}
+ 						} else {
+-							eap_legacy_rate->ext_rate[eap_legacy_rate->ext_rate_len] = rate[i] & 0x7f;
++							eap_legacy_rate->ext_rate[eap_legacy_rate->ext_rate_len] = rate[j] & 0x7f;
+ 							eap_legacy_rate->ext_rate_len++;
+ 							wdev->eap.eapsupportofdmmcs |= (1 << (j - 4));
+ 							wdev->eap.eapsupportratemode |= SUPPORT_OFDM_MODE;

@@ -27,7 +27,7 @@
  	lastTxRate.field.STBC = rTxStatResult.rEntryTxRate.STBC;
  
  	if (lastTxRate.field.MODE >= MODE_VHT)
-@@ -7088,7 +7088,7 @@ UINT32 RTMPGetLastRxRate(PRTMP_ADAPTER p
+@@ -7089,7 +7089,7 @@ UINT32 RTMPGetLastRxRate(PRTMP_ADAPTER p
  	lastRxRate.field.MODE = rRxStatResult.u1RxMode;
  	lastRxRate.field.BW = rRxStatResult.u1BW;
  	lastRxRate.field.ldpc = rRxStatResult.u1Coding;

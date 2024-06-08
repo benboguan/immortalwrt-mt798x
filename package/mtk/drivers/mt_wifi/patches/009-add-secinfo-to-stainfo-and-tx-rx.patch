@@ -1,6 +1,6 @@
 --- a/mt_wifi/embedded/common/cmm_info.c
 +++ b/mt_wifi/embedded/common/cmm_info.c
-@@ -7028,13 +7028,10 @@ typedef struct _RT_802_11_MAC_ENTRY_FIX
+@@ -7030,13 +7030,14 @@ typedef struct _RT_802_11_MAC_ENTRY_FIX
  	UINT32 ConnectedTime;
  	HTTRANSMIT_SETTING_FIX TxRate;
  	HTTRANSMIT_SETTING_FIX LastRxRate;
@@ -11,17 +11,25 @@
  	SHORT SoundingRespSnr[3];			/* SNR from Sounding Response. Units=0.25 dB. 22 dB offset removed */
 -	/*	SHORT TxPER;	*/					/* TX PER over the last second. Percent */
 -	/*	SHORT reserved;*/
-+	UINT32					EncryMode;
-+	UINT32					AuthMode;
++	UINT64 TxPackets;  //TxPackets.QuadPart
++	UINT64 RxPackets;  //RxPackets.QuadPart
++	UINT64 TxBytes;
++	UINT64 RxBytes;
++	UINT32 EncryMode;
++	UINT32 AuthMode;
  } RT_802_11_MAC_ENTRY_FIX, *PRT_802_11_MAC_ENTRY_FIX;
  
  typedef struct _RT_802_11_MAC_TABLE_FIX {
-@@ -7152,6 +7149,8 @@ VOID RTMPIoctlGetMacTableStaInfo(
+@@ -7153,6 +7154,12 @@ VOID RTMPIoctlGetMacTableStaInfo(
  			pDst->ConnectedTime = pEntry->StaConnectTime;
  			pDst->TxRate.word = RTMPGetLastTxRate_fix(pAd, pEntry);
  			pDst->LastRxRate.word = RTMPGetLastRxRate(pAd, pEntry);
 +			pDst->EncryMode = pEntry->SecConfig.PairwiseCipher;
 +			pDst->AuthMode = pEntry->SecConfig.AKMMap;
++			pDst->TxPackets = (UINT64)pEntry->TxPackets.QuadPart;
++			pDst->RxPackets = (UINT64)pEntry->RxPackets.QuadPart;
++			pDst->TxBytes = (UINT64)pEntry->TxBytes;
++			pDst->RxBytes = (UINT64)pEntry->RxBytes;
  			pMacTab->Num += 1;
  			/* Add to avoid Array cross board */
  			if (pMacTab->Num >= MAX_LEN_OF_MAC_TABLE)

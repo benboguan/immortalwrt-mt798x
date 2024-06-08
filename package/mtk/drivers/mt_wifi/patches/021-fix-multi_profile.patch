@@ -1,0 +1,71 @@
+--- a/mt_wifi/embedded/common/multi_profile.c
++++ b/mt_wifi/embedded/common/multi_profile.c
+@@ -713,18 +713,16 @@ static INT multi_profile_merge_mac_address(
+ 		}
+ 	}
+ 
+-#ifdef CONFIG_APSTA_MIXED_SUPPORT
+ 	/* apcli mac addr */
+ 	if (RTMPGetKeyParameter("ApcliMacAddress", tmpbuf, 25, buf2, TRUE)) {
+ 		ret = snprintf(tok_str, sizeof(tok_str), "ApcliMacAddress1");
+ 		if (os_snprintf_error(sizeof(tok_str), ret)) {
+ 			MTWF_DBG(NULL, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+ 					 "tok_str snprintf error!!!\n");
+ 			return NDIS_STATUS_FAILURE;
+ 		}
+ 		RTMPAddKeyParameter(tok_str, tmpbuf, 25, final);
+ 	}
+-#endif /* CONFIG_APSTA_MIXED_SUPPORT */
+ 
+ 	return NDIS_STATUS_SUCCESS;
+ }
+@@ -3622,6 +3620,10 @@ static INT multi_profile_merge_ft(
+ {
+ 	/*merge FtMdId*/
+ 	multi_profile_merge_increase(data, 1, "FtMdId", buf1, buf2, final);
++	/*merge FtR0khId*/
++	multi_profile_merge_increase(data, 1, "FtR0khId", buf1, buf2, final);
++	/*merge AssocDeadLine*/
++	multi_profile_merge_increase(data, 1, "AssocDeadLine", buf1, buf2, final);
+ 	/*merge FtSupport */
+ 	multi_profile_merge_perbss(data, "FtSupport", buf1, buf2, final, MPF_APPEND_BSS0);
+ 	/*merge FtOnly */
+@@ -3642,11 +3644,25 @@ static INT multi_profile_merge_rrm(
+ 	CHAR *final)
+ {
+ 	/*merge FtSupport */
+-	multi_profile_merge_separate("RRMEnable", buf1, buf2, final);
++	multi_profile_merge_perbss(data, "RRMEnable", buf1, buf2, final, MPF_APPEND_BSS0);
+ 	return NDIS_STATUS_SUCCESS;
+ }
+ #endif
+ 
++#ifdef CONFIG_DOT11V_WNM
++static INT multi_profile_merge_wnm(
++	struct mpf_data *data,
++	CHAR *buf1,
++	CHAR *buf2,
++	CHAR *final)
++{
++	/*merge WNMEnable */
++	multi_profile_merge_perbss(data, "WNMEnable", buf1, buf2, final, MPF_APPEND_BSS0);
++	multi_profile_merge_perbss(data, "WNMBTMEnable", buf1, buf2, final, MPF_APPEND_BSS0);
++	return NDIS_STATUS_SUCCESS;
++}
++#endif
++
+ #ifdef DSCP_PRI_SUPPORT
+ INT multi_profile_merge_dscp_pri(
+ 	struct mpf_data *data,
+@@ -3999,6 +4015,11 @@ #ifdef DOT11K_RRM_SUPPORT
+ 		return retval;
+ #endif
+ 
++#ifdef CONFIG_DOT11V_WNM
++	if (multi_profile_merge_wnm(data, buf1, buf2, final) != NDIS_STATUS_SUCCESS)
++		return retval;
++#endif
++
+ #ifdef DSCP_PRI_SUPPORT
+ 	if (multi_profile_merge_dscp_pri(data, buf1, buf2, final) != NDIS_STATUS_SUCCESS)
+ 		return retval;

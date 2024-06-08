@@ -1,0 +1,15 @@
+--- a/mt_wifi/embedded/mgmt/bss_ops.c
++++ b/mt_wifi/embedded/mgmt/bss_ops.c
+@@ -426,6 +426,12 @@ static VOID BssCipherParse(BSS_ENTRY *pBss)
+ 			/*pBss->WPA2.RsnCapability = *(PUSHORT) pTmp;*/
+ 			pBss->RsnCapability = (pTmp[1] << 8) + pTmp[0];
+ 			pTmp += sizeof(USHORT);
++			if(IS_AKM_WPA2(pBss->AKMMap)
++				&&(pBss->IsSupportSHA256KeyDerivation == TRUE)
++				&&(pBss->RsnCapability&(1<<6))
++				){
++				SET_AKM_WPA3(pBss->AKMMap);
++			}
+ 			break;
+ 		case IE_RSNXE:
+ #ifdef DOT11_SAE_SUPPORT
