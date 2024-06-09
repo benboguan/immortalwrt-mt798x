@@ -18,51 +18,22 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 PKG_CONFIG_DEPENDS:=$(foreach c, $(PKG_KCONFIG),$(if $(CONFIG_$c),CONFIG_$(c)))
 
 PKG_CONFIG_DEPENDS:= \
-	CONFIG_PACKAGE_kmod-cfg80211 \
-	CONFIG_PACKAGE_hostapd \
-	CONFIG_WPA_RFKILL_SUPPORT \
-	CONFIG_DRIVER_WEXT_SUPPORT \
-	CONFIG_DRIVER_11N_SUPPORT \
-	CONFIG_DRIVER_11AC_SUPPORT \
-	CONFIG_DRIVER_11AX_SUPPORT \
-	CONFIG_WPA_ENABLE_WEP
-
-PKG_BUILD_FLAGS:=gc-sections lto
+	CONFIG_PACKAGE_hostapd
 
 SUPPLICANT_PROVIDERS:=
 HOSTAPD_PROVIDERS:=
 
-#TARGET_CFLAGS += -I$(LINUX_DIR)/include/uapi/linux/mtk_nl80211_inc
+# TARGET_CFLAGS += -I$(LINUX_DIR)/include/uapi/linux/mtk_nl80211_inc
 
 LOCAL_TYPE=$(strip \
 		# $(if $(findstring wpad,$(BUILD_VARIANT)),wpad, \
 		$(if $(findstring supplicant,$(BUILD_VARIANT)),supplicant, \
 		hostapd \
-		)))
+		))# )
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-
-ifneq ($(CONFIG_DRIVER_11N_SUPPORT),)
-  HOSTAPD_IEEE80211N:=y
-endif
-
-ifneq ($(CONFIG_DRIVER_11AC_SUPPORT),)
-  HOSTAPD_IEEE80211AC:=y
-endif
-
-ifneq ($(CONFIG_DRIVER_11AX_SUPPORT),)
-  HOSTAPD_IEEE80211AX:=y
-endif
-
-DRIVER_MAKEOPTS= \
-	CONFIG_ACS=$(CONFIG_PACKAGE_kmod-cfg80211) \
-	CONFIG_DRIVER_NL80211=$(CONFIG_PACKAGE_kmod-cfg80211) \
-	CONFIG_IEEE80211N=$(HOSTAPD_IEEE80211N) \
-	CONFIG_IEEE80211AC=$(HOSTAPD_IEEE80211AC) \
-	CONFIG_IEEE80211AX=$(HOSTAPD_IEEE80211AX) \
-	CONFIG_DRIVER_WEXT=$(CONFIG_DRIVER_WEXT_SUPPORT)
 ifneq ($(LOCAL_TYPE),hostapd)
   ifdef CONFIG_WPA_RFKILL_SUPPORT
     DRIVER_MAKEOPTS += NEED_RFKILL=y
@@ -124,12 +95,12 @@ define Package/wpa-supplicant-2.10
   CONFLICTS:=$(SUPPLICANT_PROVIDERS)
   SUPPLICANT_PROVIDERS+=$(1)
   DEPENDS:=$(DRV_DEPENDS) +libnl-tiny +libopenssl +libubus
+  DEPENDS+=+hostapd-2.10
   VARIANT:=supplicant
 endef
 
-define Package/wpa-supplicant-2.10/config
-	source "$(SOURCE)/Config.in"
-endef
+CONFIGURE_VARS += \
+	LIBDBI_CFLAGS="-I$(STAGING_DIR)/usr/include"
 
 ifneq ($(wildcard $(PKG_BUILD_DIR)/.config_*),$(subst .configured_,.config_,$(STAMP_CONFIGURED)))
   define Build/Configure/rebuild
@@ -146,7 +117,13 @@ DRIVER_MAKEOPTS= \
     CONFIG_DRIVER_NL80211=y \
     CONFIG_TLS=openssl
 
-TARGET_CPPFLAGS := \
+TARGET_CPPFLAGS += \
+	-I$(PKG_BUILD_DIR)/src \
+	-I$(PKG_BUILD_DIR)/src/utils \
+	-I/include \
+	-I$(STAGING_DIR)/usr/include/openssl \
+	-I$(STAGING_DIR)/usr/include \
+	-I$(LINUX_DIR)/user_headers/include \
 	-I$(STAGING_DIR)/usr/include/libnl-tiny \
 	-I$(PKG_BUILD_DIR)/src/crypto \
 	$(TARGET_CPPFLAGS) \
@@ -315,9 +292,10 @@ endef
 define Package/wpa-supplicant-2.10/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wpa_supplicant/wpa_supplicant $(1)/usr/sbin/
-	$(CP) $(PKG_BUILD_DIR)/wpa_supplicant/wpa_supplicant  $(1)/usr/sbin/
+	$(CP) $(PKG_BUILD_DIR)/wpa_supplicant/wpa_supplicant $(1)/usr/sbin/
 	$(CP) $(PKG_BUILD_DIR)/wpa_supplicant/wpa_cli $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/etc
+	$(CP) files/wpa_supplicant.logrotate.conf $(1)/etc/
 	$(CP) files/wpa_supplicant_common.conf $(1)/etc/
 	$(CP) files/wpa_supplicant_generate.sh $(1)/usr/sbin
 	$(CP) files/hostapd_sta.sh $(1)/usr/sbin
