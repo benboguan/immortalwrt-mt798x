@@ -345,7 +345,16 @@
  	const char *	p;
 --- a/Makefile
 +++ b/Makefile
-@@ -195,9 +195,9 @@ install-iwmulticall:: iwmulticall
+@@ -110,7 +110,7 @@ install-iwmulticall:: iwmulticall
+ PICFLAG=-fPIC
+ 
+ # Standard compilation targets
+-all:: $(IWLIB) $(PROGS)
++all: $(STATIC) $(IWLIB) $(PROGS)
+ 
+ %: %.o
+ 	$(CC) $(LDFLAGS) $(STRIPFLAGS) $(XCFLAGS) -o $@ $^ $(LIBS)
+@@ -195,12 +195,13 @@ install-iwmulticall:: iwmulticall
  	install -m 755 $< $(INSTALL_DIR)/iwconfig
  	( cd $(INSTALL_DIR) ; \
  	  ln -f -s iwconfig iwlist ; \
@@ -356,4 +365,8 @@
 +	  $(if $(BUILD_WE_ESSENTIAL),,ln -f -s iwconfig iwgetid ) )
  
  clean::
+ 	$(RM_CMD) 
++	$(RM) $(STATIC) $(DYNAMIC) $(PROGS) $(EXTRAPROGS) libiw* wireless.h
+ 
+ realclean::
  	$(RM_CMD) 

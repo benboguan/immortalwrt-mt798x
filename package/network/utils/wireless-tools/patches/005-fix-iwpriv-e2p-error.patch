@@ -1,0 +1,34 @@
+--- a/iwpriv.c
++++ b/iwpriv.c
+@@ -259,7 +259,7 @@
+ 		int		priv_num)	/* Number of descriptions */
+ {
+   struct iwreq	wrq;
+-  u_char	buffer[4096];	/* Only that big in v25 and later */
++  u_char	buffer[4096*8];	/* this buffer size for get_site_survey length */
+   int		i = 0;		/* Start with first command arg */
+   int		k;		/* Index in private description table */
+   int		temp;
+@@ -425,6 +425,11 @@
+   else
+     {
+       wrq.u.data.length = 0L;
++      if(0 == strcmp("get_site_survey", cmdname))
++      {
++	      wrq.u.data.length = 120*128; // 120 is per entry size, 128 is counter of entry
++	      fprintf(stderr, "(%d)cmdname %s\n",cmdname);
++      }
+     }
+ 
+   strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
+@@ -457,6 +462,10 @@
+ 	}
+     }
+ 
++#if 1
++	if((priv[k].cmd == 0x8BED) && (wrq.u.data.pointer == (caddr_t) buffer))
++	    wrq.u.data.length = sizeof(buffer);
++#endif  
+   /* Perform the private ioctl */
+   if(ioctl(skfd, priv[k].cmd, &wrq) < 0)
+     {
