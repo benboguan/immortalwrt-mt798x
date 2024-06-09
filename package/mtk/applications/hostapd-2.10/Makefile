@@ -29,7 +29,7 @@ LOCAL_TYPE=$(strip \
 		# $(if $(findstring wpad,$(BUILD_VARIANT)),wpad, \
 		$(if $(findstring supplicant,$(BUILD_VARIANT)),supplicant, \
 		hostapd \
-		))# )
+		))
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/kernel.mk
@@ -95,7 +95,6 @@ define Package/wpa-supplicant-2.10
   CONFLICTS:=$(SUPPLICANT_PROVIDERS)
   SUPPLICANT_PROVIDERS+=$(1)
   DEPENDS:=$(DRV_DEPENDS) +libnl-tiny +libopenssl +libubus
-  DEPENDS+=+hostapd-2.10
   VARIANT:=supplicant
 endef
 
@@ -117,13 +116,7 @@ DRIVER_MAKEOPTS= \
     CONFIG_DRIVER_NL80211=y \
     CONFIG_TLS=openssl
 
-TARGET_CPPFLAGS += \
-	-I$(PKG_BUILD_DIR)/src \
-	-I$(PKG_BUILD_DIR)/src/utils \
-	-I/include \
-	-I$(STAGING_DIR)/usr/include/openssl \
-	-I$(STAGING_DIR)/usr/include \
-	-I$(LINUX_DIR)/user_headers/include \
+TARGET_CPPFLAGS := \
 	-I$(STAGING_DIR)/usr/include/libnl-tiny \
 	-I$(PKG_BUILD_DIR)/src/crypto \
 	$(TARGET_CPPFLAGS) \
