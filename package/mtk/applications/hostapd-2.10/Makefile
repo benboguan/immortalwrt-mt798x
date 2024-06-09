@@ -27,10 +27,12 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_DRIVER_11AX_SUPPORT \
 	CONFIG_WPA_ENABLE_WEP
 
+PKG_BUILD_FLAGS:=gc-sections lto
+
 SUPPLICANT_PROVIDERS:=
 HOSTAPD_PROVIDERS:=
 
-TARGET_CFLAGS += -I$(LINUX_DIR)/include/uapi/linux/mtk_nl80211_inc
+#TARGET_CFLAGS += -I$(LINUX_DIR)/include/uapi/linux/mtk_nl80211_inc
 
 LOCAL_TYPE=$(strip \
 		$(if $(findstring wpad,$(BUILD_VARIANT)),wpad, \
@@ -40,6 +42,7 @@ LOCAL_TYPE=$(strip \
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/kernel.mk
+
 
 ifneq ($(CONFIG_DRIVER_11N_SUPPORT),)
   HOSTAPD_IEEE80211N:=y
@@ -60,16 +63,14 @@ DRIVER_MAKEOPTS= \
 	CONFIG_IEEE80211AC=$(HOSTAPD_IEEE80211AC) \
 	CONFIG_IEEE80211AX=$(HOSTAPD_IEEE80211AX) \
 	CONFIG_DRIVER_WEXT=$(CONFIG_DRIVER_WEXT_SUPPORT)
-
 ifneq ($(LOCAL_TYPE),hostapd)
   ifdef CONFIG_WPA_RFKILL_SUPPORT
     DRIVER_MAKEOPTS += NEED_RFKILL=y
   endif
 endif
 
-ifdef CONFIG_USE_GLIBC
-  TARGET_LDFLAGS += -lrt
-  TARGET_LDFLAGS_C += -lrt
+ifeq ($(LOCAL_TYPE),supplicant)
+    DRIVER_MAKEOPTS += CONFIG_AP=y
 endif
 
 DRV_DEPENDS:=+PACKAGE_kmod-cfg80211:libnl-tiny
@@ -85,7 +86,7 @@ define Package/hostapd-2.10
   PROVIDES:=hostapd
   CONFLICTS:=$(HOSTAPD_PROVIDERS)
   HOSTAPD_PROVIDERS+=$(1)
-  DEPENDS:= +libnl-tiny +libopenssl
+  DEPENDS:=$(DRV_DEPENDS) +libnl-tiny +libopenssl +libubus
   VARIANT:=hostapd
 endef
 
@@ -103,7 +104,7 @@ define Package/wpad-2.10
   PROVIDES:=hostapd wpa-supplicant
   CONFLICTS:=$(HOSTAPD_PROVIDERS) $(SUPPLICANT_PROVIDERS)
   HOSTAPD_PROVIDERS+=$(1)
-  DEPENDS:= +libnl-tiny +libopenssl
+  DEPENDS:=$(DRV_DEPENDS) +libnl-tiny +libopenssl +libubus
   SUPPLICANT_PROVIDERS+=$(1)
 endef
 
@@ -123,12 +124,9 @@ define Package/wpa-supplicant-2.10
   PROVIDES:=wpa-supplicant
   CONFLICTS:=$(SUPPLICANT_PROVIDERS)
   SUPPLICANT_PROVIDERS+=$(1)
-  DEPENDS:= +libnl-tiny +libopenssl
+  DEPENDS:=$(DRV_DEPENDS) +libnl-tiny +libopenssl +libubus
   VARIANT:=supplicant
 endef
-
-CONFIGURE_VARS += \
-	LIBDBI_CFLAGS="-I$(STAGING_DIR)/usr/include"
 
 define Package/wpa-supplicant-2.10/config
 	source "$(SOURCE)/Config.in"
@@ -146,16 +144,12 @@ ifneq ($(wildcard $(PKG_BUILD_DIR)/.config_*),$(subst .configured_,.config_,$(ST
 endif
 
 DRIVER_MAKEOPTS= \
-    CONFIG_DRIVER_NL80211=y
+    CONFIG_DRIVER_NL80211=y \
+    CONFIG_TLS=openssl
 
 TARGET_CPPFLAGS := \
-	-I$(STAGING_DIR)/usr/include/openssl \
-	-I$(STAGING_DIR)/usr/include \
-	-D_GNU_SOURCE \
-	-I$(LINUX_DIR)/user_headers/include \
 	-I$(STAGING_DIR)/usr/include/libnl-tiny \
 	-I$(PKG_BUILD_DIR)/src/crypto \
-	-I$(BUILD_DIR)/openssl-1.1.1w/include \
 	$(TARGET_CPPFLAGS) \
 	-DCONFIG_LIBNL20 \
 	-D_GNU_SOURCE \
@@ -166,18 +160,12 @@ TARGET_CFLAGS += \
 	-fdata-sections \
 	-flto \
 	-DNO_TIMESTAMP_CHECK \
+	-DHOSTAPD_MAPR3_SUPPORT \
 	-DCONFIG_NAT
 
-TARGET_LDFLAGS += -Wl,--gc-sections -lnl-tiny -lssl -lcrypto -latomic -flto=jobserver -fuse-linker-plugin -lubox -lubus
+TARGET_LDFLAGS += -Wl,--gc-sections -lnl-tiny -lcrypto -lssl -lubox -lubus
 TARGET_CONFIGURE_OPTS += CONFIG_P2P=y CONFIG_INTERNAL_LIBTOMMATH=y RTCONFIG_MT798X=y
 
-ifdef CONFIG_PACKAGE_kmod-cfg80211
-  TARGET_LDFLAGS += -lm -lnl-tiny
-endif
-
-ifdef CONFIG_WPA_ENABLE_WEP
-    DRIVER_MAKEOPTS += CONFIG_WEP=y
-endif
 
 CFLAGS="$(TARGET_CFLAGS)"
 
