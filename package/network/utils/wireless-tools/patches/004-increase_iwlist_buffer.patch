@@ -1,14 +1,6 @@
 --- a/iwlist.c
 +++ b/iwlist.c
-@@ -13,6 +13,7 @@ print_scanning_info(int		skfd,
- 
- #include "iwlib.h"		/* Header */
- #include <sys/time.h>
-+#include "../shared/rtconfig.h"
- 
- /****************************** TYPES ******************************/
- 
-@@ -158,6 +159,22 @@ print_scanning_info(int		skfd,
+@@ -158,6 +158,22 @@ print_scanning_info(int		skfd,
  	"none",
  	"802.1x",
  	"PSK",
@@ -31,7 +23,7 @@
  };
  #define	IW_IE_KEY_MGMT_NUM	IW_ARRAY_LEN(iw_ie_key_mgmt_name)
  
-@@ -792,7 +809,8 @@ print_scanning_info(int		skfd,
+@@ -792,7 +808,8 @@ print_scanning_info(int		skfd,
  	  if(iw_get_ext(skfd, ifname, SIOCGIWSCAN, &wrq) < 0)
  	    {
  	      /* Check if buffer was too small (WE-17 only) */
@@ -41,7 +33,7 @@
  		{
  		  /* Some driver may return very large scan results, either
  		   * because there are many cells, or because they have many
-@@ -808,6 +826,10 @@ print_scanning_info(int		skfd,
+@@ -808,6 +825,10 @@ print_scanning_info(int		skfd,
  		  else
  		    buflen *= 2;
  
@@ -52,7 +44,7 @@
  		  /* Try again */
  		  goto realloc;
  		}
-@@ -2152,6 +2174,7 @@ main(int	argc,
+@@ -2152,6 +2173,7 @@ main(int	argc,
    char **args;			/* Command arguments */
    int count;			/* Number of arguments */
    const iwlist_cmd *iwcmd;
@@ -60,7 +52,7 @@
  
    if(argc < 2)
      iw_usage(1);
-@@ -2199,12 +2222,12 @@ main(int	argc,
+@@ -2199,12 +2221,12 @@ main(int	argc,
  
    /* do the actual work */
    if (dev)
