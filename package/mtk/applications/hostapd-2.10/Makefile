@@ -43,8 +43,36 @@ ifneq ($(CONFIG_DRIVER_11AC_SUPPORT),)
   HOSTAPD_IEEE80211AC:=y
 endif
 
+include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/kernel.mk
+
+STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(CONFIG_WPA_MSG_MIN_PRIORITY)
+
+ifneq ($(CONFIG_DRIVER_11N_SUPPORT),)
+  HOSTAPD_IEEE80211N:=y
+endif
+
+ifneq ($(CONFIG_DRIVER_11AC_SUPPORT),)
+  HOSTAPD_IEEE80211AC:=y
+endif
+
 ifneq ($(CONFIG_DRIVER_11AX_SUPPORT),)
   HOSTAPD_IEEE80211AX:=y
+endif
+
+DRIVER_MAKEOPTS= \
+	CONFIG_ACS=$(CONFIG_PACKAGE_kmod-cfg80211) \
+	CONFIG_DRIVER_NL80211=$(CONFIG_PACKAGE_kmod-cfg80211) \
+	CONFIG_IEEE80211N=$(HOSTAPD_IEEE80211N) \
+	CONFIG_IEEE80211AC=$(HOSTAPD_IEEE80211AC) \
+	CONFIG_IEEE80211AX=$(HOSTAPD_IEEE80211AX) \
+	CONFIG_DRIVER_WEXT=$(CONFIG_DRIVER_WEXT_SUPPORT) \
+	CONFIG_MBO=$(CONFIG_WPA_MBO_SUPPORT)
+
+ifneq ($(LOCAL_TYPE),hostapd)
+  ifdef CONFIG_WPA_RFKILL_SUPPORT
+    DRIVER_MAKEOPTS += NEED_RFKILL=y
+  endif
 endif
 
 DRIVER_MAKEOPTS= \
@@ -79,7 +107,6 @@ define Package/hostapd-2.10/description
   WPA hostapd MTK V2.10
 endef
 
-
 ifneq ($(wildcard $(PKG_BUILD_DIR)/.config_*),$(subst .configured_,.config_,$(STAMP_CONFIGURED)))
   define Build/Configure/rebuild
 	$(FIND) $(PKG_BUILD_DIR) -name \*.o -or -name \*.a | $(XARGS) rm -f
@@ -99,7 +126,7 @@ TARGET_CPPFLAGS := \
 	$(TARGET_CPPFLAGS) \
 	-DCONFIG_LIBNL20 \
 	-D_GNU_SOURCE \
-	-DCONFIG_MSG_MIN_PRIORITY=0
+	$(if $(CONFIG_WPA_MSG_MIN_PRIORITY),-DCONFIG_MSG_MIN_PRIORITY=$(CONFIG_WPA_MSG_MIN_PRIORITY))
 
 TARGET_CFLAGS += \
 	-ffunction-sections \
@@ -136,16 +163,6 @@ define Build/RunMake
 		$(2)
 endef
 
-define Build/Compile
-	$(call Build/RunMake,hostapd, \
-		hostapd hostapd_cli \
-	)
-endef
-
-define Build/Compile
-	$(Build/Compile/$(LOCAL_TYPE))
-endef
-
 define Package/hostapd-2.10/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_DIR) $(1)/etc/capabilities $(1)/etc/rc.button $(1)/etc/hotplug.d/ieee80211 $(1)/etc/init.d $(1)/lib/netifd  $(1)/usr/share/acl.d
@@ -164,7 +181,7 @@ define Package/hostapd-2.10/install
 	$(CP) $(PKG_BUILD_DIR)/hostapd/hostapd  $(1)/usr/sbin/
 	$(CP) $(PKG_BUILD_DIR)/hostapd/hostapd_cli $(1)/usr/sbin/
 #	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wpa_supplicant/wpa_supplicant $(1)/usr/sbin
-#	$(CP) $(PKG_BUILD_DIR)/wpa_supplicant/wpa_supplicant $(1)/usr/sbin/
+#	$(CP) $(PKG_BUILD_DIR)/wpa_supplicant/wpa_supplicant  $(1)/usr/sbin/
 #	$(CP) $(PKG_BUILD_DIR)/wpa_supplicant/wpa_cli $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/etc
 	$(CP) files/hostapd.conf $(1)/etc/
