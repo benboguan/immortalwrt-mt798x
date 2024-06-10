@@ -18,7 +18,14 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 PKG_CONFIG_DEPENDS:=$(foreach c, $(PKG_KCONFIG),$(if $(CONFIG_$c),CONFIG_$(c)))
 
 PKG_CONFIG_DEPENDS:= \
-	CONFIG_PACKAGE_hostapd
+	CONFIG_PACKAGE_kmod-cfg80211 \
+	CONFIG_PACKAGE_hostapd \
+	CONFIG_WPA_RFKILL_SUPPORT \
+	CONFIG_DRIVER_WEXT_SUPPORT \
+	CONFIG_DRIVER_11N_SUPPORT \
+	CONFIG_DRIVER_11AC_SUPPORT \
+	CONFIG_DRIVER_11AX_SUPPORT \
+	CONFIG_WPA_ENABLE_WEP
 
 SUPPLICANT_PROVIDERS:=
 HOSTAPD_PROVIDERS:=
@@ -26,13 +33,36 @@ HOSTAPD_PROVIDERS:=
 # TARGET_CFLAGS += -I$(LINUX_DIR)/include/uapi/linux/mtk_nl80211_inc
 
 LOCAL_TYPE=$(strip \
-		# $(if $(findstring wpad,$(BUILD_VARIANT)),wpad, \
+		$(if $(findstring wpad,$(BUILD_VARIANT)),wpad, \
 		$(if $(findstring supplicant,$(BUILD_VARIANT)),supplicant, \
 		hostapd \
-		))
+		)))
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/kernel.mk
+
+STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(CONFIG_WPA_MSG_MIN_PRIORITY)
+
+ifneq ($(CONFIG_DRIVER_11N_SUPPORT),)
+  HOSTAPD_IEEE80211N:=y
+endif
+
+ifneq ($(CONFIG_DRIVER_11AC_SUPPORT),)
+  HOSTAPD_IEEE80211AC:=y
+endif
+
+ifneq ($(CONFIG_DRIVER_11AX_SUPPORT),)
+  HOSTAPD_IEEE80211AX:=y
+endif
+
+DRIVER_MAKEOPTS= \
+	CONFIG_ACS=$(CONFIG_PACKAGE_kmod-cfg80211) \
+	CONFIG_DRIVER_NL80211=$(CONFIG_PACKAGE_kmod-cfg80211) \
+	CONFIG_IEEE80211N=$(HOSTAPD_IEEE80211N) \
+	CONFIG_IEEE80211AC=$(HOSTAPD_IEEE80211AC) \
+	CONFIG_IEEE80211AX=$(HOSTAPD_IEEE80211AX) \
+	CONFIG_DRIVER_WEXT=$(CONFIG_DRIVER_WEXT_SUPPORT) \
+	CONFIG_MBO=$(CONFIG_WPA_MBO_SUPPORT)
 
 ifneq ($(LOCAL_TYPE),hostapd)
   ifdef CONFIG_WPA_RFKILL_SUPPORT
@@ -40,9 +70,9 @@ ifneq ($(LOCAL_TYPE),hostapd)
   endif
 endif
 
-ifeq ($(LOCAL_TYPE),supplicant)
-    DRIVER_MAKEOPTS += CONFIG_AP=y
-endif
+#ifeq ($(LOCAL_TYPE),supplicant)
+    #DRIVER_MAKEOPTS += CONFIG_AP=y
+#endif
 
 DRV_DEPENDS:=+PACKAGE_kmod-cfg80211:libnl-tiny
 
@@ -65,24 +95,27 @@ define Package/hostapd-2.10/description
   WPA hostapd MTK V2.10
 endef
 
-# define Package/wpad-2.10
-  # SECTION:=net
-  # CATEGORY:=Network
-  # SUBMENU:=WirelessAPD
-  # TITLE:=IEEE 802.1x Auth/Supplicant
-  # USERID:=network=101:network=101
-  # URL:=http://hostap.epitest.fi/
-  # PROVIDES:=hostapd wpa-supplicant
-  # CONFLICTS:=$(HOSTAPD_PROVIDERS) $(SUPPLICANT_PROVIDERS)
-  # HOSTAPD_PROVIDERS+=$(1)
-  # DEPENDS:=$(DRV_DEPENDS) +libnl-tiny +libopenssl +libubus +libubox
-  # VARIANT:=wpad
-# endef
 
-# define Package/wpad-2.10/description
- # This package contains a full featured IEEE 802.1x/WPA/EAP/RADIUS
- # Authenticator and Supplicant
-# endef
+define Package/wpad-2.10
+  SECTION:=net
+  CATEGORY:=Network
+  SUBMENU:=WirelessAPD
+  TITLE:=IEEE 802.1x Auth/Supplicant
+  USERID:=network=101:network=101
+  URL:=http://hostap.epitest.fi/
+  PROVIDES:=hostapd wpa-supplicant
+  CONFLICTS:=$(HOSTAPD_PROVIDERS) $(SUPPLICANT_PROVIDERS)
+  HOSTAPD_PROVIDERS+=$(1)
+  SUPPLICANT_PROVIDERS+=$(1)
+  DEPENDS:=$(DRV_DEPENDS) +libnl-tiny +libopenssl +libubus +libubox
+  VARIANT:=wpad
+endef
+
+define Package/wpad-2.10/description
+ This package contains a full featured IEEE 802.1x/WPA/EAP/RADIUS
+ Authenticator and Supplicant
+endef
+
 
 define Package/wpa-supplicant-2.10
   SECTION:=net
@@ -98,8 +131,39 @@ define Package/wpa-supplicant-2.10
   VARIANT:=supplicant
 endef
 
-CONFIGURE_VARS += \
-	LIBDBI_CFLAGS="-I$(STAGING_DIR)/usr/include"
+define Package/wpa-supplicant-2.10/config
+	source "$(SOURCE)/Config.in"
+endef
+
+define Package/wpa-supplicant-2.10/description
+  WPA Supplicant V2.10
+endef
+
+
+define Package/hostapd-utils
+  SECTION:=net
+  CATEGORY:=Network
+  SUBMENU:=WirelessAPD
+  TITLE:=IEEE 802.1x Authenticator (utils)
+  URL:=http://hostap.epitest.fi/
+  DEPENDS:=@$(subst $(space),||,$(foreach pkg,$(HOSTAPD_PROVIDERS),PACKAGE_$(pkg)))
+  VARIANT:=*
+endef
+
+define Package/hostapd-utils/description
+ This package contains a command line utility to control the
+ IEEE 802.1x/WPA/EAP/RADIUS Authenticator.
+endef
+
+define Package/wpa-cli
+  SECTION:=net
+  CATEGORY:=Network
+  SUBMENU:=WirelessAPD
+  DEPENDS:=@$(subst $(space),||,$(foreach pkg,$(SUPPLICANT_PROVIDERS),PACKAGE_$(pkg)))
+  TITLE:=WPA Supplicant command line control utility
+  VARIANT:=*
+endef
+
 
 ifneq ($(wildcard $(PKG_BUILD_DIR)/.config_*),$(subst .configured_,.config_,$(STAMP_CONFIGURED)))
   define Build/Configure/rebuild
@@ -122,7 +186,7 @@ TARGET_CPPFLAGS := \
 	$(TARGET_CPPFLAGS) \
 	-DCONFIG_LIBNL20 \
 	-D_GNU_SOURCE \
-	-DCONFIG_MSG_MIN_PRIORITY=0
+	$(if $(CONFIG_WPA_MSG_MIN_PRIORITY),-DCONFIG_MSG_MIN_PRIORITY=$(CONFIG_WPA_MSG_MIN_PRIORITY))
 
 TARGET_CFLAGS += \
 	-ffunction-sections \
@@ -135,6 +199,9 @@ TARGET_CFLAGS += \
 TARGET_LDFLAGS += -Wl,--gc-sections -lnl-tiny -lcrypto -lssl -lubox -lubus
 TARGET_CONFIGURE_OPTS += CONFIG_P2P=y CONFIG_INTERNAL_LIBTOMMATH=y RTCONFIG_MT798X=y
 
+ifdef CONFIG_WPA_ENABLE_WEP
+    DRIVER_MAKEOPTS += CONFIG_WEP=y
+endif
 
 CFLAGS="$(TARGET_CFLAGS)"
 
@@ -157,30 +224,30 @@ define Build/RunMake
 		$(2)
 endef
 
-# define Build/Compile/wpad
-	# echo ` \
-		# $(call Build/RunMake,hostapd,-s MULTICALL=1 dump_cflags); \
-		# $(call Build/RunMake,wpa_supplicant,-s MULTICALL=1 dump_cflags) | \
-		# sed -e 's,-n ,,g' -e 's^$(TARGET_CFLAGS)^^' \
-	# ` > $(PKG_BUILD_DIR)/.cflags
-	# sed -i 's/"/\\"/g' $(PKG_BUILD_DIR)/.cflags
-	# +$(call Build/RunMake,hostapd, \
-		# CFLAGS="$$$$(cat $(PKG_BUILD_DIR)/.cflags)" \
-		# MULTICALL=1 \
-		# hostapd_cli hostapd_multi.a \
-	# )
-	# +$(call Build/RunMake,wpa_supplicant, \
-		# CFLAGS="$$$$(cat $(PKG_BUILD_DIR)/.cflags)" \
-		# MULTICALL=1 \
-		# wpa_cli wpa_supplicant_multi.a \
-	# )
-	# +export MAKEFLAGS="$(MAKE_JOBSERVER)"; $(TARGET_CC) -o $(PKG_BUILD_DIR)/wpad \
-		# $(TARGET_CFLAGS) \
-		# ./files/multicall.c \
-		# $(PKG_BUILD_DIR)/hostapd/hostapd_multi.a \
-		# $(PKG_BUILD_DIR)/wpa_supplicant/wpa_supplicant_multi.a \
-		# $(TARGET_LDFLAGS)
-# endef
+define Build/Compile/wpad
+	echo ` \
+		$(call Build/RunMake,hostapd,-s MULTICALL=1 dump_cflags); \
+		$(call Build/RunMake,wpa_supplicant,-s MULTICALL=1 dump_cflags) | \
+		sed -e 's,-n ,,g' -e 's^$(TARGET_CFLAGS)^^' \
+	` > $(PKG_BUILD_DIR)/.cflags
+	sed -i 's/"/\\"/g' $(PKG_BUILD_DIR)/.cflags
+	+$(call Build/RunMake,hostapd, \
+		CFLAGS="$$$$(cat $(PKG_BUILD_DIR)/.cflags)" \
+		MULTICALL=1 \
+		hostapd_cli hostapd_multi.a \
+	)
+	+$(call Build/RunMake,wpa_supplicant, \
+		CFLAGS="$$$$(cat $(PKG_BUILD_DIR)/.cflags)" \
+		MULTICALL=1 \
+		wpa_cli wpa_supplicant_multi.a \
+	)
+	+export MAKEFLAGS="$(MAKE_JOBSERVER)"; $(TARGET_CC) -o $(PKG_BUILD_DIR)/wpad \
+		$(TARGET_CFLAGS) \
+		./files/multicall.c \
+		$(PKG_BUILD_DIR)/hostapd/hostapd_multi.a \
+		$(PKG_BUILD_DIR)/wpa_supplicant/wpa_supplicant_multi.a \
+		$(TARGET_LDFLAGS)
+endef
 
 define Build/Compile/hostapd
 	+$(call Build/RunMake,hostapd, \
@@ -210,12 +277,13 @@ define Package/hostapd-2.10/install
 	$(INSTALL_BIN) ./files/wps-hotplug.sh $(1)/etc/rc.button/wps
 	$(INSTALL_DATA) ./files/wpad_acl.json $(1)/usr/share/acl.d
 	$(INSTALL_DATA) ./files/wpad.json $(1)/etc/capabilities
-	$(CP) files/hostapd_conf_generate.sh $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(CP) ./files/hostapd_conf_generate.sh $(1)/usr/bin/
 #	$(CP) $(PKG_BUILD_DIR)/hostapd/hostapd $(PKG_BUILD_DIR)/hostapd/hostapd-2.10
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostapd/hostapd $(1)/usr/sbin/
 	$(CP) $(PKG_BUILD_DIR)/hostapd/hostapd  $(1)/usr/sbin/
-	$(CP) $(PKG_BUILD_DIR)/hostapd/hostapd_cli $(1)/usr/sbin/
-#	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wpa_supplicant/wpa_supplicant $(1)/usr/sbin/
+#	$(CP) $(PKG_BUILD_DIR)/hostapd/hostapd_cli $(1)/usr/sbin/
+#	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wpa_supplicant/wpa_supplicant $(1)/usr/sbin
 #	$(CP) $(PKG_BUILD_DIR)/wpa_supplicant/wpa_supplicant  $(1)/usr/sbin/
 #	$(CP) $(PKG_BUILD_DIR)/wpa_supplicant/wpa_cli $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/etc
@@ -262,38 +330,57 @@ define Package/hostapd-2.10/install
 	$(CP) files/hostapd_common.conf $(1)/etc/
 	$(CP) -f files/*.png $(1)/etc/
 	$(CP) -f files/*.ico $(1)/etc/
-	$(CP) files/hostapd_generate.sh $(1)/usr/sbin
+	$(CP) ./files/hostapd_generate.sh $(1)/usr/bin
 	$(CP) files/hostapd_ap.sh $(1)/usr/sbin
 	$(CP) files/hostapd_app.sh $(1)/usr/sbin
 	$(INSTALL_DIR) $(1)/etc/init.d/
 	$(CP) files/hostapd_init $(1)/etc/init.d
 	$(CP) files/hostapd_ap_11r.sh $(1)/usr/sbin
-	$(CP) files/hostapd_rai0_AP_11r.conf $(1)/etc/
+	$(CP) files/hostapd_rax0_AP_11r.conf $(1)/etc/
 	$(CP) files/hostapd_stop.sh $(1)/usr/sbin
 #	$(CP) files/wpa_supplicant_common.conf $(1)/etc/
-#	$(CP) files/wpa_supplicant_generate.sh $(1)/usr/sbin
+#	$(CP) ./files/wpa_supplicant_generate.sh $(1)/usr/bin
 #	$(CP) files/hostapd_sta.sh $(1)/usr/sbin
 endef
 
-# define Package/wpad-2.10/install
-	# $(INSTALL_DIR) $(1)/usr/sbin
-	# $(INSTALL_BIN) ./files/wpad $(1)/usr/sbin/
-	# $(LN) wpad $(1)/usr/sbin/hostapd
-	# $(LN) wpad $(1)/usr/sbin/wpa_supplicant
-# endef
+ifneq ($(LOCAL_TYPE),supplicant)
+  define Package/hostapd-utils/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostapd/hostapd_cli $(1)/usr/sbin/
+  endef
+endif
+
+define Package/wpad-2.10/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wpad-2.10/wpad $(1)/usr/sbin/
+	$(LN) wpad $(1)/usr/sbin/hostapd
+	$(LN) wpad $(1)/usr/sbin/wpa_supplicant
+	# $(INSTALL_BIN) $(PKG_BUILD_DIR)/hostapd/hostapd_cli $(1)/usr/sbin/
+	# $(CP) $(PKG_BUILD_DIR)/wpa_supplicant/wpa_cli $(1)/usr/sbin/
+endef
 
 define Package/wpa-supplicant-2.10/install
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wpa_supplicant/wpa_supplicant $(1)/usr/sbin/
-	$(CP) $(PKG_BUILD_DIR)/wpa_supplicant/wpa_supplicant $(1)/usr/sbin/
-	$(CP) $(PKG_BUILD_DIR)/wpa_supplicant/wpa_cli $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/usr/sbin $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wpa-supplicant-2.10/wpa_supplicant/wpa_supplicant $(1)/usr/sbin/
+	$(CP) $(PKG_BUILD_DIR)/wpa-supplicant-2.10/wpa_supplicant/wpa_supplicant $(1)/usr/sbin/
+	# $(CP) $(PKG_BUILD_DIR)/wpa-supplicant-2.10/wpa_supplicant/wpa_cli $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/etc
 	$(CP) files/wpa_supplicant.logrotate.conf $(1)/etc/
 	$(CP) files/wpa_supplicant_common.conf $(1)/etc/
-	$(CP) files/wpa_supplicant_generate.sh $(1)/usr/sbin
+	$(CP) files/wpa_supplicant.conf $(1)/etc/
+	$(CP) files/p2p_dev.conf $(1)/etc/
+	$(CP) files/p2p_dhcpd.conf $(1)/etc/
+	$(CP) ./files/wpa_supplicant_generate.sh $(1)/usr/bin
 	$(CP) files/hostapd_sta.sh $(1)/usr/sbin
 endef
 
+ifneq ($(LOCAL_TYPE),hostapd)
+  define Package/wpa-cli/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(CP) $(PKG_BUILD_DIR)/wpa_supplicant/wpa_cli $(1)/usr/sbin/
+  endef
+endif
+
 $(eval $(call BuildPackage,hostapd-2.10))
-# $(eval $(call BuildPackage,wpad-2.10))
+$(eval $(call BuildPackage,wpad-2.10))
 $(eval $(call BuildPackage,wpa-supplicant-2.10))

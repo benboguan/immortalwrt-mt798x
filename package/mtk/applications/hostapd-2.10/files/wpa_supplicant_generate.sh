@@ -3,7 +3,7 @@
 usage()
 {
 	echo " "
-	echo "USAGE: wpa_supplicant_generate.sh [interface: apcli0|apclii0] [security option: open|wpapsk|wpa2psk|wpawpa2mixedpsk|wepopen|wepshare]"
+	echo "USAGE: wpa_supplicant_generate.sh [interface: apcli0|apclix0] [security option: open|wpapsk|wpa2psk|wpawpa2mixedpsk|wepopen|wepshare]"
 }
 
 if [ $# -lt 2 ]; then

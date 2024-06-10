@@ -3,8 +3,8 @@
 usage()
 {
 	echo " "
-	echo "USAGE: hostapd_sta.sh [apcli0|apclii0] [security option: open|wpapsk|wpa2psk|wpawpa2mixedpsk|wepopen|wepshare|EnterpriseAP|wpsopen|wpswpa2psk|owe|sae|suiteB] [optional: conf=<conf_file_path>]"
-	echo "example: hostapd_sta.sh apclii0 open => apclii0 with security open mode"
+	echo "USAGE: hostapd_sta.sh [apcli0|apclix0] [security option: open|wpapsk|wpa2psk|wpawpa2mixedpsk|wepopen|wepshare|EnterpriseAP|wpsopen|wpswpa2psk|owe|sae|suiteB] [optional: conf=<conf_file_path>]"
+	echo "example: hostapd_sta.sh apclix0 open => apclix0 with security open mode"
 	echo "example: hostapd_sta.sh apcli0 wpa2psk => apcli0 with security wpa2psk mode"
 	echo "example: hostapd_sta.sh apcli0 open conf=/etc/wpa_supplicant_apcli0_open.conf=> apcli0 with provided security conf file"
 }
@@ -70,43 +70,43 @@ fi
 
 hostapd_sta_connection_start()
 {
-if [ "$1" = "apclii0" ]; then
+if [ "$1" = "apclix0" ]; then
 	if [ "$2" = "open" ]; then
-		echo "apclii0(5G) security is open."
-		/usr/bin/wpa_supplicant -Dnl80211 -i apclii0 -c /etc/wpa_supplicant_apclii0_open.conf &
+		echo "apclix0(5G) security is open."
+		/usr/bin/wpa_supplicant -Dnl80211 -i apclix0 -c /etc/wpa_supplicant_apclix0_open.conf &
 	elif [ "$2" = "wpapsk" ]; then
-		echo "apclii0(5G) security is wpapsk."
-		/usr/bin/wpa_supplicant -Dnl80211 -i apclii0 -c /etc/wpa_supplicant_apclii0_wpapsk.conf &
+		echo "apclix0(5G) security is wpapsk."
+		/usr/bin/wpa_supplicant -Dnl80211 -i apclix0 -c /etc/wpa_supplicant_apclix0_wpapsk.conf &
 	elif [ "$2" = "wpa2psk" ]; then
-		echo "apclii0(5G) security is wpa2psk."
-		/usr/bin/wpa_supplicant -Dnl80211 -i apclii0 -c /etc/wpa_supplicant_apclii0_wpa2psk.conf &
+		echo "apclix0(5G) security is wpa2psk."
+		/usr/bin/wpa_supplicant -Dnl80211 -i apclix0 -c /etc/wpa_supplicant_apclix0_wpa2psk.conf &
 	elif [ "$2" = "wpawpa2mixedpsk" ]; then
-		echo "apclii0(5G) security is wpawpa2mixedpsk."
-		/usr/bin/wpa_supplicant -Dnl80211 -i apclii0 -c /etc/wpa_supplicant_apclii0_wpawpa2mixedpsk.conf &
+		echo "apclix0(5G) security is wpawpa2mixedpsk."
+		/usr/bin/wpa_supplicant -Dnl80211 -i apclix0 -c /etc/wpa_supplicant_apclix0_wpawpa2mixedpsk.conf &
 	elif [ "$2" = "wepopen" ]; then
-		echo "apclii0(5G) security is wep open."
-		/usr/bin/wpa_supplicant -Dnl80211 -i apclii0 -c /etc/wpa_supplicant_apclii0_wepopen.conf &
+		echo "apclix0(5G) security is wep open."
+		/usr/bin/wpa_supplicant -Dnl80211 -i apclix0 -c /etc/wpa_supplicant_apclix0_wepopen.conf &
 	elif [ "$2" = "wepshare" ]; then
-		echo "apclii0(5G) security is wep shared."
-		/usr/bin/wpa_supplicant -Dnl80211 -i apclii0 -c /etc/wpa_supplicant_apclii0_wepshare.conf &
+		echo "apclix0(5G) security is wep shared."
+		/usr/bin/wpa_supplicant -Dnl80211 -i apclix0 -c /etc/wpa_supplicant_apclix0_wepshare.conf &
 	elif [ "$2" = "EnterpriseAP" ]; then
-		echo "apclii0(5G) security is EnterpriseAP."
-		/usr/bin/wpa_supplicant -Dnl80211 -i apclii0 -c /etc/wpa_supplicant_apclii0_EnterpriseAP.conf &
+		echo "apclix0(5G) security is EnterpriseAP."
+		/usr/bin/wpa_supplicant -Dnl80211 -i apclix0 -c /etc/wpa_supplicant_apclix0_EnterpriseAP.conf &
 	elif [ "$2" = "wpsopen" ]; then
-		echo "apclii0(5G) security is wps open."
-		/usr/bin/wpa_supplicant -Dnl80211 -i apclii0 -c /etc/wpa_supplicant_apclii0_wpsopen.conf &
+		echo "apclix0(5G) security is wps open."
+		/usr/bin/wpa_supplicant -Dnl80211 -i apclix0 -c /etc/wpa_supplicant_apclix0_wpsopen.conf &
 	elif [ "$2" = "wpswpa2psk" ]; then
-		echo "apclii0(5G) security is wps wpa2psk."
-		/usr/bin/wpa_supplicant -Dnl80211 -i apclii0 -c /etc/wpa_supplicant_apclii0_wpswpa2psk.conf &
+		echo "apclix0(5G) security is wps wpa2psk."
+		/usr/bin/wpa_supplicant -Dnl80211 -i apclix0 -c /etc/wpa_supplicant_apclix0_wpswpa2psk.conf &
 	elif [ "$2" = "owe" ]; then
-		echo "apclii0(5G) security is owe."
-		/usr/bin/wpa_supplicant -Dnl80211 -i apclii0 -c /etc/wpa_supplicant_apclii0_owe.conf &
+		echo "apclix0(5G) security is owe."
+		/usr/bin/wpa_supplicant -Dnl80211 -i apclix0 -c /etc/wpa_supplicant_apclix0_owe.conf &
 	elif [ "$2" = "suiteB" ]; then
-		echo "apclii0(5G) security is suiteB."
-		/usr/bin/wpa_supplicant -Dnl80211 -i apclii0 -c /etc/wpa_supplicant_apclii0_suiteB.conf &	
+		echo "apclix0(5G) security is suiteB."
+		/usr/bin/wpa_supplicant -Dnl80211 -i apclix0 -c /etc/wpa_supplicant_apclix0_suiteB.conf &	
 	elif [ "$2" = "sae" ]; then
-		echo "apclii0(5G) security is sae."
-		/usr/bin/wpa_supplicant -Dnl80211 -i apclii0 -c /etc/wpa_supplicant_apclii0_sae.conf &
+		echo "apclix0(5G) security is sae."
+		/usr/bin/wpa_supplicant -Dnl80211 -i apclix0 -c /etc/wpa_supplicant_apclix0_sae.conf &
 	else 
 		echo "STA has no this security($2)"	
 	fi	
@@ -146,7 +146,7 @@ elif [ "$1" = "apcli0" ]; then
 		/usr/bin/wpa_supplicant -Dnl80211 -i apcli0 -c /etc/wpa_supplicant_apcli0_suiteB.conf &
 	elif [ "$2" = "sae" ]; then
 		echo "apcli0(2G) security is sae."
-		/usr/bin/wpa_supplicant -Dnl80211 -i apcli0 -c /etc/wpa_supplicant_apclii0_sae.conf &
+		/usr/bin/wpa_supplicant -Dnl80211 -i apcli0 -c /etc/wpa_supplicant_apcli0_sae.conf &
 	else
 		echo "STA has no this security($2)"		
 	fi
@@ -160,7 +160,7 @@ sec_type=$2;
 
 if [ $# -eq 3 ]; then
 	/usr/bin/wpa_supplicant -Dnl80211 -i $sta_wif_if -c $3 &
-elif [ "$1" = "apclii0" ] || [ "$1" = "apcli0" ]; then
+elif [ "$1" = "apclix0" ] || [ "$1" = "apcli0" ]; then
 	hostapd_sta_generate_conf $sta_wif_if $sec_type
 	hostapd_sta_connection_start $sta_wif_if $sec_type
 else

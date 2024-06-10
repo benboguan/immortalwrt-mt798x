@@ -9,10 +9,10 @@ usage()
 	echo "option 3: WDS Hostapd STA BringUp."
 	echo "option 4: WDS Hostapd STA Connects to AP."
 	echo "option 5: Hostapd 11r BringUp."
-	echo "example: hostapd_app.sh 1 5g open => normal AP(5G) up with rai0 and security open mode."
-	echo "example: hostapd_app.sh 1 both open => two bandand normal APs(2G and 5G) up with rai0/rai0 and security open mode."
+	echo "example: hostapd_app.sh 1 5g open => normal AP(5G) up with rax0 and security open mode."
+	echo "example: hostapd_app.sh 1 both open => two bandand normal APs(2G and 5G) up with ra0/rax0 and security open mode."
 	echo "example: hostapd_app.sh 2 2g wpapsk => normal STA with apcli0 and security wpapsk mode connects to AP."
-	echo "example: hostapd_app.sh 5 5g 00:0C:43:26:46:80 0 => AP0 bring hostapd with 11r for 5G, and another AP's rai0 is 00:0C:43:26:46:80."
+	echo "example: hostapd_app.sh 5 5g 00:0C:43:26:46:80 0 => AP0 bring hostapd with 11r for 5G, and another AP's rax0 is 00:0C:43:26:46:80."
 	echo "example: hostapd_app.sh 1 2g open conf=/etc/hostapd_ra0_open.conf=> normal AP(2G) up with ra0 with given conf file."
 }
 
@@ -37,7 +37,7 @@ if [ "$1" = "5" ]; then
 fi
 
 if { [ "$1" = "1" ] || [ "$1" = "3" ]; } && { [ "$2" = "5g" ] || [ "$2" = "5G" ]; }; then
-	wifi_if=rai0
+	wifi_if=rax0
 	echo $wifi_if "!!!!!!!!"
 elif { [ "$1" = "1" ] || [ "$1" = "3" ]; } && { [ "$2" = "2g" ] || [ "$2" = "2G" ]; }; then
 	wifi_if=ra0
@@ -49,7 +49,7 @@ elif { [ "$1" = "2" ] || [ "$1" = "4" ]; } && { [ "$2" = "2g" ] || [ "$2" = "2G"
 	wifi_if=apcli0
 	echo $wifi_if "!!!!!!!!"
 elif { [ "$1" = "5" ]; } && { [ "$2" = "5g" ] || [ "$2" = "5G" ]; }; then
-	wifi_if=rai0
+	wifi_if=rax0
 	echo $wifi_if "!!!!!!!!"
 elif { [ "$1" = "5" ]; } && { [ "$2" = "2g" ] || [ "$2" = "2G" ]; }; then
 	wifi_if=ra0
