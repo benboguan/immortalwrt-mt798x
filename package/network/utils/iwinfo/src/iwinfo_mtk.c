@@ -356,8 +356,8 @@ static void fill_rate_info(HTTRANSMIT_SETTING HTSetting, struct iwinfo_rate_entr
 
 	if (HTSetting.field.MODE >= MODE_HE) {
 //		re->he_gi = HTSetting.field.ShortGI;
-		re->he_gi = ((HTSetting.field.MCS + 1) & 0xf) & 0x3;
-		re->he_dcm = (HTSetting.field.MCS + 1) & 0x10 ? 1 : 0;
+		re->he_gi = (HTSetting.field.MCS & 0xf) & 0x3;
+		re->he_dcm = HTSetting.field.MCS & 0x10 ? 1 : 0;
 	}
 
 	if (HTSetting.field.BW == BW_20)

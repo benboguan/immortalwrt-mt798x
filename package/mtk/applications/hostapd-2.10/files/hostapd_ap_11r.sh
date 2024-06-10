@@ -8,8 +8,8 @@ nas_other="ap1.mtk.com"
 fi
 
 if { [ "$3" = "5g" ] || [ "$3" = "5G" ]; }; then
-	iface=rai0
-	holder=$(iwconfig rai0 | grep 'Access Point' | awk '{print $5}' | sed "s/://g")
+	iface=rax0
+	holder=$(iwconfig rax0 | grep 'Access Point' | awk '{print $5}' | sed "s/://g")
 elif { [ "$3" = "2g" ] || [ "$3" = "2G" ]; }; then
 	iface=ra0
 	holder=$(iwconfig ra0 | grep 'Access Point' | awk '{print $5}' | sed "s/://g")
@@ -21,7 +21,7 @@ bridge=$(brctl show | grep -v bridge | awk '{print $1}')
 
 #holder=$(iwconfig ${iface} | grep 'Access Point' | awk '{print $5}' | sed "s/://g")
 
-cp /etc/hostapd_rai0_AP_11r.conf /etc/hostapd_${iface}_11r.conf;
+cp /etc/hostapd_rax0_AP_11r.conf /etc/hostapd_${iface}_11r.conf;
 
 sed -i "s/nas_identifier=.*/nas_identifier=${nas_self}/g" /etc/hostapd_${iface}_11r.conf;
 

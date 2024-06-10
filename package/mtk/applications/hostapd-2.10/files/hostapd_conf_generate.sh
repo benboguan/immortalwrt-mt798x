@@ -3,7 +3,7 @@
 usage()
 {
 	echo " "
-	echo "USAGE: hostapd_generate.sh [interface: ra0|rai0] [security option: open|wpapsk|wpa2psk|wpawpa2mixedpsk|wepopen|wepshare|EnterpriseAP|wpsopen|wpswpa2psk|sae|suiteB]"
+	echo "USAGE: hostapd_generate.sh [interface: ra0|rax0] [security option: open|wpapsk|wpa2psk|wpawpa2mixedpsk|wepopen|wepshare|EnterpriseAP|wpsopen|wpswpa2psk|sae|suiteB]"
 }
 
 if [ $# -lt 2 ]; then
