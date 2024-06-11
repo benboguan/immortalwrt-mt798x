@@ -1,0 +1,38 @@
+--- a/mt_wifi/embedded/include/oid.h
++++ b/mt_wifi/embedded/include/oid.h
+@@ -1372,9 +1372,16 @@ typedef struct _RT_802_11_MAC_ENTRY {
+ 	CHAR AvgRssi0;
+ 	CHAR AvgRssi1;
+ 	CHAR AvgRssi2;
++	CHAR AvgRssi3;
+ 	UINT32 ConnectedTime;
+ 	HTTRANSMIT_SETTING TxRate;
+ 	UINT32 LastRxRate;
++	UINT32 EncryMode;
++	UINT32 AuthMode;
++	UINT64 TxPackets; //TxPackets.QuadPart
++	UINT64 RxPackets; //RxPackets.QuadPart
++	UINT64 TxBytes;
++	UINT64 RxBytes;
+ 	/*
+ 		sync with WEB UI's structure for ioctl usage.
+ 	*/
+--- a/mt_wifi/embedded/common/cmm_info.c
++++ b/mt_wifi/embedded/common/cmm_info.c
+@@ -7275,9 +7275,16 @@ typedef struct _RT_802_11_MAC_ENTRY {
+ 			pDst->AvgRssi0 = pEntry->RssiSample.AvgRssi[0];
+ 			pDst->AvgRssi1 = pEntry->RssiSample.AvgRssi[1];
+ 			pDst->AvgRssi2 = pEntry->RssiSample.AvgRssi[2];
++			pDst->AvgRssi3 = pEntry->RssiSample.AvgRssi[3];
+ 			/* the connected time per entry*/
+ 			pDst->ConnectedTime = pEntry->StaConnectTime;
+ 			pDst->TxRate.word = RTMPGetLastTxRate(pAd, pEntry);
++			pDst->EncryMode = pEntry->SecConfig.PairwiseCipher;
++			pDst->AuthMode = pEntry->SecConfig.AKMMap;
++			pDst->TxPackets = (UINT64)pEntry->TxPackets.QuadPart;
++			pDst->RxPackets = (UINT64)pEntry->RxPackets.QuadPart;
++			pDst->TxBytes = (UINT64)pEntry->TxBytes;
++			pDst->RxBytes = (UINT64)pEntry->RxBytes;
+ #ifdef RTMP_RBUS_SUPPORT
+ 
+ 			if (IS_RBUS_INF(pAd))
