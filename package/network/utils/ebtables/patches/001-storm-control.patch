@@ -1,0 +1,76 @@
+--- a/extensions/Makefile
++++ b/extensions/Makefile
+@@ -1,7 +1,7 @@
+ #! /usr/bin/make
+ 
+ EXT_FUNC+=802_3 nat arp arpreply ip ip6 standard log redirect vlan mark_m mark \
+-          pkttype stp among limit ulog nflog string
++          pkttype stp among limit ulog nflog string storm_control
+ EXT_TABLES+=filter nat broute
+ EXT_OBJS+=$(foreach T,$(EXT_FUNC), extensions/ebt_$(T).o)
+ EXT_OBJS+=$(foreach T,$(EXT_TABLES), extensions/ebtable_$(T).o)
+--- /dev/null
++++ b/extensions/ebt_storm_control.c
+@@ -0,0 +1,62 @@
++#include <stdio.h>
++#include <stdlib.h>
++#include <getopt.h>
++#include "../include/ebtables_u.h"
++
++static struct option opts[] =
++{
++	{0}
++};
++
++static void print_help()
++{
++	printf(" Ethernet storm control target\n");
++}
++
++static void init(struct ebt_entry_target *t)
++{
++	return;
++}
++
++static int parse(int c, char **argv, int argc, const struct ebt_u_entry *entry,
++   unsigned int *flags, struct ebt_entry_target **target)
++{
++	return 0;
++}
++
++static void final_check(const struct ebt_u_entry *entry,
++   const struct ebt_entry_target *target, const char *name,
++   unsigned int hookmask, unsigned int time)
++{
++	return;
++}
++
++static void print(const struct ebt_u_entry *entry,
++   const struct ebt_entry_target *target)
++{
++	return;
++}
++
++static int compare(const struct ebt_entry_target *t1,
++   const struct ebt_entry_target *t2)
++{
++	return 0;
++}
++
++static struct ebt_u_target storm_control =
++{
++	.name		= "storm_control",
++	.size		= 0,
++	.help		= print_help,
++	.init		= init,
++	.parse		= parse,
++	.final_check	= final_check,
++	.print		= print,
++	.compare	= compare,
++	.extra_ops	= opts,
++};
++
++__attribute__((constructor)) static void extension_init(void)
++{
++	ebt_register_target(&storm_control);
++}
