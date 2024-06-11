@@ -5,7 +5,7 @@
  {
    struct iwreq	wrq;
 -  u_char	buffer[4096];	/* Only that big in v25 and later */
-+  u_char	buffer[4096*8];	/* this buffer size for get_site_survey length */
++  u_char	buffer[8192*2];	/* this buffer size for get_site_survey length */
    int		i = 0;		/* Start with first command arg */
    int		k;		/* Index in private description table */
    int		temp;
@@ -15,7 +15,7 @@
        wrq.u.data.length = 0L;
 +      if(0 == strcmp("get_site_survey", cmdname))
 +      {
-+	      wrq.u.data.length = 120*128; // 120 is per entry size, 128 is counter of entry
++	      wrq.u.data.length =8192; // 120*128; // 120 is per entry size, 128 is counter of entry
 +	      fprintf(stderr, "(%d)cmdname %s\n",cmdname);
 +      }
      }

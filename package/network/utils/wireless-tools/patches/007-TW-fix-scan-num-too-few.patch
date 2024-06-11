@@ -24,7 +24,7 @@ index 226f540b..96c93450 100644
  #define IW_SCAN_THIS_RATE	0x0080	/* Scan only this Bit-Rate */
  /* Maximum size of returned data */
 -#define IW_SCAN_MAX_DATA	4096	/* In bytes */
-+#define IW_SCAN_MAX_DATA	(4096*8)	/* In bytes */
++#define IW_SCAN_MAX_DATA	(8192*2)	/* In bytes */
  
  /****************************** TYPES ******************************/
  
@@ -37,7 +37,7 @@ index bacf44b5..0d365a8e 100644
  #define IW_SCAN_THIS_RATE	0x0080	/* Scan only this Bit-Rate */
  /* Maximum size of returned data */
 -#define IW_SCAN_MAX_DATA	4096	/* In bytes */
-+#define IW_SCAN_MAX_DATA	(4096*8)	/* In bytes */
++#define IW_SCAN_MAX_DATA	(8192*2)	/* In bytes */
  
  /* Max number of char in custom event - use multiple of them if needed */
  #define IW_CUSTOM_MAX		256	/* In bytes */
@@ -50,7 +50,7 @@ index 965a83b1..e3eadc0e 100644
  #define IW_SCAN_THIS_RATE	0x0080	/* Scan only this Bit-Rate */
  /* Maximum size of returned data */
 -#define IW_SCAN_MAX_DATA	4096	/* In bytes */
-+#define IW_SCAN_MAX_DATA	(4096*8)	/* In bytes */
++#define IW_SCAN_MAX_DATA	(8192*2)	/* In bytes */
  
  /* Max number of char in custom event - use multiple of them if needed */
  #define IW_CUSTOM_MAX		256	/* In bytes */
@@ -63,7 +63,7 @@ index 794b94ab..68a7a80b 100644
  #define IW_SCAN_THIS_RATE	0x0080	/* Scan only this Bit-Rate */
  /* Maximum size of returned data */
 -#define IW_SCAN_MAX_DATA	4096	/* In bytes */
-+#define IW_SCAN_MAX_DATA	(4096*8)	/* In bytes */
++#define IW_SCAN_MAX_DATA	(8192*2)	/* In bytes */
  
  /* Max number of char in custom event - use multiple of them if needed */
  #define IW_CUSTOM_MAX		256	/* In bytes */
@@ -76,7 +76,7 @@ index ae485f9c..06ef4b2b 100644
  #define IW_SCAN_TYPE_PASSIVE 1
  /* Maximum size of returned data */
 -#define IW_SCAN_MAX_DATA	4096	/* In bytes */
-+#define IW_SCAN_MAX_DATA	(4096*8)	/* In bytes */
++#define IW_SCAN_MAX_DATA	(8192*2)	/* In bytes */
  
  /* Max number of char in custom event - use multiple of them if needed */
  #define IW_CUSTOM_MAX		256	/* In bytes */
@@ -89,7 +89,7 @@ index dab5afda..b5836c12 100644
  #define IW_SCAN_TYPE_PASSIVE 1
  /* Maximum size of returned data */
 -#define IW_SCAN_MAX_DATA	4096	/* In bytes */
-+#define IW_SCAN_MAX_DATA	(4096*8)	/* In bytes */
++#define IW_SCAN_MAX_DATA	(8192*2)	/* In bytes */
  
  /* Max number of char in custom event - use multiple of them if needed */
  #define IW_CUSTOM_MAX		256	/* In bytes */
@@ -102,7 +102,7 @@ index 888de4d5..bf5adda3 100644
  #define IW_SCAN_TYPE_PASSIVE 1
  /* Maximum size of returned data */
 -#define IW_SCAN_MAX_DATA	4096	/* In bytes */
-+#define IW_SCAN_MAX_DATA	(4096*8)	/* In bytes */
++#define IW_SCAN_MAX_DATA	(8192*2)	/* In bytes */
  
  /* Max number of char in custom event - use multiple of them if needed */
  #define IW_CUSTOM_MAX		256	/* In bytes */
@@ -115,7 +115,7 @@ index 3d46c1d7..127e8c5e 100644
  #define IW_SCAN_TYPE_PASSIVE 1
  /* Maximum size of returned data */
 -#define IW_SCAN_MAX_DATA	4096	/* In bytes */
-+#define IW_SCAN_MAX_DATA	(4096*8)	/* In bytes */
++#define IW_SCAN_MAX_DATA	(8192*2)	/* In bytes */
  
  /* Max number of char in custom event - use multiple of them if needed */
  #define IW_CUSTOM_MAX		256	/* In bytes */
@@ -128,7 +128,7 @@ index 9a885db5..5eee8d15 100644
  #define IW_SCAN_TYPE_PASSIVE 1
  /* Maximum size of returned data */
 -#define IW_SCAN_MAX_DATA	4096	/* In bytes */
-+#define IW_SCAN_MAX_DATA	(4096*8)	/* In bytes */
++#define IW_SCAN_MAX_DATA	(8192*2)	/* In bytes */
  
  /* Max number of char in custom event - use multiple of them if needed */
  #define IW_CUSTOM_MAX		256	/* In bytes */
