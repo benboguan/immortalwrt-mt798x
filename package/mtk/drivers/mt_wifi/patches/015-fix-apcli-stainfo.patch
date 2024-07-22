@@ -5,7 +5,7 @@
  				need_send = FALSE;
  		}
 -		if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC) && (need_send == TRUE)) {
-+		if ((IS_ENTRY_CLIENT(pEntry) || IS_ENTRY_PEER_AP(pEntry) || IS_ENTRY_MESH(pEntry) || IS_ENTRY_WDS(pEntry))
++		if ((IS_ENTRY_CLIENT(pEntry) || IS_ENTRY_PEER_AP(pEntry) || IS_ENTRY_REPEATER(pEntry) || IS_ENTRY_MESH(pEntry) || IS_ENTRY_WDS(pEntry))
 +			&& (pEntry->Sst == SST_ASSOC)
 +			&& (need_send == TRUE)) {
  			pDst = &pMacTab->Entry[pMacTab->Num];

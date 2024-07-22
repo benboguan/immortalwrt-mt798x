@@ -1,6 +1,6 @@
 --- a/mt_wifi/os/linux/ap_ioctl.c
 +++ b/mt_wifi/os/linux/ap_ioctl.c
-@@ -824,8 +824,55 @@ INT rt28xx_ap_ioctl(void *net_dev_obj, v
+@@ -824,8 +824,107 @@ INT rt28xx_ap_ioctl(void *net_dev_obj, v
  		break;
  	}
  	case SIOCGIWRANGE:	/*Get range of parameters */
@@ -28,8 +28,60 @@
 +				range.we_version_compiled = WIRELESS_EXT;
 +				range.we_version_source = 21;
 +				range.max_qual.qual = 100;
-+				range.max_qual.level = 0; /* dB */
-+				range.max_qual.noise = 0; /* dB */
++				range.max_qual.level = 0x100 - 127; /* dB */
++				range.max_qual.noise = 0x100 - 127; /* dB */
++				range.sensitivity = 65535;
++
++				/* RTS and fragmentation thresholds */
++				range.min_rts = 0;
++				range.max_rts = 2347;
++				range.min_frag = 256;
++				range.max_frag = 2346;
++
++				range.max_encoding_tokens = 4;
++				range.num_encoding_sizes = 4;
++				range.encoding_size[0] = 5;
++				range.encoding_size[1] = 13;
++				range.encoding_size[2] = 32;
++				range.encoding_size[3] = 16;
++
++				/* Transmit Power - values are in mW */
++				range.num_txpower = 2;
++				range.txpower[0] = 1;
++				range.txpower[1] = 100; /* 100mW for mtkwifi driver's 100% */
++				range.txpower_capa = IW_TXPOW_MWATT;
++
++				/* Only support retry limits */
++				range.retry_capa = IW_RETRY_LIMIT;
++				range.retry_flags = IW_RETRY_LIMIT;
++				range.r_time_flags = 0;
++				/* SRL and LRL limits */
++				range.min_retry = 1;
++				range.max_retry = 255;
++				/* Retry lifetime limits unsupported */
++				range.min_r_time = 0;
++				range.max_r_time = 0;
++
++				range.enc_capa = IW_ENC_CAPA_WPA;
++				range.enc_capa |= IW_ENC_CAPA_CIPHER_TKIP;
++				range.enc_capa |= IW_ENC_CAPA_CIPHER_CCMP;
++				range.enc_capa |= IW_ENC_CAPA_WPA2;
++				/* Tell the host (e.g. wpa_supplicant) to let us do the handshake */
++				range.enc_capa |= IW_ENC_CAPA_4WAY_HANDSHAKE;
++
++				/* Event capability (kernel) */
++				IW_EVENT_CAPA_SET_KERNEL(range.event_capa);
++				/* Event capability (driver) */
++				IW_EVENT_CAPA_SET(range.event_capa, SIOCGIWAP);
++				IW_EVENT_CAPA_SET(range.event_capa, SIOCGIWSCAN);
++				IW_EVENT_CAPA_SET(range.event_capa, IWEVTXDROP);
++				IW_EVENT_CAPA_SET(range.event_capa, IWEVMICHAELMICFAILURE);
++				IW_EVENT_CAPA_SET(range.event_capa, IWEVASSOCREQIE);
++				IW_EVENT_CAPA_SET(range.event_capa, IWEVASSOCRESPIE);
++				IW_EVENT_CAPA_SET(range.event_capa, IWEVPMKIDCAND);
++
++				/* FC7 wireless.h defines EXT 22 but doesn't define scan_capa bits
++				range.scan_capa = IW_SCAN_CAPA_ESSID; */
 +
 +				BandIdx = wlan_operate_get_ch_band(wdev);
 +				pChCtrl = hc_get_channel_ctrl(pAdin->hdev_ctrl, BandIdx);
@@ -57,7 +109,7 @@
  	case SIOCGIWRETRY:	/*get retry limits and lifetime */
  	case SIOCSIWRETRY:	/*set retry limits and lifetime */
  		Status = RTMP_IO_EOPNOTSUPP;
-@@ -838,7 +885,7 @@ INT rt28xx_ap_ioctl(void *net_dev_obj, v
+@@ -838,7 +937,7 @@ INT rt28xx_ap_ioctl(void *net_dev_obj, v
  		if ((wdev != NULL) && (wdev->if_up_down_state == FALSE)) {
  			if (wdev_down_exec_ioctl(wrq, subcmd) == FALSE) {
  				MTWF_DBG(pAd, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
