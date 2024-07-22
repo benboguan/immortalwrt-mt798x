@@ -170,7 +170,77 @@ static int mtk_get_channel(const char *ifname, int *buf)
 
 static int mtk_get_center_chan1(const char *ifname, int *buf)
 {
-	/* Not Supported */
+	int channel;
+	struct iwreq wrq;
+	unsigned char bw = 0;
+	unsigned long wmode = 0;
+
+	wrq.u.data.length = sizeof(bw);
+	wrq.u.data.pointer = &bw;
+	wrq.u.data.flags = OID_802_11_BW;
+
+	if (mtk_ioctl(ifname, SIOCGIWFREQ, &wrq) >= 0)
+	{
+		channel = wrq.u.freq.m;
+		wrq.u.data.length = sizeof(wmode);
+		wrq.u.data.pointer = &wmode;
+		wrq.u.data.flags = RT_OID_802_11_PHY_MODE;
+
+		if (mtk_ioctl(ifname, RT_PRIV_IOCTL, &wrq) >= 0)
+		{
+			if (channel == 0)
+				*buf = 0;
+			if (WMODE_CAP_AX(wmode) || WMODE_CAP_AC(wmode)) {
+				switch (bw) {
+				// case BW_20: *buf = channel; break;
+				case BW_40:
+					if (( (channel / 4) % 2 ) == 1)
+						*buf = channel + 2;
+					else if (( (channel / 4) % 2 ) == 0)
+						*buf = channel - 2;
+					break;
+				case BW_80:
+					if (( (channel / 4) % 4 ) == 1)
+						*buf = channel + 6;
+					else if (( (channel / 4) % 4 ) == 2)
+						*buf = channel + 2;
+					else if (( (channel / 4) % 4 ) == 3)
+						*buf = channel - 2;
+					else if (( (channel / 4) % 4 ) == 0)
+						*buf = channel - 6;
+					break;
+				// case BW_8080:
+				case BW_160:
+					if (is_6g(ifname) || WMODE_AX_6G) {
+						if (channel >= 1 && channel <= 19)
+							*buf = 15;
+						if (channel >= 33 && channel <= 61)
+							*buf = 47;
+						if (channel >= 65 && channel <= 93)
+							*buf = 79;
+						if (channel >= 97 && channel <= 125)
+							*buf = 111;
+						if (channel >= 129 && channel <= 157)
+							*buf = 143;
+						if (channel >= 161 && channel <= 189)
+							*buf = 175;
+						if (channel >= 193 && channel <= 233)
+							*buf = 207;
+					} else {
+						if (channel >= 36 && channel <= 64)
+							*buf = 50;
+						if (channel >= 100 && channel <= 128)
+							*buf = 114;
+						if (channel >= 149 && channel <= 177)
+							*buf = 163;
+					}
+					break;
+				}
+			}
+			return 0;
+		}
+	}
+
 	return -1;
 }
 
@@ -269,7 +339,7 @@ static int mtk_get_noise(const char *ifname, int *buf)
 	if (mtk_ioctl(ifname, SIOCGIWSTATS, &wrq) >= 0)
 	{
 		nr = (stats.qual.updated & IW_QUAL_DBM)
-			? (stats.qual.noise - 0x100) : stats.qual.noise;
+			? (stats.qual.noise - 0x127) : stats.qual.noise;
 
 		if (nr <= -127)
 		{
@@ -277,10 +347,13 @@ static int mtk_get_noise(const char *ifname, int *buf)
 		}
 		else
 		{
-			if (is_5g(ifname))
+			/* if (is_6g(ifname))
+				*buf = nr - 35;
+			else if (is_5g(ifname))
 				*buf = nr - 30;
 			else
-				*buf = nr - 25;
+				*buf = nr - 25; */
+			*buf = nr;
 		}
 
 		return 0;
@@ -355,7 +428,7 @@ static void fill_rate_info(HTTRANSMIT_SETTING HTSetting, struct iwinfo_rate_entr
 	}
 
 	if (HTSetting.field.MODE >= MODE_HE) {
-//		re->he_gi = HTSetting.field.ShortGI;
+		// re->he_gi = HTSetting.field.ShortGI;
 		re->he_gi = (HTSetting.field.MCS & 0xf) & 0x3;
 		re->he_dcm = HTSetting.field.MCS & 0x10 ? 1 : 0;
 	}
@@ -498,25 +571,6 @@ static int mtk_get_txpwrlist(const char *ifname, char *buf, int *len)
 	return 0;
 }
 
-static const char* format_chan_width(bool vht, uint8_t width)
-{
-	if (!vht && width < ARRAY_SIZE(ht_chan_width))
-		switch (ht_chan_width[width]) {
-			case 20: return "20 MHz";
-			case 2040: return "40 MHz or higher";
-		}
-
-	if (vht && width < ARRAY_SIZE(vht_chan_width))
-		switch (vht_chan_width[width]) {
-			case 40: return "20 or 40 MHz";
-			case 80: return "80 MHz";
-			case 8080: return "80+80 MHz";
-			case 160: return "160 MHz";
-		}
-
-	return "unknown";
-}
-
 static int mtk_get_scanlist_dump(const char *ifname, int index, char *data, size_t len)
 {
 	struct iwreq wrq = {};
@@ -537,6 +591,7 @@ enum {
 	SCAN_DATA_SECURITY,
 	SCAN_DATA_RSSI,
 	SCAN_DATA_SIG,
+	SCAN_DATA_EXTCH,
 	SCAN_DATA_NT,
 	SCAN_DATA_SSID_LEN,
 	SCAN_DATA_MAX
@@ -583,13 +638,18 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 		offsets[SCAN_DATA_SECURITY] = strstr(pos, "Security ") - pos;
 		offsets[SCAN_DATA_RSSI] = strstr(pos, "Rssi") - pos;
 		offsets[SCAN_DATA_SIG] = strstr(pos, "Siganl") - pos;
+		offsets[SCAN_DATA_EXTCH] = strstr(pos, "ExtCH") - pos;
 		offsets[SCAN_DATA_NT] = strstr(pos, "NT") - pos;
 		offsets[SCAN_DATA_SSID_LEN] = strstr(pos, "SSID_Len") - pos;
 
 		while (1) {
 			struct iwinfo_crypto_entry *crypto = &e->crypto;
+			struct iwinfo_scanlist_ht_chan_entry *ht_chan_info = &e->ht_chan_info;
+			struct iwinfo_scanlist_vht_chan_entry *vht_chan_info = &e->vht_chan_info;
 			const char *security;
+			char *extch = NULL;
 			uint8_t *mac = e->mac;
+			int channel = 0, center_chan1 = 0, bw = 0;
 			int ssid_len;
 
 			pos = strtok(NULL, "\n");
@@ -652,6 +712,39 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 				}
 			}
 
+			extch = pos + offsets[SCAN_DATA_EXTCH];
+			memset(extch, 0, sizeof(struct iwinfo_scanlist_ht_chan_entry));
+
+			if (ht_chan_info->primary_chan) {
+				if (mtk_get_channel(ifname, &channel))
+					ht_chan_info->primary_chan = channel;
+				// if (strstr(extch, "ABOVE")) {
+				if (strncmp(extch, "ABOVE", 5)) {
+					ht_chan_info->secondary_chan_off = (intptr_t)(uint8_t *)(ht_secondary_offset[1]);
+					ht_chan_info->chan_width = ht_chan_width[1];
+				} else if (strncmp(extch, "BELOW", 5)) {
+					ht_chan_info->secondary_chan_off = (intptr_t)(uint8_t *)(ht_secondary_offset[3]);
+					ht_chan_info->chan_width = ht_chan_width[1];
+				} else if (strncmp(extch, "NONE", 4)) {
+					ht_chan_info->secondary_chan_off = (intptr_t)(uint8_t *)(ht_secondary_offset[0]);
+					ht_chan_info->chan_width = ht_chan_width[0];
+				}
+			}
+
+			if (vht_chan_info->center_chan_1) {
+				if (mtk_get_center_chan1(ifname, &center_chan1))
+					vht_chan_info->center_chan_1 = center_chan1;
+				if (mtk_get_center_chan1(ifname, &bw)) {
+					if (bw == BW_40)
+						vht_chan_info->chan_width = vht_chan_width[0];
+					else if (bw == BW_80)
+						vht_chan_info->chan_width = vht_chan_width[1];
+					else if (bw == BW_160)
+						vht_chan_info->chan_width = vht_chan_width[2];
+					// e->vht_chan_info.center_chan_2;
+				}
+			}
+
 			if (strstr(flags, "[MESH]"))
 				e->mode = IWINFO_OPMODE_MESHPOINT;
 			else if (strstr(flags, "[IBSS]"))
@@ -671,18 +764,6 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 
 			sscanf(pos + offsets[SCAN_DATA_SSID_LEN], "%d", &ssid_len);
 			memcpy(e->ssid, pos + offsets[SCAN_DATA_SSID], ssid_len);
-
-			if (e->ht_chan_info.primary_chan) {
-//					e->ht_chan_info.primary_chan;
-//					ht_secondary_offset[e->ht_chan_info.secondary_chan_off];
-					format_chan_width(false, e->ht_chan_info.chan_width);
-			}
-
-			if (e->vht_chan_info.center_chan_1) {
-//					e->vht_chan_info.center_chan_1;
-//					e->vht_chan_info.center_chan_2;
-					format_chan_width(true, e->vht_chan_info.chan_width);
-			}
 
 			*len += sizeof(struct iwinfo_scanlist_entry);
 			e++;
@@ -1035,7 +1116,7 @@ static int mtk_get_l1profile_attr(const char *attr, char *data, int len)
 
 static int mtk_get_hardware_id_from_l1profile(struct iwinfo_hardware_id *id)
 {
-	const char *attr = "INDEX0";
+	const char *attr = "INDEX[0-9]";
 	char buf[16] = {0};
 
 	if (mtk_get_l1profile_attr(attr, buf, sizeof(buf)) < 0)
@@ -1049,6 +1130,16 @@ static int mtk_get_hardware_id_from_l1profile(struct iwinfo_hardware_id *id)
 	} else if (!strcmp(buf, "MT7986")) {
 		id->vendor_id = 0x14c3;
 		id->device_id = 0x7986;
+		id->subsystem_vendor_id = id->vendor_id;
+		id->subsystem_device_id = id->device_id;
+	} else if (!strcmp(buf, "MT7916")) {
+		id->vendor_id = 0x14c3;
+		id->device_id = 0x7906;
+		id->subsystem_vendor_id = id->vendor_id;
+		id->subsystem_device_id = id->device_id;
+	} else if (!strcmp(buf, "MT7915")) {
+		id->vendor_id = 0x14c3;
+		id->device_id = 0x7915;
 		id->subsystem_vendor_id = id->vendor_id;
 		id->subsystem_device_id = id->device_id;
 	} else {
