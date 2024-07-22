@@ -23,7 +23,7 @@
 +		return -EFAULT;
 +	}
 +
-+	if ((pObj->ioctl_if_type == INT_MBSSID) || (pObj->ioctl_if_type == INT_MAIN))
++	if ((pObj->ioctl_if_type == INT_MBSSID) || (pObj->ioctl_if_type == INT_MAIN) || (pObj->ioctl_if_type == INT_APCLI) || (pObj->ioctl_if_type == INT_WDS))
 +	{
 +		apidx = pObj->ioctl_if;
 +		if (apidx >= ad->ApCfg.BssidNum)
@@ -67,8 +67,8 @@
 -			MTWF_DBG(pAd, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
 -			"RT_PRIV_IOCTL interface is down, cmd [%x] return!!!\n", cmd);
 -			return -ENETDOWN;
-+		if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_MAIN || 
-+			RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_MBSSID) {
++		if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_MAIN || RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_MBSSID || 
++			RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_APCLI || RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_WDS) {
 +			wdev = pIoctlConfig->wdev;
 +			if (wdev->if_up_down_state == FALSE) {
 +				MTWF_DBG(pAd, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_INFO,
