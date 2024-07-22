@@ -211,29 +211,12 @@ static int mtk_get_center_chan1(const char *ifname, int *buf)
 					break;
 				// case BW_8080:
 				case BW_160:
-					if (is_6g(ifname) || WMODE_AX_6G) {
-						if (channel >= 1 && channel <= 19)
-							*buf = 15;
-						if (channel >= 33 && channel <= 61)
-							*buf = 47;
-						if (channel >= 65 && channel <= 93)
-							*buf = 79;
-						if (channel >= 97 && channel <= 125)
-							*buf = 111;
-						if (channel >= 129 && channel <= 157)
-							*buf = 143;
-						if (channel >= 161 && channel <= 189)
-							*buf = 175;
-						if (channel >= 193 && channel <= 233)
-							*buf = 207;
-					} else {
-						if (channel >= 36 && channel <= 64)
-							*buf = 50;
-						if (channel >= 100 && channel <= 128)
-							*buf = 114;
-						if (channel >= 149 && channel <= 177)
-							*buf = 163;
-					}
+					if (channel >= 36 && channel <= 64)
+						*buf = 50;
+					else if (channel >= 100 && channel <= 128)
+						*buf = 114;
+					else if (channel >= 149 && channel <= 177)
+						*buf = 163;
 					break;
 				}
 			}
