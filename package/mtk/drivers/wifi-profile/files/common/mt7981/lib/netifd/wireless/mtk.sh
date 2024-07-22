@@ -473,7 +473,7 @@ mtk_sta_vif_pre_config() {
 			ApCliAuthMode="${enc}"
 			ApCliEncrypType="${crypto}"
 			ApCliDefKId="2"
-			ApCliWPAPSK="${key}"
+			[ -n "$key" ] && ApCliWPAPSK="${key}"
 	;;
 	WEP|wep|wep-open|wep-shared)
 		if [[ "$encryption" = "wep-shared" ]]; then
@@ -598,6 +598,12 @@ mtk_mesh_vif_pre_config() {
 		local enc
 		local crypto
 		case "$encryption" in
+			psk*)
+				enc=WPAPSK
+			;;
+			psk2*)
+				enc=WPA2PSK
+			;;
 			SAE*|psk3*|sae)
 				enc=WPA3PSK
 			;;
@@ -641,10 +647,10 @@ mtk_mesh_vif_pre_config() {
 
 	mt_cmd ifconfig $MESH_IF up
 	mt_cmd echo "Interface $MESH_IF now up."
-	mt_cmd iwpriv ra${MTWIFI_IFPREFIX}0 set mapEnable=0
+	mt_cmd iwpriv ra${MTWIFI_IFPREFIX}0 set mapEnable=1
 	mt_cmd iwpriv ra${MTWIFI_IFPREFIX}0 set mapR2Enable=1
 	mt_cmd iwpriv ra${MTWIFI_IFPREFIX}0 set mapR3Enable=1
-	# mt_cmd iwpriv ra${MTWIFI_IFPREFIX}0 set mapR4Enable=1
+	# mt_cmd iwpriv ra${MTWIFI_IFPREFIX}0 set mapR4Enable=0
 	mt_cmd iwpriv ra${MTWIFI_IFPREFIX}0 set mapTSEnable=1
 
 	MeshAutoLink="${MeshAutoLink:-1}"
@@ -677,19 +683,27 @@ mtk_vif_down() {
 		rax0)
 			for vif in ra0 ra1 ra2 ra3 ra4 ra5 ra6 ra7 ra8 ra9 ra10 \
 				ra11 ra12 ra13 ra14 ra15 wds0 wds1 wds2 wds3 apcli0 mesh0; do
-				[ -d "/sys/class/net/$vif" ] && ifconfig $vif down
+				[ -d "/sys/class/net/$vif" ] && ifconfig $vif down 2>/dev/null
 			done
 		;;
 		ra0)
 			for vif in rax0 rax1 rax2 rax3 rax4 rax5 rax6 rax7 rax8 rax9 rax10 \
 				rax11 rax12 rax13 rax14 rax15 wdsx0 wdsx1 wdsx2 wdsx3 apclix0 meshx0; do
-				[ -d "/sys/class/net/$vif" ] && ifconfig $vif down
+				[ -d "/sys/class/net/$vif" ] && ifconfig $vif down 2>/dev/null
 			done
 		;;
 	esac
 }
 
 drv_mtk_cleanup() {
+	modname="/lib/modules/*/mt_wifi.ko"
+
+	[ -f $modname ] && {
+		sleep 1
+		rmmod $modname
+		insmod $modname
+	}
+
 	return
 }
 
@@ -700,14 +714,14 @@ drv_mtk_teardown() {
 			for vif in ra0 ra1 ra2 ra3 ra4 ra5 ra6 ra7 ra8 ra9 ra10 \
 				ra11 ra12 ra13 ra14 ra15 wds0 wds1 wds2 wds3 apcli0 mesh0; do
 				# iwpriv $vif set DisConnectAllSta=1
-				[ -d "/sys/class/net/$vif" ] && ifconfig $vif down
+				[ -d "/sys/class/net/$vif" ] && ifconfig $vif down 2>/dev/null
 			done
 		;;
 		rax0)
 			for vif in rax0 rax1 rax2 rax3 rax4 rax5 rax6 rax7 rax8 rax9 rax10 \
 				rax11 rax12 rax13 rax14 rax15 wdsx0 wdsx1 wdsx2 wdsx3 apclix0 meshx0; do
 				# iwpriv $vif set DisConnectAllSta=1
-				[ -d "/sys/class/net/$vif" ] && ifconfig $vif down
+				[ -d "/sys/class/net/$vif" ] && ifconfig $vif down 2>/dev/null
 			done
 		;;
 	esac
@@ -718,7 +732,7 @@ drv_mtk_setup() {
 	json_select config
 	json_get_vars main_if phy_name macaddr channel mode hwmode htmode \
 		txpower country macfilter maclist greenap diversity frag \
-		rts hidden disabled ht_coex #device所有配置项
+		rts hidden disabled ht_coex band #device所有配置项
 		
 	json_get_vars \
 			noscan:1 \
@@ -1008,13 +1022,16 @@ drv_mtk_setup() {
 	[ "${country}" == "VN" ] && countryregion_a=0 && countryregion=1
 	[ "${country}" == "YE" ] && countryregion_a=0 && countryregion=1
 	[ "${country}" == "ZW" ] && countryregion_a=0 && countryregion=1
+	[ "${country}" == "00" ] && countryregion_a=26 && countryregion=5 && RDRegion=CE
 
 #其它相关
 	case "$hwmode" in
 		a)
 			EXTCHA=1
-			[ "${channel}" != "auto" ] && [ "${channel}" != "0" ] && [ "$(( (${channel} / 4) % 2 ))" == "0" ] && EXTCHA=0
-			# [ "${channel}" == "165" ] && EXTCHA=0
+			case "$channel" in
+				40|48|56|64|104|112|120|128| \
+				136|144|153|161|169|177) EXTCHA=0;;
+			esac
 			[ "${channel}" == "auto" -o "${channel}" == "0" ] && {
 				AutoChannelSelect=3
 				channel=0
@@ -1054,7 +1071,6 @@ AMSDU_NUM=8
 AntCtrl=
 APACM=0;0;0;0
 APAifsn=3;7;1;1
-ApCliNum=2
 ApCliPMFSHA256=0
 ApCliTxMcs=33
 ApCliWirelessMode=
@@ -1212,6 +1228,7 @@ RDRegion=${RDRegion}
 RED_Enable=1
 RegDomain=Global
 RTSThreshold=${rts:-2347}
+ScsEnable=0
 SCSEnable=1
 session_timeout_interval=0
 quiet_interval=0
@@ -1530,6 +1547,9 @@ EOF
 	echo "MeshWPAKEY=${MeshWPAKEY}" >> $MTWIFI_PROFILE_PATH
 	echo "MeshForwarding=${mesh_fwding}" >> $MTWIFI_PROFILE_PATH
 	echo "MeshRssiThreshold=${mesh_rssi_threshold}" >> $MTWIFI_PROFILE_PATH
+
+#FIXME:重新加载驱动
+	drv_mtk_cleanup ${phy_name}
 
 #接口上线
 #加锁

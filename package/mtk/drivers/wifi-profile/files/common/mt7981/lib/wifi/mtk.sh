@@ -1,10 +1,11 @@
 #!/bin/sh
 #
 # Copyright (c) 2014 OpenWrt
-# Copyright (C) 2013-2015 D-Team Technology Co.,Ltd. ShenZhen
+# Copyright (c) 2013-2015 D-Team Technology Co.,Ltd. ShenZhen
 # Copyright (c) 2005-2015, lintel <lintel.huang@gmail.com>
 # Copyright (c) 2013, Hoowa <hoowa.sun@gmail.com>
 # Copyright (c) 2015-2017, GuoGuo <gch981213@gmail.com>
+# Copyright (c) 2022-2024, nanchuci <nanchuci023@gmail.com>
 #
 # 	Detect script for MT7615/MT7915/MT798X DBDC mode
 #
