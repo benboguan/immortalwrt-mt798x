@@ -46,6 +46,48 @@
  
  #define LUA_REG(type,op) \
  	{ #op, iwinfo_L_##type##_##op }
+--- a/iwinfo_cli.c
++++ b/iwinfo_cli.c
+@@ -770,6 +770,20 @@ static void print_freqlist(const
+ 	}
+ }
+ 
++
++static void print_channel_utilization(const struct iwinfo_ops *iw, const char *ifname)
++{
++	int channel_utilization;
++	
++	if (iw->channel_utilization && iw->channel_utilization(ifname, &channel_utilization))
++	{
++		printf("Get channel utilization error\n");
++		return;
++	}
++
++	printf("%d\n",channel_utilization);
++}
++
+ 
+ static void print_assoclist(const struct iwinfo_ops *iw, const char *ifname)
+ {
+@@ -923,6 +937,7 @@ int main(int argc, char **argv)
+ 			"	iwinfo <device> freqlist\n"
+ 			"	iwinfo <device> assoclist\n"
+ 			"	iwinfo <device> countrylist\n"
++			"	iwinfo <device> utilization\n"
+ 			"	iwinfo <device> htmodelist\n"
+ 			"	iwinfo <backend> phyname <section>\n"
+ 		);
+@@ -1020,6 +1035,10 @@ int main(int argc, char **argv)
+ 					print_countrylist(iw, argv[1]);
+ 					break;
+ 
++				case 'u':
++					print_channel_utilization(iw, argv[1]);
++					break;
++
+ 				case 'h':
+ 					print_htmodelist(iw, argv[1]);
+ 					break;
 --- a/iwinfo_lua.c
 +++ b/iwinfo_lua.c
 @@ -777,6 +777,36 @@ LUA_WRAP_STRUCT_OP(nl80211,mbssid_suppor
