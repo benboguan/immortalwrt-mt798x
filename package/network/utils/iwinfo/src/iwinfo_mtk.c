@@ -9,6 +9,77 @@ static inline int mtk_ioctl(const char *ifname, int cmd, struct iwreq *wrq)
 	return iwinfo_ioctl(cmd, wrq);
 }
 
+static char * mtk_hostapd_info(const char *ifname)
+{
+	char device[6];
+	char path[1024] = { 0 };
+	static char buf[16384] = { 0 };
+	FILE *conf;
+
+	// setting up the device
+	strncpy(device, ifname, 5);
+	device[5]='\0';
+
+	snprintf(path, sizeof(path), "/etc/hostapd_%s.conf", device);
+
+	if ((conf = fopen(path, "r")) != NULL)
+	{
+		fread(buf, sizeof(buf) - 1, 1, conf);
+		fclose(conf);
+
+		return buf;
+	}
+
+	return NULL;
+}
+
+static char * mtk_getval(const char *ifname, const char *buf, const char *key)
+{
+	int i, len;
+	char lkey[64] = { 0 };
+	const char *ln = buf;
+	static char lval[256] = { 0 };
+
+	int matched_if = ifname ? 0 : 1;
+
+	for( i = 0, len = strlen(buf); i < len; i++ )
+	{
+		if (!lkey[0] && (buf[i] == ' ' || buf[i] == '\t'))
+		{
+			ln++;
+		}
+		else if (!lkey[0] && (buf[i] == '='))
+		{
+			if ((&buf[i] - ln) > 0)
+				memcpy(lkey, ln, min(sizeof(lkey) - 1, &buf[i] - ln));
+		}
+		else if (buf[i] == '\n')
+		{
+			if (lkey[0])
+			{
+				memcpy(lval, ln + strlen(lkey) + 1,
+					min(sizeof(lval) - 1, &buf[i] - ln - strlen(lkey) - 1));
+
+				if ((ifname != NULL) &&
+				    (!strcmp(lkey, "interface") || !strcmp(lkey, "bss")) )
+				{
+					matched_if = !strcmp(lval, ifname);
+				}
+				else if (matched_if && !strcmp(lkey, key))
+				{
+					return lval;
+				}
+			}
+
+			ln = &buf[i+1];
+			memset(lkey, 0, sizeof(lkey));
+			memset(lval, 0, sizeof(lval));
+		}
+	}
+
+	return NULL;
+}
+
 static int is_5g(const char *ifname)
 {
 	const char *phy = NULL;
@@ -114,6 +185,7 @@ static int mtk_get_mode(const char *ifname, int *buf)
 
 static int mtk_get_ssid(const char *ifname, char *buf)
 {
+	char *ssid;
 	struct iwreq wrq = {};
 
 	wrq.u.essid.pointer = buf;
@@ -121,12 +193,20 @@ static int mtk_get_ssid(const char *ifname, char *buf)
 
 	if(mtk_ioctl(ifname, SIOCGIWESSID, &wrq) >= 0)
 		return 0;
+	else if ((ssid = mtk_hostapd_info(ifname)) &&
+	         (ssid = mtk_getval(ifname, ssid, "ssid")))
+	{
+		memcpy(buf, ssid, strlen(ssid));
+		return 0;
+	}
 
 	return -1;
 }
 
 static int mtk_get_bssid(const char *ifname, char *buf)
 {
+	char *bssid;
+	unsigned char mac[6];
 	struct iwreq wrq;
 
 	if(mtk_ioctl(ifname, SIOCGIWAP, &wrq) >= 0)
@@ -135,6 +215,21 @@ static int mtk_get_bssid(const char *ifname, char *buf)
 			(uint8_t)wrq.u.ap_addr.sa_data[0], (uint8_t)wrq.u.ap_addr.sa_data[1],
 			(uint8_t)wrq.u.ap_addr.sa_data[2], (uint8_t)wrq.u.ap_addr.sa_data[3],
 			(uint8_t)wrq.u.ap_addr.sa_data[4], (uint8_t)wrq.u.ap_addr.sa_data[5]);
+
+		return 0;
+	}
+	else if ((bssid = mtk_hostapd_info(ifname)) &&
+	         (bssid = mtk_getval(ifname, bssid, "bssid")))
+	{
+		mac[0] = strtol(&bssid[0],  NULL, 16);
+		mac[1] = strtol(&bssid[3],  NULL, 16);
+		mac[2] = strtol(&bssid[6],  NULL, 16);
+		mac[3] = strtol(&bssid[9],  NULL, 16);
+		mac[4] = strtol(&bssid[12], NULL, 16);
+		mac[5] = strtol(&bssid[15], NULL, 16);
+
+		sprintf(buf, "%02X:%02X:%02X:%02X:%02X:%02X",
+		        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
 		return 0;
 	}
@@ -330,13 +425,10 @@ static int mtk_get_noise(const char *ifname, int *buf)
 		}
 		else
 		{
-			/* if (is_6g(ifname))
-				*buf = nr - 35;
-			else if (is_5g(ifname))
-				*buf = nr - 30;
+			if (is_5g(ifname))
+				*buf = nr - 5;
 			else
-				*buf = nr - 25; */
-			*buf = nr;
+				*buf = nr;
 		}
 
 		return 0;
@@ -916,12 +1008,19 @@ static int mtk_get_htmodelist(const char *ifname, int *buf)
 
 static int mtk_get_htmode(const char *ifname, int *buf)
 {
+	char *res;
+	int he = 0;
+	char *ieee80211ax = NULL;
 	struct iwreq wrq;
 	unsigned char bw = 0;
 	unsigned long wmode = 0;
 
-	if (!mtk_is_ifup(ifname))
+	res = mtk_hostapd_info(ifname);
+	if (!mtk_is_ifup(ifname) || !res)
 		return -1;
+
+	if (NULL != (ieee80211ax = mtk_getval(NULL, res, "ieee80211ax")))
+		he = 1;
 
 	wrq.u.data.length = sizeof(bw);
 	wrq.u.data.pointer = &bw;
@@ -935,7 +1034,7 @@ static int mtk_get_htmode(const char *ifname, int *buf)
 
 		if (mtk_ioctl(ifname, RT_PRIV_IOCTL, &wrq) >= 0)
 		{
-			if (WMODE_CAP_AX(wmode)) {
+			if (WMODE_CAP_AX(wmode) || he) {
 				switch (bw) {
 					case BW_20: *buf = IWINFO_HTMODE_HE20; break;
 					case BW_40: *buf = IWINFO_HTMODE_HE40; break;
@@ -968,6 +1067,9 @@ static int mtk_get_htmode(const char *ifname, int *buf)
 
 static int mtk_get_encryption(const char *ifname, char *buf)
 {
+	int i;
+	char k[9];
+	char *val, *res;
 	struct iwreq wrq;
 	struct security_info secinfo;
 	unsigned int authMode, encryMode;
@@ -1048,6 +1150,75 @@ static int mtk_get_encryption(const char *ifname, char *buf)
 			c->enabled = 0;
 		else
 			c->enabled = 1;
+
+		return 0;
+	}
+	/* Hostapd */
+	else if ((res = mtk_hostapd_info(ifname)))
+	{
+		if ((val = mtk_getval(ifname, res, "wpa")) != NULL)
+			c->wpa_version = atoi(val);
+
+		val = mtk_getval(ifname, res, "wpa_key_mgmt");
+
+		if (!val || strstr(val, "PSK"))
+			c->auth_suites |= IWINFO_KMGMT_PSK;
+
+		if (val && (strstr(val, "EAP") || strstr(val, "802.1X")))
+			c->auth_suites |= IWINFO_KMGMT_8021x;
+
+		if (val && strstr(val, "NONE"))
+			c->auth_suites |= IWINFO_KMGMT_NONE;
+
+		if ((val = mtk_getval(ifname, res, "wpa_pairwise")) != NULL)
+		{
+			if (strstr(val, "TKIP"))
+				c->pair_ciphers |= IWINFO_CIPHER_TKIP;
+
+			if (strstr(val, "CCMP"))
+				c->pair_ciphers |= IWINFO_CIPHER_CCMP;
+
+			if (strstr(val, "NONE"))
+				c->pair_ciphers |= IWINFO_CIPHER_NONE;
+		}
+
+		if ((val = mtk_getval(ifname, res, "auth_algs")) != NULL)
+		{
+			switch(atoi(val)) {
+				case 1:
+					c->auth_algs |= IWINFO_AUTH_OPEN;
+					break;
+
+				case 2:
+					c->auth_algs |= IWINFO_AUTH_SHARED;
+					break;
+
+				case 3:
+					c->auth_algs |= IWINFO_AUTH_OPEN;
+					c->auth_algs |= IWINFO_AUTH_SHARED;
+					break;
+
+				default:
+					break;
+			}
+
+			for (i = 0; i < 4; i++)
+			{
+				snprintf(k, sizeof(k), "wep_key%d", i);
+
+				if ((val = mtk_getval(ifname, res, k)))
+				{
+					if ((strlen(val) == 5) || (strlen(val) == 10))
+						c->pair_ciphers |= IWINFO_CIPHER_WEP40;
+
+					else if ((strlen(val) == 13) || (strlen(val) == 26))
+						c->pair_ciphers |= IWINFO_CIPHER_WEP104;
+				}
+			}
+		}
+
+		c->group_ciphers = c->pair_ciphers;
+		c->enabled = (c->wpa_version || c->pair_ciphers) ? 1 : 0;
 
 		return 0;
 	}

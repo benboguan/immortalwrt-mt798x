@@ -14,7 +14,15 @@
  	IWINFO_CLI_LDFLAGS += -lnl-tiny
 --- a/include/iwinfo.h
 +++ b/include/iwinfo.h
-@@ -412,6 +412,7 @@ extern const struct iwinfo_ops wext_ops;
+@@ -401,6 +401,7 @@ extern const struct iwinfo_ops wext_ops;
+ 	int (*lookup_phy)(const char *, char *);
+ 	int (*phy_path)(const char *phyname, const char **path);
+ 	void (*close)(void);
++	int (*channel_utilization)(const char *, int *);
+ };
+ 
+ const char * iwinfo_type(const char *ifname);
+@@ -412,6 +413,7 @@ extern const struct iwinfo_ops wext_ops;
  extern const struct iwinfo_ops madwifi_ops;
  extern const struct iwinfo_ops nl80211_ops;
  extern const struct iwinfo_ops wl_ops;

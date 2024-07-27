@@ -12,6 +12,8 @@
 #define INT64	long long
 #define INT 	int
 
+#define min(x, y) ((x) < (y)) ? (x) : (y)
+
 typedef union _HTTRANSMIT_SETTING_FIX {
 	struct {
 		unsigned short MCS:6;
