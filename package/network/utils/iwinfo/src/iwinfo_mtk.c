@@ -1270,7 +1270,7 @@ static int mtk_get_l1profile_attr(const char *attr, char *data, int len)
 
 static int mtk_get_hardware_id_from_l1profile(struct iwinfo_hardware_id *id)
 {
-	const char *attr = "INDEX[0-9]";
+	const char *attr = "INDEX[0-9]+";
 	char buf[16] = {0};
 
 	if (mtk_get_l1profile_attr(attr, buf, sizeof(buf)) < 0)
@@ -1288,7 +1288,7 @@ static int mtk_get_hardware_id_from_l1profile(struct iwinfo_hardware_id *id)
 		id->subsystem_device_id = id->device_id;
 	} else if (!strcmp(buf, "MT7916")) {
 		id->vendor_id = 0x14c3;
-		id->device_id = 0x7906;
+		id->device_id = 0x7916 | 0x7906;
 		id->subsystem_vendor_id = id->vendor_id;
 		id->subsystem_device_id = id->device_id;
 	} else if (!strcmp(buf, "MT7915")) {

@@ -193,10 +193,11 @@
  	luaL_register(L, NULL, R_common);
 --- a/devices.txt
 +++ b/devices.txt
-@@ -189,6 +189,8 @@
+@@ -189,6 +189,9 @@
  0x14c3 0x7662 0x14c3 0x7662    0      0  "MediaTek" "MT76x2E"
  0x14c3 0x7915 0x14c3 0x7915    0      0  "MediaTek" "MT7915E"
  0x14c3 0x7906 0x14c3 0x7906    0      0  "MediaTek" "MT7916AN"
++0x14c3 0x7916 0x14c3 0x7916    0      0  "MediaTek" "MT7916AN"
 +0x14c3 0x7986 0x14c3 0x7986    0      0  "MediaTek" "MT7986"
 +0x14c3 0x7981 0x14c3 0x7981    0      0  "MediaTek" "MT7981"
  0x14e4 0xaa52 0x14e4 0xaa52    0      0  "Broadcom" "BCM43602"
@@ -227,8 +228,8 @@
  
 +	if (read(fd, &ident, sizeof(ident)) != -1)
 +	{
-+		if (ident == 0x7981 || ident == 0x7986 || ident == 0x7906 || ident == 0x7915
-+			|| ident == 0x8179 || ident == 0x8679 || ident == 0x0679 || ident == 0x1579)
++		if (ident == 0x7981 || ident == 0x7986 || ident == 0x7906 || ident == 0x7916 || ident == 0x7915
++			|| ident == 0x8179 || ident == 0x8679 || ident == 0x0679 || ident == 0x1679 || ident == 0x1579)
 +		{
 +			if ((ident & 0xff) == 0x79)
 +				id->device_id = (ident >> 8) | (ident & 0x00ff) << 8;
