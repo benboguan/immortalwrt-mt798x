@@ -11,7 +11,6 @@
 #
 # 	嘿，对着屏幕的哥们,为了表示对原作者辛苦工作的尊重，任何引用跟借用都不允许你抹去所有作者的信息,请保留这段话。
 #
-
 append DRIVERS "mtk"
 
 . /lib/functions.sh
@@ -21,12 +20,12 @@ board=$(board_name)
 
 mtk_get_first_if_mac() {
 	local wlan_mac=""
+	Factory_part=$(find_mtd_part Factory)
 	case $board in
 	*)
 		mac_offset="0x4"
-		factory_part=$(find_mtd_part Factory)
-		[ -z "$factory_part" ] && factory_part=$(find_mtd_part factory)
-		wlan_mac=$(dd bs=1 skip=$mac_offset count=6 if=$factory_part 2>/dev/null | /usr/sbin/maccalc bin2mac)
+		[ -z "$Factory_part" ] && Factory_part=$(find_mtd_part factory)
+		wlan_mac=$(dd bs=1 skip=$mac_offset count=6 if=$Factory_part 2>/dev/null | /usr/sbin/maccalc bin2mac)
 		[ "$wlan_mac" == "ff:ff:ff:ff:ff:ff" -o "$wlan_mac" == "00:00:00:00:00:00" ] && wlan_mac="fc:a0:5a:00:79:15"
 		;;
 	esac
@@ -59,9 +58,11 @@ is_support_11ax_ht160_dev()
 }
 
 detect_mtk() {
-	local macaddr ifname
+	local macaddr
 	hostname=$(uci -q get system.@system[-1].hostname)
 	config_load wireless
+
+	json_load_file /etc/board.json
 
 	[ -n "$(is_11ax_dbdc_dev)" -o -n "$(is_11ac_dbdc_dev)" ] || return 0
 

@@ -7,11 +7,13 @@
 # Copyright (c) 2020,2023, jjm2473 <jjm2473@gmail.com>
 # Copyright (c) 2022,2023, nanchuci <nanchuci023@gmail.com>
 #
-# 	netifd config script for MT7615/MT7915/MT798X DBDC mode.
+# 	netifd config script for MT7615/MT7915/MT7916/MT798X DBDC mode.
 #
 # 	嘿，对着屏幕的哥们,为了表示对原作者辛苦工作的尊重，任何引用跟借用都不允许你抹去所有作者的信息,请保留这段话。
 #
 . /lib/netifd/netifd-wireless.sh
+. /lib/netifd/hostapd.sh
+. /lib/functions/system.sh
 
 init_wireless_driver "$@"
 
@@ -677,6 +679,18 @@ mtk_vif_post_config() {
 	wireless_add_vif "$name" "$ifname"
 }
 
+is_ax4200_dev() {
+	[ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0_profile_path |grep mt7986-ax4200)" ] && echo yes;
+
+	return 0;
+}
+
+is_ax6000_dev() {
+	[ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0_profile_path |grep mt7986-ax6000)" ] && echo yes;
+
+	return 0;
+}
+
 mtk_vif_down() {
 	phy_name=${1}
 	case "$phy_name" in
@@ -696,12 +710,18 @@ mtk_vif_down() {
 }
 
 drv_mtk_cleanup() {
+	modname=""
+
 	modname="/lib/modules/*/mt_wifi.ko"
 
 	[ -f $modname ] && {
-		sleep 1
+		echo "unload mtk wifi module..."
 		rmmod $modname
-		insmod $modname
+		sleep 2
+		echo "reload mtk wifi module..."
+		modprobe $modname
+		sleep 1
+		# insmod $modname
 	}
 
 	return
@@ -797,9 +817,22 @@ drv_mtk_setup() {
 			MESH_IF="mesh0"
 			MTWIFI_IFPREFIX=""
 			MTWIFI_DEF_BAND="g"
-			MTWIFI_PROFILE_PATH="${MTWIFI_PROFILE_DIR}mt7981.dbdc.b0.dat"
-			MTWIFI_CMD_PATH="${MTWIFI_PROFILE_DIR}mt7981.dbdc.cmd_b0.sh"
-			MTWIFI_CMD_OPATH="${MTWIFI_PROFILE_DIR}mt7981.dbdc.cmd_b1.sh"
+			if [ -n "$(is_ax4200_dev)" ]; then
+				MTWIFI_PROFILE_PATH="${MTWIFI_PROFILE_DIR}mt7986-ax4200.dbdc.b0.dat"
+				MTWIFI_CMD_PATH="${MTWIFI_PROFILE_DIR}mt7986-ax4200.dbdc.cmd_b0.sh"
+				MTWIFI_CMD_OPATH="${MTWIFI_PROFILE_DIR}mt7986-ax4200.dbdc.cmd_b1.sh"
+			elif [ -n "$(is_ax6000_dev)" ]; then
+				RddAntSel=0
+				HT_RxStream=4
+				HT_TxStream=4
+				MTWIFI_PROFILE_PATH="${MTWIFI_PROFILE_DIR}mt7986-ax6000.dbdc.b0.dat"
+				MTWIFI_CMD_PATH="${MTWIFI_PROFILE_DIR}mt7986-ax6000.dbdc.cmd_b0.sh"
+				MTWIFI_CMD_OPATH="${MTWIFI_PROFILE_DIR}mt7986-ax6000.dbdc.cmd_b1.sh"
+			else
+				MTWIFI_PROFILE_PATH="${MTWIFI_PROFILE_DIR}mt7981.dbdc.b0.dat"
+				MTWIFI_CMD_PATH="${MTWIFI_PROFILE_DIR}mt7981.dbdc.cmd_b0.sh"
+				MTWIFI_CMD_OPATH="${MTWIFI_PROFILE_DIR}mt7981.dbdc.cmd_b1.sh"
+			fi
 		;;
 		rax0)
 			WirelessMode=17
@@ -807,9 +840,24 @@ drv_mtk_setup() {
 			MESH_IF="meshx0"
 			MTWIFI_IFPREFIX="x"
 			MTWIFI_DEF_BAND="a"
-			MTWIFI_PROFILE_PATH="${MTWIFI_PROFILE_DIR}mt7981.dbdc.b1.dat"
-			MTWIFI_CMD_PATH="${MTWIFI_PROFILE_DIR}mt7981.dbdc.cmd_b1.sh"
-			MTWIFI_CMD_OPATH="${MTWIFI_PROFILE_DIR}mt7981.dbdc.cmd_b0.sh"
+			if [ -n "$(is_ax4200_dev)" ]; then
+				HT_RxStream=3
+				HT_TxStream=3
+				MTWIFI_PROFILE_PATH="${MTWIFI_PROFILE_DIR}mt7986-ax4200.dbdc.b1.dat"
+				MTWIFI_CMD_PATH="${MTWIFI_PROFILE_DIR}mt7986-ax4200.dbdc.cmd_b1.sh"
+				MTWIFI_CMD_OPATH="${MTWIFI_PROFILE_DIR}mt7986-ax4200.dbdc.cmd_b0.sh"
+			elif [ -n "$(is_ax6000_dev)" ]; then
+				RddAntSel=2
+				HT_RxStream=4
+				HT_TxStream=4
+				MTWIFI_PROFILE_PATH="${MTWIFI_PROFILE_DIR}mt7986-ax6000.dbdc.b1.dat"
+				MTWIFI_CMD_PATH="${MTWIFI_PROFILE_DIR}mt7986-ax6000.dbdc.cmd_b1.sh"
+				MTWIFI_CMD_OPATH="${MTWIFI_PROFILE_DIR}mt7986-ax6000.dbdc.cmd_b0.sh"
+			else
+				MTWIFI_PROFILE_PATH="${MTWIFI_PROFILE_DIR}mt7981.dbdc.b1.dat"
+				MTWIFI_CMD_PATH="${MTWIFI_PROFILE_DIR}mt7981.dbdc.cmd_b1.sh"
+				MTWIFI_CMD_OPATH="${MTWIFI_PROFILE_DIR}mt7981.dbdc.cmd_b0.sh"
+			fi
 		;;
 		*)
 			echo "Unknown phy:$phy_name"
@@ -1168,9 +1216,9 @@ HT_MpduDensity=4
 HT_OpMode=${greenfield:-0}
 HT_PROTECT=1
 HT_RDG=1
-HT_RxStream=2
+HT_RxStream=${HT_RxStream:-2}
 HT_STBC=${tx_stbc:-1}
-HT_TxStream=2
+HT_TxStream=${HT_TxStream:-2}
 IcapMode=0
 idle_timeout_interval=0
 IdsEnable=0

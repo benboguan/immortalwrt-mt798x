@@ -169,11 +169,14 @@ define Package/wifi-script/install
 	$(INSTALL_DIR) $(1)/lib/netifd/wireless/
 	$(INSTALL_DIR) $(1)/etc/uci-defaults/
 
-	if [ "$$(CONFIG_first_card_name)" = "MT7981" -o "$$(CONFIG_second_card_name)" = "MT7981" ] ; then \
-		$(INSTALL_DATA) ./files/common/mt7981/lib/wifi/mtk.sh $(1)/lib/wifi/; \
-		$(INSTALL_BIN) ./files/common/mt7981/lib/netifd/wireless/mtk.sh $(1)/lib/netifd/wireless/; \
-		$(INSTALL_DATA) ./files/common/mt7981/etc/uci-defaults/10_mt798x_dbdc $(1)/etc/uci-defaults/10_mt798x_dbdc ; \
-	fi
+	$(INSTALL_DATA) ./files/common/mt79xx/lib/wifi/mtk.sh $(1)/lib/wifi/; \
+	$(INSTALL_BIN) ./files/common/mt79xx/lib/netifd/wireless/mtk.sh $(1)/lib/netifd/wireless/; \
+	$(INSTALL_DATA) ./files/common/mt79xx/etc/uci-defaults/10_mt798x_dbdc $(1)/etc/uci-defaults/10_mt798x_dbdc ; \
+	# if [ "$$(CONFIG_first_card_name)" = "MT7981" -o "$$(CONFIG_second_card_name)" = "MT7981" ] ; then \
+		# $(INSTALL_DATA) ./files/common/mt7981/lib/wifi/mtk.sh $(1)/lib/wifi/; \
+		# $(INSTALL_BIN) ./files/common/mt7981/lib/netifd/wireless/mtk.sh $(1)/lib/netifd/wireless/; \
+		# $(INSTALL_DATA) ./files/common/mt7981/etc/uci-defaults/10_mt798x_dbdc $(1)/etc/uci-defaults/10_mt798x_dbdc ; \
+	# fi
 endef
 
 define Package/wifi-dats/install
