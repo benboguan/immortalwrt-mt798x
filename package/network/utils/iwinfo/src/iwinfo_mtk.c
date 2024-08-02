@@ -274,7 +274,7 @@ static int mtk_get_center_chan1(const char *ifname, int *buf)
 	wrq.u.data.pointer = &bw;
 	wrq.u.data.flags = OID_802_11_BW;
 
-	if (mtk_ioctl(ifname, SIOCSIWFREQ, &wrq) >= 0)
+	if (mtk_ioctl(ifname, SIOCGIWFREQ, &wrq) >= 0)
 	{
 		channel = wrq.u.freq.m;
 		wrq.u.data.length = sizeof(wmode);
