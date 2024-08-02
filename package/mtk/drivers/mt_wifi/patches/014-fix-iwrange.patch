@@ -1,6 +1,6 @@
 --- a/mt_wifi/os/linux/ap_ioctl.c
 +++ b/mt_wifi/os/linux/ap_ioctl.c
-@@ -824,8 +824,107 @@ INT rt28xx_ap_ioctl(void *net_dev_obj, v
+@@ -824,8 +824,108 @@ INT rt28xx_ap_ioctl(void *net_dev_obj, v
  		break;
  	}
  	case SIOCGIWRANGE:	/*Get range of parameters */
@@ -28,9 +28,10 @@
 +				range.we_version_compiled = WIRELESS_EXT;
 +				range.we_version_source = 21;
 +				range.max_qual.qual = 100;
-+				range.max_qual.level = 0x100 - 127; /* dB */
++				range.max_qual.level = 0; /* dB */
 +				range.max_qual.noise = 0x100 - 127; /* dB */
-+				range.sensitivity = 65535;
++				/* range.max_qual.updated = 10;
++				range.sensitivity = 65535; */
 +
 +				/* RTS and fragmentation thresholds */
 +				range.min_rts = 0;
@@ -38,12 +39,12 @@
 +				range.min_frag = 256;
 +				range.max_frag = 2346;
 +
-+				range.max_encoding_tokens = 4;
++				/* range.max_encoding_tokens = 4;
 +				range.num_encoding_sizes = 4;
 +				range.encoding_size[0] = 5;
 +				range.encoding_size[1] = 13;
 +				range.encoding_size[2] = 32;
-+				range.encoding_size[3] = 16;
++				range.encoding_size[3] = 16; */
 +
 +				/* Transmit Power - values are in mW */
 +				range.num_txpower = 2;
