@@ -417,7 +417,7 @@ static int mtk_get_noise(const char *ifname, int *buf)
 	if (mtk_ioctl(ifname, SIOCGIWSTATS, &wrq) >= 0)
 	{
 		nr = (stats.qual.updated & IW_QUAL_DBM)
-			? (stats.qual.noise - 0x127) : stats.qual.noise;
+			? (stats.qual.noise - 0x100) : stats.qual.noise;
 
 		if (nr <= -127)
 		{
@@ -646,6 +646,25 @@ static int mtk_get_txpwrlist(const char *ifname, char *buf, int *len)
 	return 0;
 }
 
+static const char* format_chan_width(bool vht, uint8_t width)
+{
+	if (!vht && width < ARRAY_SIZE(ht_chan_width))
+		switch (ht_chan_width[width]) {
+			case 20: return "20 MHz";
+			case 2040: return "40 MHz or higher";
+		}
+
+	if (vht && width < ARRAY_SIZE(vht_chan_width))
+		switch (vht_chan_width[width]) {
+			case 40: return "20 or 40 MHz";
+			case 80: return "80 MHz";
+			case 8080: return "80+80 MHz";
+			case 160: return "160 MHz";
+		}
+
+	return "unknown";
+}
+
 static int mtk_get_scanlist_dump(const char *ifname, int index, char *data, size_t len)
 {
 	struct iwreq wrq = {};
@@ -796,27 +815,29 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 				// if (strstr(extch, "ABOVE")) {
 				if (strncmp(extch, "ABOVE", 5)) {
 					ht_chan_info->secondary_chan_off = (intptr_t)(uint8_t *)(ht_secondary_offset[1]);
-					ht_chan_info->chan_width = ht_chan_width[1];
+					// ht_chan_info->chan_width = ht_chan_width[1];
 				} else if (strncmp(extch, "BELOW", 5)) {
 					ht_chan_info->secondary_chan_off = (intptr_t)(uint8_t *)(ht_secondary_offset[3]);
-					ht_chan_info->chan_width = ht_chan_width[1];
+					// ht_chan_info->chan_width = ht_chan_width[1];
 				} else if (strncmp(extch, "NONE", 4)) {
 					ht_chan_info->secondary_chan_off = (intptr_t)(uint8_t *)(ht_secondary_offset[0]);
-					ht_chan_info->chan_width = ht_chan_width[0];
+					// ht_chan_info->chan_width = ht_chan_width[0];
 				}
+				format_chan_width(false, ht_chan_info->chan_width);
 			}
 
 			if (vht_chan_info->center_chan_1) {
 				if (mtk_get_center_chan1(ifname, &center_chan1))
 					vht_chan_info->center_chan_1 = center_chan1;
 				if (mtk_get_center_chan1(ifname, &bw)) {
-					if (bw == BW_40)
+					/* if (bw == BW_40)
 						vht_chan_info->chan_width = vht_chan_width[0];
 					else if (bw == BW_80)
 						vht_chan_info->chan_width = vht_chan_width[1];
 					else if (bw == BW_160)
 						vht_chan_info->chan_width = vht_chan_width[2];
-					// e->vht_chan_info.center_chan_2;
+					// e->vht_chan_info.center_chan_2; */
+					format_chan_width(true, vht_chan_info->chan_width);
 				}
 			}
 
