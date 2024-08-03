@@ -30,8 +30,8 @@
 +				range.max_qual.qual = 100;
 +				range.max_qual.level = 0; /* dB */
 +				range.max_qual.noise = 0x100 - 127; /* dB */
-+				/* range.max_qual.updated = 10;
-+				range.sensitivity = 65535; */
++				range.max_qual.updated = 10;
++				/* range.sensitivity = 65535; */
 +
 +				/* RTS and fragmentation thresholds */
 +				range.min_rts = 0;
@@ -39,12 +39,12 @@
 +				range.min_frag = 256;
 +				range.max_frag = 2346;
 +
-+				/* range.max_encoding_tokens = 4;
++				range.max_encoding_tokens = 4;
 +				range.num_encoding_sizes = 4;
 +				range.encoding_size[0] = 5;
 +				range.encoding_size[1] = 13;
 +				range.encoding_size[2] = 32;
-+				range.encoding_size[3] = 16; */
++				range.encoding_size[3] = 16;
 +
 +				/* Transmit Power - values are in mW */
 +				range.num_txpower = 2;
@@ -53,15 +53,15 @@
 +				range.txpower_capa = IW_TXPOW_MWATT;
 +
 +				/* Only support retry limits */
-+				range.retry_capa = IW_RETRY_LIMIT;
++				/* range.retry_capa = IW_RETRY_LIMIT;
 +				range.retry_flags = IW_RETRY_LIMIT;
-+				range.r_time_flags = 0;
++				range.r_time_flags = 0; */
 +				/* SRL and LRL limits */
-+				range.min_retry = 1;
-+				range.max_retry = 255;
++				/* range.min_retry = 1;
++				range.max_retry = 255; */
 +				/* Retry lifetime limits unsupported */
-+				range.min_r_time = 0;
-+				range.max_r_time = 0;
++				/* range.min_r_time = 0;
++				range.max_r_time = 0; */
 +
 +				range.enc_capa = IW_ENC_CAPA_WPA;
 +				range.enc_capa |= IW_ENC_CAPA_CIPHER_TKIP;
