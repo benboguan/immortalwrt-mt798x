@@ -417,7 +417,7 @@ static int mtk_get_noise(const char *ifname, int *buf)
 	if (mtk_ioctl(ifname, SIOCGIWSTATS, &wrq) >= 0)
 	{
 		nr = (stats.qual.updated & IW_QUAL_DBM)
-			? (stats.qual.noise - 0x127) : stats.qual.noise;
+			? (stats.qual.noise - 0x117) : stats.qual.noise;
 
 		if (nr <= -127)
 		{
