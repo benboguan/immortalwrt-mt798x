@@ -949,14 +949,84 @@ static int mtk_get_countrylist(const char *ifname, char *buf, int *len)
 	return 0;
 }
 
-static int mtk_get_hwmodelist(const char *ifname, int *buf)
+static int mtk_get_band(const char *ifname, int *buf)
 {
 	char chans[IWINFO_BUFSIZE] = { 0 };
 	struct iwinfo_freqlist_entry *e = NULL;
+	struct uci_section *s;
+	const char* band = NULL;
 	int len = 0;
 
 	*buf = 0;
 
+	/* get hwmode base on uci band config */
+	s = iwinfo_uci_get_radio(ifname, "mtk");
+	if (!s)
+		goto uciout;
+	
+	band = uci_lookup_option_string(uci_ctx, s, "band");
+
+uciout:
+	iwinfo_uci_free();
+
+	if (band) {
+		if (!strcmp(band,"2g"))
+			*buf = IWINFO_BAND_24;
+		else if (!strcmp(band,"5g"))
+			*buf = IWINFO_BAND_5;
+		return 0;
+	}
+
+	/* get band base on iwrange */
+	if (!mtk_get_freqlist(ifname, chans, &len) )
+	{
+		for (e = (struct iwinfo_freqlist_entry *)chans; e->channel; e++ )
+		{
+			if (e->channel <= 14 ) //2.4Ghz
+			{
+				*buf = IWINFO_BAND_24;
+			}
+			else //5Ghz
+			{
+				*buf = IWINFO_BAND_5;
+			}
+		}
+
+		return 0;
+	}
+
+	return -1;
+}
+
+static int mtk_get_hwmodelist(const char *ifname, int *buf)
+{
+	char chans[IWINFO_BUFSIZE] = { 0 };
+	struct iwinfo_freqlist_entry *e = NULL;
+	struct uci_section *s;
+	const char* band = NULL;
+	int len = 0;
+
+	*buf = 0;
+
+	/* get hwmode base on uci band config */
+	s = iwinfo_uci_get_radio(ifname, "mtk");
+	if (!s)
+		goto uciout;
+	
+	band = uci_lookup_option_string(uci_ctx, s, "band");
+
+uciout:
+	iwinfo_uci_free();
+
+	if (band) {
+		if (!strcmp(band,"2g"))
+			*buf = (IWINFO_80211_B | IWINFO_80211_G | IWINFO_80211_N | IWINFO_80211_AX);
+		else if (!strcmp(band,"5g"))
+			*buf = (IWINFO_80211_A | IWINFO_80211_N | IWINFO_80211_AC | IWINFO_80211_AX);
+		return 0;
+	}
+
+	/* get hwmode base on iwrange */
 	if (!mtk_get_freqlist(ifname, chans, &len) )
 	{
 		for (e = (struct iwinfo_freqlist_entry *)chans; e->channel; e++ )
@@ -981,10 +1051,32 @@ static int mtk_get_htmodelist(const char *ifname, int *buf)
 {
 	char chans[IWINFO_BUFSIZE] = { 0 };
 	struct iwinfo_freqlist_entry *e = NULL;
+	struct uci_section *s;
+	const char* band = NULL;
 	int len = 0;
 
 	*buf = 0;
 
+	/* get htmode base on uci band config */
+	s = iwinfo_uci_get_radio(ifname, "mtk");
+	if (!s)
+		goto uciout;
+	
+	band = uci_lookup_option_string(uci_ctx, s, "band");
+
+uciout:
+	iwinfo_uci_free();
+
+	if (band) {
+		if (!strcmp(band,"2g"))
+			*buf = (IWINFO_HTMODE_HT20 | IWINFO_HTMODE_HT40 | IWINFO_HTMODE_HE20 | IWINFO_HTMODE_HE40);
+		else if (!strcmp(band,"5g"))
+			*buf = (IWINFO_HTMODE_HT20 | IWINFO_HTMODE_HT40 | IWINFO_HTMODE_VHT20 | IWINFO_HTMODE_VHT40 | IWINFO_HTMODE_VHT80 | IWINFO_HTMODE_VHT80_80
+			| IWINFO_HTMODE_VHT160 | IWINFO_HTMODE_HE20 | IWINFO_HTMODE_HE40 | IWINFO_HTMODE_HE80 | IWINFO_HTMODE_HE80_80 | IWINFO_HTMODE_HE160);
+		return 0;
+	}
+
+	/* get htmode base on iwrange */
 	if (!mtk_get_freqlist(ifname, chans, &len) )
 	{
 		for (e = (struct iwinfo_freqlist_entry *)chans; e->channel; e++ )
@@ -1238,7 +1330,7 @@ static int mtk_get_mbssid_support(const char *ifname, int *buf)
 	return 0;
 }
 
-static int mtk_get_l1profile_attr(const char *attr, char *data, int len)
+static int mtk_get_l1profile_attr(const char *attr, const char *attr1, char *data, int len)
 {
 	FILE *fp;
 	char *key, *val, buf[512];
@@ -1255,7 +1347,7 @@ static int mtk_get_l1profile_attr(const char *attr, char *data, int len)
 		if (!key || !val || !*key || *key == '#')
 			continue;
 
-		if (!strcmp(key, attr))
+		if (!strcmp(key, attr) || !strcmp(key, attr1))
 		{
 			//printf("l1profile key=%s, val=%s\n", key, val);
 			snprintf(data, len, "%s", val);
@@ -1270,10 +1362,11 @@ static int mtk_get_l1profile_attr(const char *attr, char *data, int len)
 
 static int mtk_get_hardware_id_from_l1profile(struct iwinfo_hardware_id *id)
 {
-	const char *attr = "INDEX[0-9]+";
+	const char *attr = "INDEX0";
+	const char *attr1 = "INDEX1";
 	char buf[16] = {0};
 
-	if (mtk_get_l1profile_attr(attr, buf, sizeof(buf)) < 0)
+	if (mtk_get_l1profile_attr(attr, buf, sizeof(buf)) < 0 || mtk_get_l1profile_attr(attr1, buf, sizeof(buf)) < 0)
 		return -1;
 	
 	if (!strcmp(buf, "MT7981")) {
