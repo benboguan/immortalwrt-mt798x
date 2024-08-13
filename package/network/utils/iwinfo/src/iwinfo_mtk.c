@@ -1330,7 +1330,7 @@ static int mtk_get_mbssid_support(const char *ifname, int *buf)
 	return 0;
 }
 
-static int mtk_get_l1profile_attr(const char *attr[2], char *data, int len)
+static int mtk_get_l1profile_attr(const char *attr, char *data, int len)
 {
 	FILE *fp;
 	char *key, *val, buf[512];
@@ -1347,7 +1347,7 @@ static int mtk_get_l1profile_attr(const char *attr[2], char *data, int len)
 		if (!key || !val || !*key || *key == '#')
 			continue;
 
-		if (!strcmp(key, attr[2]))
+		if (!strcmp(key, attr))
 		{
 			//printf("l1profile key=%s, val=%s\n", key, val);
 			snprintf(data, len, "%s", val);
@@ -1362,7 +1362,7 @@ static int mtk_get_l1profile_attr(const char *attr[2], char *data, int len)
 
 static int mtk_get_hardware_id_from_l1profile(struct iwinfo_hardware_id *id)
 {
-	const char *attr[2] = {INDEX0, INDEX1};
+	const char *attr = "INDEX[0-9]+";
 	char buf[16] = {0};
 
 	if (mtk_get_l1profile_attr(attr, buf, sizeof(buf)) < 0)
