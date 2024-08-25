@@ -162,6 +162,20 @@ endef
 $(eval $(call KernelPackage,nf-flow))
 
 
+define KernelPackage/nf-flow-netlink
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Netfilter flowtable netlink support
+  KCONFIG:= \
+	CONFIG_NF_FLOW_TABLE_NETLINK
+  DEPENDS:=+kmod-nf-flow +kmod-nfnetlink
+  FILES:= \
+	$(LINUX_DIR)/net/netfilter/nf_flow_table_netlink.ko
+  AUTOLOAD:=$(call AutoProbe,nf_flow_table_netlink)
+endef
+
+$(eval $(call KernelPackage,nf-flow-netlink))
+
+
 define AddDepends/ipt
   SUBMENU:=$(NF_MENU)
   DEPENDS+= +kmod-ipt-core $(1)
