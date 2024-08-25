@@ -1,16 +1,6 @@
 --- a/scripts/netifd-wireless.sh
 +++ b/scripts/netifd-wireless.sh
-@@ -70,7 +70,8 @@ case "$band" in
- 
- 	case "$band" in
- 		2g) hwmode=g;;
--		5g|6g|60g) hwmode=a;;
-+		5g|6g) hwmode=a;;
-+		60g) hwmode=ad;;
- 		*)
- 			case "$hwmode" in
- 				*a) band=5g;;
-@@ -107,14 +108,16 @@ _wdev_wrapper() {
+@@ -108,14 +108,16 @@ _wdev_wrapper() {
  }
  
  _wdev_notify_init() {
@@ -31,7 +21,7 @@
  	json_add_object "data"
  }
  
-@@ -150,7 +153,7 @@ _wireless_add_vlan() {
+@@ -151,7 +153,7 @@ _wireless_add_vlan() {
  	local name="$1"; shift
  	local ifname="$1"; shift
  
@@ -40,20 +30,15 @@
  	json_add_string "ifname" "$ifname"
  	_wdev_add_variables "$@"
  	_wdev_notify
-@@ -217,9 +220,12 @@ case "$encryption" in
- 
- 	case "$encryption" in
- 		*tkip+aes|*tkip+ccmp|*aes+tkip|*ccmp+tkip) wpa_cipher="CCMP TKIP";;
-+		*ccmp256) wpa_cipher="CCMP-256";;
- 		*aes|*ccmp) wpa_cipher="CCMP";;
+@@ -230,6 +232,7 @@ case "$encryption" in
  		*tkip) wpa_cipher="TKIP";;
-+		*gcmp256) wpa_cipher="GCMP-256";;
+ 		*gcmp256) wpa_cipher="GCMP-256";;
  		*gcmp) wpa_cipher="GCMP";;
 +		wpa3-192*) wpa_cipher="GCMP-256";;
  	esac
  
  	# 802.11n requires CCMP for WPA
-@@ -251,11 +257,14 @@ case "$encryption" in
+@@ -261,11 +264,14 @@ case "$encryption" in
  		owe*)
  			auth_type=owe
  		;;
@@ -70,7 +55,7 @@
  		;;
  		psk3-mixed*|sae-mixed*)
  			auth_type=psk-sae
-@@ -326,6 +335,7 @@ for_each_interface() {
+@@ -336,6 +342,7 @@ for_each_interface() {
  				continue
  			}
  		fi
@@ -78,7 +63,7 @@
  		"$@" "$_w_iface"
  		json_select ..
  	done
-@@ -368,10 +378,12 @@ for_each_interface() {
+@@ -378,10 +385,12 @@ for_each_interface() {
  
  _wdev_common_iface_config() {
  	config_add_string mode ssid encryption 'key:wpakey'

@@ -1,6 +1,6 @@
 --- a/wireless.c
 +++ b/wireless.c
-@@ -1071,15 +1071,17 @@ wireless_station_create(struct wireless_
+@@ -1112,15 +1112,17 @@ wireless_station_create(struct wireless_
  {
  	struct wireless_station *sta;
  	struct blob_attr *tb[__STA_ATTR_MAX];
@@ -19,7 +19,7 @@
  
  	sprintf(name, "%d", wdev->sta_idx++);
  
-@@ -1114,15 +1116,17 @@ wireless_vlan_create(struct wireless_dev
+@@ -1155,15 +1157,17 @@ wireless_vlan_create(struct wireless_dev
  {
  	struct wireless_vlan *vlan;
  	struct blob_attr *tb[__VLAN_ATTR_MAX];
@@ -38,7 +38,7 @@
  
  	sprintf(name, "%d", wdev->vlan_idx++);
  
-@@ -1159,15 +1163,17 @@ struct wireless_interface* wireless_inte
+@@ -1200,15 +1204,17 @@ struct wireless_interface* wireless_inte
  {
  	struct wireless_interface *vif;
  	struct blob_attr *tb[__VIF_ATTR_MAX];
