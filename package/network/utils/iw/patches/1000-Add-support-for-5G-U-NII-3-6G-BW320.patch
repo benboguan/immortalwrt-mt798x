@@ -33,7 +33,7 @@ diff --git a/util.c b/util.c
 index d36dbdc..818dc96 100644
 --- a/util.c
 +++ b/util.c
-@@ -1750,11 +1750,11 @@ int get_cf1(const struct chanmode *chanmode, unsigned long freq)
+@@ -1690,11 +1690,13 @@ int get_cf1(const struct chanmode *chanmode, unsigned long freq)
  {
  	unsigned int cf1 = freq, j;
  	unsigned int bw80[] = { 5180, 5260, 5500, 5580, 5660, 5745,
@@ -47,9 +47,11 @@ index d36dbdc..818dc96 100644
 +				6835, 6915, 6995 };
 +	unsigned int bw160[] = { 5180, 5500, 5745, 5955, 6115, 6275,
 +				 6435, 6595, 6755, 6915 };
- 	/* based on 11be D2 E.1 Country information and operating classes */
- 	unsigned int bw320[] = {5955, 6115, 6275, 6435, 6595, 6755};
++	/* based on 11be D2 E.1 Country information and operating classes */
++	unsigned int bw320[] = {5955, 6115, 6275, 6435, 6595, 6755};
  
+ 	switch (chanmode->width) {
+ 	case NL80211_CHAN_WIDTH_80:
 -- 
 2.18.0
 
