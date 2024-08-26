@@ -1070,7 +1070,7 @@ drv_mtk_setup() {
 	[ "${country}" == "VN" ] && countryregion_a=0 && countryregion=1
 	[ "${country}" == "YE" ] && countryregion_a=0 && countryregion=1
 	[ "${country}" == "ZW" ] && countryregion_a=0 && countryregion=1
-	[ "${country}" == "00" ] && countryregion_a=26 && countryregion=5 && RDRegion=CE
+	# [ "${country}" == "00" ] && countryregion_a=26 && countryregion=5 && RDRegion=CE
 
 #其它相关
 	case "$hwmode" in
@@ -1088,6 +1088,10 @@ drv_mtk_setup() {
 				countryregion_a=7 && RDRegion=FCC
 				ACSSKIP="100;104;108;112;116;120;124;128;132;136;140;144;169;173;177"
 			}
+			[ "${country}" == "00" ] && {
+				countryregion_a=26 && RDRegion=CE
+				ACSSKIP="100;104;108;112;116;120;124;128;132;136;140;144;169;173;177"
+			}
 			PPEnable=1
 			# ACSSKIP="100;104;108;112;116;120;124;128;132;136;140;144;169;173;177"
 		;;
@@ -1101,6 +1105,10 @@ drv_mtk_setup() {
 			}
 			[ "${country}" == "US" ] && {
 				countryregion=5 && RDRegion=FCC
+				ACSSKIP="14"
+			}
+			[ "${country}" == "00" ] && {
+				countryregion=5 && RDRegion=CE
 				ACSSKIP="14"
 			}
 			vht_1024=${Vht1024QamSupport:-0}
