@@ -376,7 +376,7 @@ static int mtk_get_signal(const char *ifname, int *buf)
 {
 //	return mtk_get_txpower(ifname, buf);
 	int ra_snr_sum, num;
-	char tmp_buf[8192];
+	char tmp_buf[IWINFO_BUFSIZE];
 	struct iwinfo_assoclist_entry tmp;
 	int ret_len, i;
 
