@@ -31,6 +31,30 @@ msgstr "自动块确认"
 msgid "U-APSD"
 msgstr "U-APSD 省电模式"
 
+msgid "Must be in %s format."
+msgstr "必须使用 %s 格式。"
+
+msgid "Format:"
+msgstr "格式："
+
+msgid "string (UTF-8)"
+msgstr "编码 (UTF-8)"
+
+msgid "integer"
+msgstr "整数"
+
+msgid "octet string"
+msgstr "八位字符串"
+
+msgid "Force CCMP-256 (AES)"
+msgstr "强制使用 CCMP-256 (AES)"
+
+msgid "Force GCMP (AES)"
+msgstr "强制使用 GCMP (AES)"
+
+msgid "Force GCMP-256 (AES)"
+msgstr "强制使用 GCMP-256 (AES)"
+
 msgid "Force GCMP256"
 msgstr "强制 GCMP256"
 
@@ -120,6 +144,11 @@ msgstr "APCLI 接口随机MAC"
 
 msgid "When enabled, the ApCli interface Mac address changes randomly."
 msgstr "当开启时，APCLI 接口 MAC 地址随机变更。"
+
+msgid ""
+"Name for OpenWrt network configuration. (No relation to wireless network "
+"name/SSID)"
+msgstr "OpenWrt 网络配置名称（和无线网络名/SSID 无关）"
 
 msgid ""
 "WFA 802.11v Spec - If one of the Dot11vMbssid is enabled "

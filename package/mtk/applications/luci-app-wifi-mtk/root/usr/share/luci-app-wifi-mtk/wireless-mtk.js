@@ -1364,7 +1364,7 @@ return view.extend({
 					if (value == 'wpa' || value == 'wpa-mixed' || value == 'wpa2' || value == 'wpa3' || value == 'wpa3-mixed' || value == 'wpa3-192')
 						uci.unset('wireless', section_id, 'key');
 
-					if (co.isActive(section_id) && e && (c == 'tkip' || c == 'ccmp' || c == 'tkip+ccmp'))
+					if (co.isActive(section_id) && e && (c == 'tkip' || c == 'ccmp' || c == 'ccmp256' || c == 'gcmp' || c == 'gcmp256' || c == 'tkip+ccmp'))
 						e += '+' + c;
 
 					uci.set('wireless', section_id, 'encryption', e);
@@ -1375,12 +1375,16 @@ return view.extend({
 				o.depends('encryption', 'wpa2');
 				o.depends('encryption', 'wpa3');
 				o.depends('encryption', 'wpa3-mixed');
+				o.depends('encryption', 'wpa3-192');
 				o.depends('encryption', 'psk');
 				o.depends('encryption', 'psk2');
 				o.depends('encryption', 'wpa-mixed');
 				o.depends('encryption', 'psk-mixed');
 				o.value('auto', _('auto'));
 				o.value('ccmp', _('Force CCMP (AES)'));
+				o.value('ccmp256', _('Force CCMP-256 (AES)'));
+				o.value('gcmp', _('Force GCMP (AES)'));
+				o.value('gcmp256', _('Force GCMP-256 (AES)'));
 				o.value('tkip', _('Force TKIP'));
 				o.value('tkip+ccmp', _('Force TKIP and CCMP (AES)'));
 				o.write = ss.children.filter(function(o) { return o.option == 'encryption' })[0].write;
@@ -1417,7 +1421,7 @@ return view.extend({
 					crypto_modes.push(['wep-shared', _('WEP Shared Key'),  10]);
 					crypto_modes.push(['wpa3', 'WPA3-EAP', 33]);
 					crypto_modes.push(['wpa3-mixed', 'WPA2-EAP/WPA3-EAP Mixed Mode', 32]);
-					crypto_modes.push(['wpa3-192', 'WPA3-192-Bit', 36]);
+					crypto_modes.push(['wpa3-192', 'WPA3-EAP 192-bit Mode', 36]);
 					crypto_modes.push(['wpa-mixed', 'WPA-EAP/WPA2-EAP Mixed Mode', 21]);
 					crypto_modes.push(['wpa2', 'WPA2-EAP', 34]);
 					crypto_modes.push(['wpa',  'WPA-EAP',  20]);
@@ -1552,6 +1556,21 @@ return view.extend({
 				o.rmempty = true;
 				o.password = true;
 
+				/* extra RADIUS settings start */
+				var attr_validate = function(section_id, value) {
+					if (!value)
+						return true;
+
+					if (!/^[0-9]+(:s:.+|:d:[0-9]+|:x:([0-9a-zA-Z]{2})+)?$/.test(value) )
+						return _('Must be in %s format.').format('<attr_id>[:<syntax:value>]');
+
+					return true;
+				};
+
+				var req_attr_syntax = _('Format:') + '<code>&lt;attr_id&gt;[:&lt;syntax:value&gt;]</code>' + '<br />' +
+					'<code>syntax: s = %s; '.format(_('string (UTF-8)')) + 'd = %s; '.format(_('integer')) + 'x = %s</code>'.format(_('octet string'))
+				/* extra RADIUS settings end */
+
 				/*o = ss.taboption('encryption', form.Value, 'dae_client', _('DAE-Client'));
 				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa-mixed', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 				o.rmempty = true;
@@ -1570,7 +1589,7 @@ return view.extend({
 
 				//WPA(1) has only WPA IE. Only >= WPA2 has RSN IE Preauth frames.
 				o = ss.taboption('encryption', form.Flag, 'rsn_preauth', _('RSN Preauth'), _('Robust Security Network (RSN): Allow roaming preauth for WPA2-EAP networks (and advertise it in WLAN beacons). Only works if the specified network interface is a bridge. Shortens the time-critical reassociation process.'));
-				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa2', 'wpa-mixed', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
+				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa2', 'wpa-mixed', 'wpa3', 'wpa3-mixed'] });
 
 
 				o = ss.taboption('encryption', form.Value, '_wpa_key', _('Key'));
@@ -2003,6 +2022,26 @@ return view.extend({
 					uci.unset('wireless', radioDev.getName(), 'disabled');
 				}
 
+				var htmodes = radioDev.getHTModes();
+
+				if (bss.vht_operation && htmodes && htmodes.indexOf('VHT20') !== -1) {
+					for (var w = bss.vht_operation.channel_width; w >= 20; w /= 2) {
+						if (htmodes.indexOf('VHT'+w) !== -1) {
+							uci.set('wireless', radioDev.getName(), 'htmode', 'VHT'+w);
+							break;
+						}
+					}
+				}
+				else if (bss.ht_operation && htmodes && htmodes.indexOf('HT20') !== -1) {
+					var w = (bss.ht_operation.secondary_channel_offset == 'no secondary') ? 20 : 40;
+					uci.set('wireless', radioDev.getName(), 'htmode', 'HT'+w);
+				}
+				else {
+					uci.remove('wireless', radioDev.getName(), 'htmode');
+				}
+
+				uci.set('wireless', radioDev.getName(), 'channel', bss.channel);
+
 				section_id = next_free_sid(wifi_sections.length);
 
 				uci.add('wireless', 'wifi-iface', section_id);
@@ -2102,7 +2141,9 @@ return view.extend({
 
 			replace = s2.option(form.Flag, 'replace', _('Replace wireless configuration'), _('Check this option to delete the existing networks from this radio.'));
 
-			name = s2.option(form.Value, 'name', _('Name of the new network'), _('The allowed characters are: <code>A-Z</code>, <code>a-z</code>, <code>0-9</code> and <code>_</code>'));
+			name = s2.option(form.Value, 'name', _('Name of the new network'),
+				_('Name for OpenWrt network configuration. (No relation to wireless network name/SSID)') + '<br />' +
+				_('The allowed characters are: <code>A-Z</code>, <code>a-z</code>, <code>0-9</code> and <code>_</code>'));
 			name.datatype = 'uciname';
 			name.default = 'wwan';
 			name.rmempty = false;
