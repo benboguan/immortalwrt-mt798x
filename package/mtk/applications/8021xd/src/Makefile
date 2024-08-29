@@ -286,7 +286,7 @@ endif #end of FILS
 all: rtdot1xd
 
 rtdot1xd: $(OBJS)
-	$(CC) -o rt2860apd $(OBJS)
+	$(CC) $(CFLAGS) -o rt2860apd $(OBJS)
 
 clean:
 	rm -f core *~ *.o rt2860apd *.d ap/*.o crypto/*.o utils/*.o common/*.o drvcallbak/*.o
