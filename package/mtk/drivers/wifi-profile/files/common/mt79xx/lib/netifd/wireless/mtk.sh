@@ -75,8 +75,7 @@ drv_mtk_init_iface_config() {
 
 get_wep_key_type() {
 	local KeyLen=$(expr length "$1")
-	if [ $KeyLen -eq 10 ] || [ $KeyLen -eq 26 ] || [ $KeyLen -eq 32 ]
-	then
+	if [ $KeyLen -eq 10 ] || [ $KeyLen -eq 26 ] || [ $KeyLen -eq 32 ]; then
 		echo 0
 	else
 		echo 1
@@ -508,6 +507,7 @@ mtk_sta_vif_pre_config() {
 
 	mt_cmd ifconfig $APCLI_IF up
 	mt_cmd echo "Interface $APCLI_IF now up."
+	mt_cmd iwpriv $APCLI_IF set ApCliMeshRule=0
 	mt_cmd iwpriv $APCLI_IF set ApCliEnable=1
 	mt_cmd iwpriv $APCLI_IF set ApCliAutoConnect=3
 	mt_cmd iwpriv $APCLI_IF set ApCliAuthMode=${ApCliAuthMode}
@@ -541,8 +541,9 @@ mtk_sta_vif_pre_config() {
 		mt_cmd iwpriv $APCLI_IF set WscConfMode=1
 		mt_cmd iwpriv $APCLI_IF set WscMode=1
 		mt_cmd iwpriv $APCLI_IF show WscPin
-		# mt_cmd iwpriv $APCLI_IF set ApCliWscSsid=$ssid
+		[ -n "$ssid" ] && mt_cmd iwpriv $APCLI_IF set ApCliWscSsid="${ssid}"
 		mt_cmd iwpriv $APCLI_IF set WscGetConf=1
+		mt_cmd iwpriv $APCLI_IF set WscGenPinCode=1
 		mt_cmd iwpriv $APCLI_IF set WscPinCode=$pin
 		# echo "ApCliWscSsid=${ssid}" >> $MTWIFI_PROFILE_PATH
 	elif [ "$wps_pushbutton" == "2" ] && [ "${ApCliAuthMode}" != "none" ]; then
