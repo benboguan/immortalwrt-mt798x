@@ -1326,13 +1326,13 @@ return view.extend({
 
 					o = ss.taboption('advanced', form.Value, 'kicklow', _('Kick low RSSI station threshold'), _('dBm'));
 					o.optional    = true;
-					o.placeholder = 0;
+					o.placeholder = -75;
 					o.datatype = 'range(-100,0)';
 					o.depends('disassoc_low_ack', '1');
 
 					o = ss.taboption('advanced', form.Value, 'assocthres', _('Station associate threshold'), _('dBm'));
 					o.optional    = true;
-					o.placeholder = 0;
+					o.placeholder = -60;
 					o.datatype    = 'range(-100,0)';
 					o.depends('disassoc_low_ack', '1');
 				}
@@ -1821,9 +1821,28 @@ return view.extend({
 						o.depends('ieee80211w', '2');
 						o.datatype = 'uinteger';
 						o.placeholder = '201';
-						o.rmempty = true;
+						o.rmempty = true; */
 
-						o = ss.taboption('encryption', form.Flag, 'wpa_disable_eapol_key_retries', _('Enable key reinstallation (KRACK) countermeasures'), _('Complicates key reinstallation attacks on the client side by disabling retransmission of EAPOL-Key frames that are used to install keys. This workaround might cause interoperability issues and reduced robustness of key negotiation especially in environments with heavy traffic load.'));
+						o = ss.taboption('encryption', form.ListValue, 'ocv', _('Operating Channel Validation'), _("Note: Workaround mode allows a STA that claims OCV capability to connect even if the STA doesn't send OCI or negotiate PMF."));
+						o.value('0', _('Disabled'));
+						o.value('1', _('Enabled'));
+						o.value('2', _('Enabled (workaround mode)'));
+						o.default = '0';
+						o.depends('ieee80211w', '1');
+						o.depends('ieee80211w', '2');
+
+						o.validate = function(section_id, value) {
+							var modeopt = this.section.children.filter(function(o) { return o.option == 'mode' })[0],
+							modeval = modeopt.formvalue(section_id);
+
+							if ((value == '2') && ((modeval == 'sta') || (modeval == 'sta-wds'))) {
+								return _('Workaround mode can only be used when acting as an access point.');
+							}
+
+							return true;
+						}
+
+						/* o = ss.taboption('encryption', form.Flag, 'wpa_disable_eapol_key_retries', _('Enable key reinstallation (KRACK) countermeasures'), _('Complicates key reinstallation attacks on the client side by disabling retransmission of EAPOL-Key frames that are used to install keys. This workaround might cause interoperability issues and reduced robustness of key negotiation especially in environments with heavy traffic load.'));
 						add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['psk2', 'psk-mixed', 'sae', 'sae-mixed', 'wpa-mixed', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });*/
 
 						o = ss.taboption('encryption', form.ListValue, 'wps_pushbutton', _('Enable WPS pushbutton, requires WPA(2)-PSK/WPA3-SAE'));

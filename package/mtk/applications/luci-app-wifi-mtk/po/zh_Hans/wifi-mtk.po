@@ -47,16 +47,32 @@ msgid "octet string"
 msgstr "八位字符串"
 
 msgid "Force CCMP-256 (AES)"
-msgstr "强制使用 CCMP-256 (AES)"
+msgstr "强制 CCMP-256 (AES)"
 
 msgid "Force GCMP (AES)"
-msgstr "强制使用 GCMP (AES)"
+msgstr "强制 GCMP (AES)"
 
 msgid "Force GCMP-256 (AES)"
-msgstr "强制使用 GCMP-256 (AES)"
+msgstr "强制 GCMP-256 (AES)"
 
 msgid "Force GCMP256"
 msgstr "强制 GCMP256"
+
+msgid "Operating Channel Validation"
+msgstr "工作信道验证"
+
+msgid "Enabled (workaround mode)"
+msgstr "已启用（权宜模式）"
+
+msgid ""
+"Note: Workaround mode allows a STA that claims OCV capability to connect "
+"even if the STA doesn't send OCI or negotiate PMF."
+msgstr ""
+"注：权宜模式允许宣称具有 OCV 能力的 STA 进行连接，即使该 STA 并不发送 OCI 或"
+"协商 PMF."
+
+msgid "Workaround mode can only be used when acting as an access point."
+msgstr "权宜模式只能用于接入点 AP 模式。"
 
 msgid "Dynamic Frequency Selection(DFS)"
 msgstr "动态频率选择（DFS）"
