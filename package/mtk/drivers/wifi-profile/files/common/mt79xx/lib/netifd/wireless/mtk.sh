@@ -65,7 +65,7 @@ drv_mtk_init_iface_config() {
 	config_add_array 'maclist:list(macaddr)' r0kh r1kh
 
 	config_add_boolean wds wmm wnm_sleep_mode bss_transition mbo rrm_neighbor_report rrm_beacon_report ft_psk_generate_local pmk_r1_push
-	config_add_int apclipe short_preamble wpa_group_rekey rsn_preauth
+	config_add_int apclipe short_preamble wpa_group_rekey rsn_preauth ocv
 	config_add_int max_listen_int ieee80211w time_advertisement 'port:port'
 	config_add_int disassoc_low_ack kicklow assocthres
 	config_add_string wdsenctype wdskey wdsphymode macaddr time_zone
@@ -91,7 +91,7 @@ mtk_ap_vif_pre_config() {
 		ssid mode wps_pushbutton pin pbc isolate hidden disassoc_low_ack kicklow assocthres rsn_preauth \
 		ieee80211k ieee80211v ieee80211r ieee80211w macfilter nasid mobility_domain r1_key_holder reassociation_deadline r0kh r1kh \
 		ft_over_ds ft_psk_generate_local pmk_r1_push rrm_neighbor_report rrm_beacon_report wnm_sleep_mode bss_transition \
-		mumimo_dl mumimo_ul ofdma_dl ofdma_ul
+		mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv
 	json_get_values maclist maclist
 	set_default wmm 1
 	set_default isolate 0
@@ -109,6 +109,7 @@ mtk_ap_vif_pre_config() {
 	set_default ofdma_ul 0
 	set_default auth_port 1812
 	set_default acct_port 1813
+	set_default ocv 0
 	json_select ..
 
 	[[ "$disabled" = "1" ]] && return
@@ -273,6 +274,7 @@ mtk_ap_vif_pre_config() {
 	Apmumimoul="${Apmumimoul}${mumimo_ul};"
 	Apofdmadl="${Apofdmadl}${ofdma_dl};"
 	Apofdmaul="${Apofdmaul}${ofdma_ul};"
+	Apocv="${Apocv}${ocv};"
 	echo "FtMdId${ApBssidNum}=${mobility_domain}" >> $MTWIFI_PROFILE_PATH
 	echo "FtR0khId${ApBssidNum}=${nasid}" >> $MTWIFI_PROFILE_PATH
 	echo "FtR1khId${ApBssidNum}=${r1_key_holder}" >> $MTWIFI_PROFILE_PATH
@@ -411,7 +413,7 @@ mtk_sta_vif_pre_config() {
 
 	json_select config
 	json_get_vars disabled encryption key key1 key2 key3 key4 ssid mode bssid wps_pushbutton pin pbc ieee80211w macaddr \
-		apclipe mumimo_dl mumimo_ul ofdma_dl ofdma_ul	
+		apclipe mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv	
 	json_select ..
 
 	[ $stacount -gt 1 ] && {
@@ -570,6 +572,7 @@ mtk_sta_vif_pre_config() {
 	ApCliMuMimoUlEnable="${mumimo_ul:-0}"
 	ApCliMuOfdmaDlEnable="${ofdma_dl:-0}"
 	ApCliMuOfdmaUlEnable="${ofdma_ul:-0}"
+	ApCliOCVSupport="${ocv:-0}"
 	# ApCliMacAddress="${macaddr}"
 	ApCliEnable="${ApCliEnable:-1}"
 	ApCliSsid="${ssid}"
@@ -1475,6 +1478,7 @@ EOF
 	Apmumimoul=""
 	Apofdmadl=""
 	Apofdmaul=""
+	Apocv=""
 	for_each_interface "ap" mtk_ap_vif_pre_config
 
 #For DBDC profile merging......
@@ -1509,6 +1513,7 @@ EOF
 	echo "MuMimoUlEnable=${Apmumimoul%?}" >> $MTWIFI_PROFILE_PATH
 	echo "MuOfdmaDlEnable=${Apofdmadl%?}" >> $MTWIFI_PROFILE_PATH
 	echo "MuOfdmaUlEnable=${Apofdmaul%?}" >> $MTWIFI_PROFILE_PATH
+	echo "OCVSupport=${Apocv%?}" >> $MTWIFI_PROFILE_PATH
 	echo "PMFMFPC=${ApPMFMFPC%?}" >> $MTWIFI_PROFILE_PATH
 	echo "PMFMFPR=${ApPMFMFPR%?}" >> $MTWIFI_PROFILE_PATH
 	echo "NoForwarding=${ApNoForwarding%?}" >> $MTWIFI_PROFILE_PATH
@@ -1557,6 +1562,7 @@ EOF
 	ApCliMuMimoUlEnable=""
 	ApCliMuOfdmaDlEnable=""
 	ApCliMuOfdmaUlEnable=""
+	ApCliOCVSupport=""
 	for_each_interface "sta" mtk_sta_vif_pre_config
 
 #For STA profile merging......
@@ -1583,6 +1589,7 @@ EOF
 	echo "ApCliMuMimoUlEnable=${ApCliMuMimoUlEnable:-0}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliMuOfdmaDlEnable=${ApCliMuOfdmaDlEnable:-0}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliMuOfdmaUlEnable=${ApCliMuOfdmaUlEnable:-0}" >> $MTWIFI_PROFILE_PATH
+	echo "ApCliOCVSupport=${ApCliOCVSupport:-0}" >> $MTWIFI_PROFILE_PATH
 
 #MESH模式
 	meshcount=0
