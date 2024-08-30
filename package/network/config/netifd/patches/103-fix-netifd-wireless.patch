@@ -1,6 +1,16 @@
 --- a/scripts/netifd-wireless.sh
 +++ b/scripts/netifd-wireless.sh
-@@ -108,14 +108,16 @@ _wdev_wrapper() {
+@@ -31,7 +31,8 @@ prepare_key_wep() {
+ 
+ 	echo -n "$key" | grep -qE "[^a-fA-F0-9]" && hex=0
+ 	[ "${#key}" -eq 10 -a $hex -eq 1 ] || \
+-	[ "${#key}" -eq 26 -a $hex -eq 1 ] || {
++	[ "${#key}" -eq 26 -a $hex -eq 1 ] || \
++	[ "${#key}" -eq 32 -a $hex -eq 1 ] || {
+ 		[ "${key:0:2}" = "s:" ] && key="${key#s:}"
+ 		key="$(echo -n "$key" | hexdump -ve '1/1 "%02x" ""')"
+ 	}
+@@ -108,14 +109,16 @@ _wdev_wrapper() {
  }
  
  _wdev_notify_init() {
@@ -21,7 +31,7 @@
  	json_add_object "data"
  }
  
-@@ -151,7 +153,7 @@ _wireless_add_vlan() {
+@@ -151,7 +154,7 @@ _wireless_add_vlan() {
  	local name="$1"; shift
  	local ifname="$1"; shift
  
@@ -38,7 +48,7 @@
  	esac
  
  	# 802.11n requires CCMP for WPA
-@@ -261,11 +264,14 @@ case "$encryption" in
+@@ -261,21 +265,27 @@ case "$encryption" in
  		owe*)
  			auth_type=owe
  		;;
@@ -47,15 +57,28 @@
 +		;;
  		wpa3-mixed*)
 -			auth_type=eap-eap192
-+			auth_type=eap-eap2
++			auth_type=eap2-eap3
  		;;
  		wpa3*)
 -			auth_type=eap192
-+			auth_type=eap2
++			auth_type=eap3
  		;;
  		psk3-mixed*|sae-mixed*)
  			auth_type=psk-sae
-@@ -336,6 +342,7 @@ for_each_interface() {
+ 		;;
+ 		psk3*|sae*)
+ 			auth_type=sae
+ 		;;
+ 		*psk*)
+ 			auth_type=psk
+ 		;;
++		*wpa2*)
++			auth_type=eap2
++		;;
+ 		*wpa*|*8021x*)
+ 			auth_type=eap
+ 		;;
+@@ -336,6 +346,7 @@ for_each_interface() {
  				continue
  			}
  		fi
@@ -63,7 +86,7 @@
  		"$@" "$_w_iface"
  		json_select ..
  	done
-@@ -378,10 +385,12 @@ for_each_interface() {
+@@ -378,10 +389,12 @@ for_each_interface() {
  
  _wdev_common_iface_config() {
  	config_add_string mode ssid encryption 'key:wpakey'
