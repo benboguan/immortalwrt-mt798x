@@ -363,12 +363,14 @@ var CBIWifiFrequencyValue = form.Value.extend({
 					'VHT20', '20 MHz', htmodelist.VHT20,
 					'VHT40', '40 MHz', htmodelist.VHT40,
 					'VHT80', '80 MHz', htmodelist.VHT80,
+					'VHT80_80', '80+80 MHz', htmodelist.VHT80_80,
 					'VHT160', '160 MHz', htmodelist.VHT160
 				],
 				'ax': [
 					'HE20', '20 MHz', htmodelist.HE20,
 					'HE40', '40 MHz', htmodelist.HE40,
 					'HE80', '80 MHz', htmodelist.HE80,
+					'HE80_80', '80+80 MHz', htmodelist.HE80_80,
 					'HE160', '160 MHz', htmodelist.HE160
 				]
 			};
@@ -455,9 +457,9 @@ var CBIWifiFrequencyValue = form.Value.extend({
 
 		this.setValues(mode, this.modes);
 
-		if (/HE20|HE40|HE80|HE160/.test(htval))
+		if (/HE20|HE40|HE80|HE80_80|HE160/.test(htval))
 			mode.value = 'ax';
-		else if (/VHT20|VHT40|VHT80|VHT160/.test(htval))
+		else if (/VHT20|VHT40|VHT80|VHT80_80|VHT160/.test(htval))
 			mode.value = 'ac';
 		else if (/HT20|HT40/.test(htval))
 			mode.value = 'n';
