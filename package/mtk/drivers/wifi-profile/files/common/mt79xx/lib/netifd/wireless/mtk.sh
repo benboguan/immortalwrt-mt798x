@@ -173,13 +173,13 @@ mtk_ap_vif_pre_config() {
 			8021x*|eap+eap2|wpa-mixed)
 				enc=WPA1WPA2
 			;;
-			8021x*|eap3*|wpa3)
+			eap3*|wpa3)
 				enc=WPA3
 			;;
-			8021x*|eap2+eap3|wpa3-mixed)
+			eap2+eap3|wpa3-mixed)
 				enc=WPA2WPA3
 			;;
-			8021x*|eap192*|wpa3-192)
+			eap192*|wpa3-192)
 				enc=WPA3-192
 			;;
 			OWE*|owe)
@@ -319,9 +319,15 @@ mtk_ap_vif_pre_config() {
 		mt_cmd iwpriv $ifname set KickStaRssiLow=$kicklow
 		mt_cmd iwpriv $ifname set AssocReqRssiThres=$assocthres
 	}
+
+	# PMF(802.11W) should be disabled if you want your device to support both iPhone and Android STAs
+	[ -n "$ieee80211r" ]  && [ "$ieee80211r" != "0" ] && {
+		mt_cmd iwpriv $ifname set ftenable=1
+		mt_cmd iwpriv $ifname set PMFMFPC=0
+		mt_cmd iwpriv $ifname set PMFMFPR=0
+	}
 	[ -n "$ieee80211k" ] && [ "$ieee80211k" != "0" ] && mt_cmd iwpriv $ifname set rrmenable=1
 	# [ -n "$ieee80211v" ] && [ "$ieee80211v" != "0" ] && mt_cmd iwpriv $ifname set wnmenable=1
-	[ -n "$ieee80211r" ] && [ "$ieee80211r" != "0" ] && mt_cmd iwpriv $ifname set ftenable=1
 	# [ -n "$ieee80211w" ] && [ "$ieee80211w" != "0" ] && mt_cmd iwpriv $ifname set pmfenable=1
 }
 
@@ -1144,6 +1150,7 @@ APTxop=0;0;94;47
 AutoChannelSelect=${AutoChannelSelect:-0}
 AutoChannelSkipList=${ACSSKIP}
 AutoProvisionEn=0
+AutoRoaming=0
 BandSteering=0
 BasicRate=15
 BeaconPeriod=${beacon_int:-100}
@@ -1151,7 +1158,7 @@ BFBACKOFFenable=0
 BGMultiClient=${legacy_rates:-1}
 BgndScanSkipCh=
 BGProtection=${BGProtection:-0}
-BndStrgBssIdx=
+BndStrgBssIdx=1
 BSSACM=0;0;0;0
 BSSAifsn=3;7;2;2
 BSSCwmax=10;10;4;3
@@ -1201,6 +1208,7 @@ Ethifname=
 ETxBfEnCond=1
 ETxBfIncapable=0
 FastConnect=1
+FastRoaming=0
 FineAGC=0
 FixedTxMode=
 ForceRoamSupport=
@@ -1365,6 +1373,7 @@ VOW_WATF_Q_LV2=
 VOW_WATF_Q_LV3=
 VOW_WMM_Search_Rule_Band0=
 VOW_WMM_Search_Rule_Band1=
+VgaClamp=0
 WapiAsCertPath=
 WapiAsIpAddr=
 WapiAsPort=
@@ -1619,6 +1628,9 @@ EOF
 #接口上线
 #加锁
 	echo "MTK Interfaces Pending..."
+#停用wapp
+	# wapp_openwrt.sh stop
+	
 	if lock -z $WIFI_OP_LOCK; then
 		sleep 2
 		drv_mtk_teardown $phy_name
@@ -1647,15 +1659,19 @@ EOF
 #MESH模式
 	for_each_interface "mesh" mtk_vif_post_config
 
-	[ "$phy_name" == "rax0" ] && [ "$ApBssidNum" == "0" ] && ifconfig ra0 down
-
 #重启HWNAT
 	[ -d /sys/module/mtkhnat ] && {
 		echo "Wait restart turboacc"
 		/etc/init.d/turboacc restart
 	}
 #设置无线上线
+	[ "$phy_name" == "rax0" ] && [ "$ApBssidNum" == "0" ] && ifconfig ra0 down
+
 	wireless_set_up
+
+#启动wapp
+	# wapp_openwrt.sh start
+	
 #解锁
 	lock -u $WIFI_OP_LOCK
 }
