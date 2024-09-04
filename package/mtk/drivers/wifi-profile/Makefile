@@ -64,7 +64,7 @@ define Package/wifi-script
   SECTION:=MTK Properties
   CATEGORY:=MTK Properties
   SUBMENU:=Drivers
-  DEPENDS:=+wifi-dats
+  DEPENDS:=+wifi-dats +maccalc +PACKAGE_firewall:kmod-br-netfilter
   TITLE:=LUCI WiFi scripts
   VERSION:=$(PKG_RELEASE)
   MENU:=1

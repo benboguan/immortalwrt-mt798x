@@ -18,19 +18,19 @@ append DRIVERS "mtk"
 
 board=$(board_name)
 
-mtk_get_first_if_mac() {
-	local wlan_mac=""
+mtk_get_lan_mac() {
+	local lan_mac
 	Factory_part=$(find_mtd_part Factory)
 	case $board in
 	*)
 		mac_offset="0x4"
 		[ -z "$Factory_part" ] && Factory_part=$(find_mtd_part factory)
-		wlan_mac=$(dd bs=1 skip=$mac_offset count=6 if=$Factory_part 2>/dev/null | /usr/sbin/maccalc bin2mac)
-		[ "$wlan_mac" == "ff:ff:ff:ff:ff:ff" -o "$wlan_mac" == "00:00:00:00:00:00" ] && wlan_mac="fc:a0:5a:00:79:15"
+		lan_mac=$(dd bs=1 skip=$mac_offset count=6 if=$Factory_part 2>/dev/null | /usr/sbin/maccalc bin2mac)
+		[ "$lan_mac" == "ff:ff:ff:ff:ff:ff" -o "$wlan_mac" == "00:00:00:00:00:00" ] && wlan_mac="fc:a0:5a:00:79:15"
 		;;
 	esac
 
-	echo ${wlan_mac}
+	echo ${lan_mac}
 }
 
 is_11ax_dbdc_dev()
@@ -59,6 +59,7 @@ is_support_11ax_ht160_dev()
 
 detect_mtk() {
 	local macaddr
+	local ifname
 	hostname=$(uci -q get system.@system[-1].hostname)
 	config_load wireless
 
@@ -68,78 +69,83 @@ detect_mtk() {
 
 	[ -d /sys/module/mt_wifi ] && {
 		for phyname in ra0 rax0; do
-			config_get type "$phyname" type
+		config_get type "$phyname" type
 
-			case $board in
-			360,t7)
-				base_mac=$(mtd_get_mac_ascii Factory lanMac)
-				;;
-			*)
-				base_mac=$(mtk_get_first_if_mac)
-				;;
+		case $board in
+		360,t7)
+			macaddr=$(mtd_get_mac_ascii Factory lanMac)
+			;;
+		*)
+			macaddr=$(mtk_get_lan_mac)
+			;;
+		esac
+
+		[ -z "$macaddr" ] && macaddr=$(cat /sys/class/net/eth0/address)
+
+		[ "$type" == "mtk" ] || {
+			case $phyname in
+				ra0)
+					band="2g"
+					hwmode="11g"
+					noscan="1"
+					ifname="ra0"
+					[ -n "$(is_11ax_dbdc_dev)" ] && htmode=HE40 || htmode=HT40
+					[ -z "$hostname" ] && {
+						ssid="OpenWRT-2.4G-$(echo $macaddr | awk -F ":" '{print $5""$6 }'| tr a-z A-Z)"
+					} || {
+						ssid="$hostname-2.4G"
+					}
+					;;
+				rax0)
+					band="5g"
+					hwmode="11a"
+#					noscan="1"
+					ifname="rax0"
+					[ -n "$(is_support_11ax_ht160_dev)" ] && htmode=HE160 || htmode=VHT160 || {
+						[ -n "$(is_11ax_dbdc_dev)" ] && htmode=HE80 || htmode=VHT80
+					}
+					[ -z "$hostname" ] && {
+						ssid="OpenWRT-5G-$(echo $macaddr | awk -F ":" '{print $5""$6 }'| tr a-z A-Z)"
+					} || {
+						ssid="$hostname-5G"
+					}
+					;;
 			esac
 
-			[ -z "$base_mac" ] && base_mac=$(cat /sys/class/net/eth0/address)
-
-			[ "$type" == "mtk" ] || {
-				case $phyname in
-					ra0)
-						band="2g"
-						hwmode="11g"
-						noscan="1"
-						[ -n "$(is_11ax_dbdc_dev)" ] && htmode=HE40 || htmode=HT40
-						[ -z "$hostname" ] && {
-							ssid="OpenWRT-2.4G-$(echo $base_mac | awk -F ":" '{print $5""$6 }'| tr a-z A-Z)"
-						} || {
-							ssid="$hostname-2.4G"
-						}
-						;;
-					rax0)
-						band="5g"
-						hwmode="11a"
-#						noscan="1"
-						[ -n "$(is_support_11ax_ht160_dev)" ] && htmode=HE160 || htmode=VHT160 || {
-							[ -n "$(is_11ax_dbdc_dev)" ] && htmode=HE80 || htmode=VHT80
-						}
-						[ -z "$hostname" ] && {
-							ssid="OpenWRT-5G-$(echo $base_mac | awk -F ":" '{print $5""$6 }'| tr a-z A-Z)"
-						} || {
-							ssid="$hostname-5G"
-						}
-						;;
-				esac
-
-#				[ -n "$macaddr" ] && {
-#					macaddr=$(macaddr_add "$macaddr" 2)
-#					dev_id="set wireless.${phyname}.macaddr=${macaddr}"
-#				}
-				uci -q batch <<-EOF
-					set wireless.${phyname}=wifi-device
-					set wireless.${phyname}.type=mtk
-					set wireless.${phyname}.hwmode=$hwmode
-					set wireless.${phyname}.band=$band
-					set wireless.${phyname}.channel=auto
-					set wireless.${phyname}.country=CN
-					set wireless.${phyname}.txburst=1
-					set wireless.${phyname}.txpower=100
-					set wireless.${phyname}.htmode=$htmode
-					set wireless.${phyname}.noscan=$noscan
-
-					set wireless.default_${phyname}=wifi-iface
-					set wireless.default_${phyname}.device=${phyname}
-					set wireless.default_${phyname}.network=lan
-					set wireless.default_${phyname}.mode=ap
-					set wireless.default_${phyname}.ieee80211k=0
-					set wireless.default_${phyname}.ieee80211v=0
-					set wireless.default_${phyname}.ieee80211w=0
-					set wireless.default_${phyname}.ieee80211r=0
-					set wireless.default_${phyname}.ssid=${ssid}
-					set wireless.default_${phyname}.encryption=none
-EOF
-				uci -q commit wireless
+			[ -n "$macaddr" ] && {
+				macaddr=$(macaddr_add "$macaddr" 2)
+				dev_id="set wireless.${phyname}.macaddr=${macaddr}"
 			}
+			uci -q batch <<-EOF
+				set wireless.${phyname}=wifi-device
+				set wireless.${phyname}.type=mtk
+				${dev_id}
+				set wireless.${phyname}.hwmode=$hwmode
+				set wireless.${phyname}.band=$band
+				set wireless.${phyname}.channel=auto
+				set wireless.${phyname}.country=CN
+				set wireless.${phyname}.txburst=1
+				set wireless.${phyname}.txpower=100
+				set wireless.${phyname}.htmode=$htmode
+				set wireless.${phyname}.noscan=$noscan
+
+				set wireless.default_${phyname}=wifi-iface
+				set wireless.default_${phyname}.device=${phyname}
+				set wireless.default_${phyname}.ifname=${ifname}
+				set wireless.default_${phyname}.network=lan
+				set wireless.default_${phyname}.mode=ap
+				set wireless.default_${phyname}.ieee80211k=0
+				set wireless.default_${phyname}.ieee80211v=0
+				set wireless.default_${phyname}.ieee80211w=0
+				set wireless.default_${phyname}.ieee80211r=0
+				set wireless.default_${phyname}.ssid=${ssid}
+				set wireless.default_${phyname}.encryption=none
+EOF
+			uci -q commit wireless
+		}
 		done
 	}
 
 	return 0;
+	uci -q commit wireless
 }

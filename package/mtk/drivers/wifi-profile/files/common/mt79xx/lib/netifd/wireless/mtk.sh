@@ -515,7 +515,6 @@ mtk_sta_vif_pre_config() {
 
 	mt_cmd ifconfig $APCLI_IF up
 	mt_cmd echo "Interface $APCLI_IF now up."
-	mt_cmd iwpriv $APCLI_IF set ApCliMeshRule=0
 	mt_cmd iwpriv $APCLI_IF set ApCliEnable=1
 	mt_cmd iwpriv $APCLI_IF set ApCliAutoConnect=3
 	mt_cmd iwpriv $APCLI_IF set ApCliAuthMode=${ApCliAuthMode}
@@ -1407,7 +1406,6 @@ WNMBTMEnable=1
 WscConfMode=0
 WscConfStatus=2
 WscV2Support=0
-MboSupport=1
 BSSColorValue=255
 QoSR1Enable=1
 QoSMgmtCapa=0
