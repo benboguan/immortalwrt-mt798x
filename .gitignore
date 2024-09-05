@@ -31,6 +31,20 @@ git-src
 .ccache
 .vscode
 
+!/dl/1905daemon*
+!/dl/ated_ext*
+!/dl/bndstrg_plus*
 !/dl/datconf*
+!/dl/fwdd*
+!/dl/hostapd*
+!/dl/libmapd*
+!/dl/mapd*
+!/dl/mapfilter*
 !/dl/mt798*
+!/dl/mtfwd*
+!/dl/mtqos*
+!/dl/sigma_daemon*
+!/dl/sigma_dut*
+!/dl/wapp*
 !/dl/warp*
+!/dl/wpa-supplicant*
