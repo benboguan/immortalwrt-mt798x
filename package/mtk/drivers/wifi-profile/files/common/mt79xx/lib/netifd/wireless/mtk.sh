@@ -1617,7 +1617,7 @@ EOF
 	echo "MeshDefaultKeyID=${MeshDefKId}" >> $MTWIFI_PROFILE_PATH
 	echo "MeshWEPKEY=${MeshWEPKEY}" >> $MTWIFI_PROFILE_PATH
 	echo "MeshWPAKEY=${MeshWPAKEY}" >> $MTWIFI_PROFILE_PATH
-	echo "MeshForwarding=${mesh_fwding}" >> $MTWIFI_PROFILE_PATH
+	echo "MeshForward=${mesh_fwding}" >> $MTWIFI_PROFILE_PATH
 	echo "MeshRssiThreshold=${mesh_rssi_threshold}" >> $MTWIFI_PROFILE_PATH
 
 #FIXME:重新加载驱动
