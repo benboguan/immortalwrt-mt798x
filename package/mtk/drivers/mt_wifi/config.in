@@ -911,6 +911,11 @@ config MTK_MBSS_SUPPORT
 #	depends on NEW_MBSSID_MODE
 #	default y
 
+config MTK_MESH_SUPPORT
+	bool "Mesh Mode Support"
+	depends on MTK_MT_AP_SUPPORT
+	default y
+
 config MTK_APCLI_SUPPORT
 	bool "AP-Client Support"
 	depends on MTK_MT_AP_SUPPORT
