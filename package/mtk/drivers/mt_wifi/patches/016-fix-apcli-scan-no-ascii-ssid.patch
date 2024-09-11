@@ -1,6 +1,6 @@
 --- a/mt_wifi/os/linux/ap_ioctl.c	2023-12-03 09:29:00.237904279 +0800
 +++ b/mt_wifi/os/linux/ap_ioctl.c	2023-12-03 09:29:11.851634173 +0800
-@@ -1025,6 +1025,8 @@ INT rt28xx_ap_ioctl(void *net_dev_obj, v
+@@ -1028,6 +1028,8 @@ INT rt28xx_ap_ioctl(void *net_dev_obj, v
  	case RTPRIV_IOCTL_GSITESURVEY:
  		wdev = pIoctlConfig->wdev;
  
