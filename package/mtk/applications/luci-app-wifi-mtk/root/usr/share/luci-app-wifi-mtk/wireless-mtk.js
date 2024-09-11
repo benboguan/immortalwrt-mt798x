@@ -1241,7 +1241,7 @@ return view.extend({
 					o.value('2', _('Bridge Mode'));
 					o.value('3', _('Repeater Mode'));
 					o.value('4', _('Lazy Mode'));
-					o.default = '3';
+					o.default = '0';
 
 					o = ss.taboption('advanced', form.ListValue, 'wdsphymode', _('WDS PHY Mode'), _('If GREENFIELD seems to be unstable,try to use OFDM instead.VHT/HE is only available for 11AC/11AX devices.'));
 					o.depends('mode', 'ap-wds');
@@ -1656,22 +1656,7 @@ return view.extend({
 
 					// Probe 802.11k support
 					o = ss.taboption('encryption', form.Flag, 'ieee80211k', _('802.11k'), _('Enables The 802.11k standard provides information to discover the best available access point'));
-					o.depends({ mode: 'ap', encryption: 'wpa' });
-					o.depends({ mode: 'ap', encryption: 'wpa-mixed' });
-					o.depends({ mode: 'ap', encryption: 'wpa2' });
-					o.depends({ mode: 'ap-wds', encryption: 'wpa' });
-					o.depends({ mode: 'ap-wds', encryption: 'wpa-mixed' });
-					o.depends({ mode: 'ap-wds', encryption: 'wpa2' });
-					o.depends({ mode: 'ap', encryption: 'psk' });
-					o.depends({ mode: 'ap', encryption: 'psk2' });
-					o.depends({ mode: 'ap', encryption: 'psk-mixed' });
-					o.depends({ mode: 'ap-wds', encryption: 'psk' });
-					o.depends({ mode: 'ap-wds', encryption: 'psk2' });
-					o.depends({ mode: 'ap-wds', encryption: 'psk-mixed' });
-					o.depends({ mode: 'ap', encryption: 'sae' });
-					o.depends({ mode: 'ap', encryption: 'sae-mixed' });
-					o.depends({ mode: 'ap-wds', encryption: 'sae' });
-					o.depends({ mode: 'ap-wds', encryption: 'sae-mixed' });
+					o.depends('mode', 'ap');
 					o.rmempty = true;
 
 					/*o = ss.taboption('encryption', form.Flag, 'rrm_neighbor_report', _('Enable neighbor report via radio measurements'));
@@ -1686,44 +1671,38 @@ return view.extend({
 					// End of 802.11k options
 
 					// Probe 802.11v support
-					o = ss.taboption('encryption', form.Flag, 'ieee80211v', _('802.11v'), _('Enables 802.11v allows client devices to exchange information about the network topology,tating overall improvement of the wireless network.'));
-					o.depends({ mode: 'ap', encryption: 'wpa' });
-					o.depends({ mode: 'ap', encryption: 'wpa-mixed' });
-					o.depends({ mode: 'ap', encryption: 'wpa2' });
-					o.depends({ mode: 'ap-wds', encryption: 'wpa' });
-					o.depends({ mode: 'ap-wds', encryption: 'wpa-mixed' });
-					o.depends({ mode: 'ap-wds', encryption: 'wpa2' });
-					o.depends({ mode: 'ap', encryption: 'psk' });
-					o.depends({ mode: 'ap', encryption: 'psk2' });
-					o.depends({ mode: 'ap', encryption: 'psk-mixed' });
-					o.depends({ mode: 'ap-wds', encryption: 'psk' });
-					o.depends({ mode: 'ap-wds', encryption: 'psk2' });
-					o.depends({ mode: 'ap-wds', encryption: 'psk-mixed' });
-					o.depends({ mode: 'ap', encryption: 'sae' });
-					o.depends({ mode: 'ap', encryption: 'sae-mixed' });
-					o.depends({ mode: 'ap-wds', encryption: 'sae' });
-					o.depends({ mode: 'ap-wds', encryption: 'sae-mixed' });
-					o.rmempty = true;
+					//o = ss.taboption('encryption', form.Flag, 'ieee80211v', _('802.11v'), _('Enables 802.11v allows client devices to exchange information about the network topology,tating overall improvement of the wireless network.'));
+					//o.depends('mode', 'ap');
+					//o.rmempty = true;
 
 					o = ss.taboption('encryption', form.Flag, 'wnm_sleep_mode', _('extended sleep mode for stations'));
 					o.default = o.enabled;
-					o.depends({ ieee80211v: '1' });
-					o.rmempty = true;
-
-					o = ss.taboption('encryption', form.Flag, 'bss_transition', _('BSS Transition Management'));
-					o.default = o.enabled;
-					o.depends({ ieee80211v: '1' });
+					//o.depends({ ieee80211v: '1' });
 					o.rmempty = true;
 
 					o = ss.taboption('encryption', form.ListValue, 'time_advertisement', _('Time advertisement'));
-					o.depends({ ieee80211v: '1' });
+					//o.depends({ ieee80211v: '1' });
 					o.value('0', _('disabled'));
 					o.value('2', _('UTC time at which the TSF timer is 0'));
-					o.rmempty = true;
+					o.write = function (section_id, value) {
+						return this.super('write', [section_id, (value == 2) ? value: null]);
+					}
 
 					o = ss.taboption('encryption', form.Value, 'time_zone', _('Local time zone as specified in 8.3 of IEEE Std 1003.1-2004'));
 					o.depends({ time_advertisement: '2' });
 					o.placeholder = 'UTC8';
+					o.rmempty = true; */
+
+					o = ss.taboption('encryption', form.Flag, 'bss_transition', _('BSS Transition Management'), _('802.11v: Basic Service Set (BSS) transition management.'));
+					o.default = o.disabled;
+					//o.depends({ ieee80211v: '1' });
+					o.depends('mode', 'ap');
+					o.rmempty = true;
+
+					o = ss.taboption('encryption', form.Flag, 'proxy_arp', _('ProxyARP'), _('802.11v: Proxy ARP enables non-AP STA to remain in power-save for longer.'));
+					o.default = o.disabled;
+					//o.depends({ ieee80211v: '1' });
+					o.depends('mode', 'ap');
 					o.rmempty = true;
 					// End of 802.11v options*/
 
@@ -1731,13 +1710,13 @@ return view.extend({
 					var has_80211r = L.hasSystemFeature('hostapd', '11r') || L.hasSystemFeature('hostapd', 'eap');
 
 					o = ss.taboption('encryption', form.Flag, 'ieee80211r', _('802.11r Fast Transition'), _('Enables fast roaming among access points that belong to the same Mobility Domain'));
-					add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa-mixed', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
+					add_dependency_permutations(o, { mode: ['ap'], encryption: ['wpa', 'wpa-mixed', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 					if (has_80211r)
-						add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['psk', 'psk2', 'psk-mixed', 'sae', 'sae-mixed'] });
+						add_dependency_permutations(o, { mode: ['ap'], encryption: ['psk', 'psk2', 'psk-mixed', 'sae', 'sae-mixed'] });
 					o.rmempty = true;
 
 					o = ss.taboption('encryption', form.Value, 'nasid', _('NAS ID'), _('Used for two different purposes: RADIUS NAS ID and 802.11r R0KH-ID. Not needed with normal WPA(2)-PSK.'));
-					add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa-mixed', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
+					add_dependency_permutations(o, { mode: ['ap'], encryption: ['wpa', 'wpa-mixed', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 					o.depends({ ieee80211r: '1' });
 					o.rmempty = true;
 
@@ -1760,7 +1739,7 @@ return view.extend({
 					o.rmempty = true;
 
 					o = ss.taboption('encryption', form.Flag, 'ft_psk_generate_local', _('Generate PMK locally'), _('When using a PSK, the PMK can be automatically generated. When enabled, the R0/R1 key options below are not applied. Disable this to use the R0 and R1 key options.'));
-					o.depends({ ieee80211r: '1' });
+					add_dependency_permutations(o, { ieee80211r: ['1'], mode: ['ap'], encryption: ['psk2', 'psk-mixed'] });
 					o.default = o.enabled;
 					o.rmempty = false;
 

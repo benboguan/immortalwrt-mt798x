@@ -155,11 +155,21 @@ msgstr "如果 GREENFIELD 看起来不稳定，请尝试改用 OFDM。VHT/HE 仅
 msgid "RSN Preauth"
 msgstr "RSN 预认证"
 
+msgid "ProxyARP"
+msgstr "代理 ARP"
+
 msgid "APCLI interface Random MAC"
 msgstr "APCLI 接口随机MAC"
 
 msgid "When enabled, the ApCli interface Mac address changes randomly."
 msgstr "当开启时，APCLI 接口 MAC 地址随机变更。"
+
+msgid "802.11v: Basic Service Set (BSS) transition management."
+msgstr "802.11v: 基础服务集合（BSS）过渡管理。"
+
+msgid ""
+"802.11v: Proxy ARP enables non-AP STA to remain in power-save for longer."
+msgstr "802.11v: 代理 ARP 允许非 AP STA 在 power-save 中停留更长时间。"
 
 msgid ""
 "Name for OpenWrt network configuration. (No relation to wireless network "
