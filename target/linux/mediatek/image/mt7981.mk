@@ -582,6 +582,36 @@ define Device/cmcc_rax3000m-emmc
 endef
 TARGET_DEVICES += cmcc_rax3000m-emmc
 
+define Device/cmcc_xr30
+  DEVICE_VENDOR := CMCC
+  DEVICE_MODEL := XR30 NAND
+  DEVICE_DTS := mt7981-cmcc-xr30
+  DEVICE_DTS_DIR := $(DTS_DIR)/mediatek
+  DEVICE_PACKAGES := $(MT7981_USB_PKGS) luci-app-samba4
+  SUPPORTED_DEVICES := cmcc,xr30
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 116736k
+  KERNEL_IN_UBI := 1
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += cmcc_xr30
+
+define Device/cmcc_xr30-emmc
+  DEVICE_VENDOR := CMCC
+  DEVICE_MODEL := XR30 eMMC
+  DEVICE_DTS := mt7981-cmcc-xr30-emmc
+  DEVICE_DTS_DIR := $(DTS_DIR)/mediatek
+  SUPPORTED_DEVICES := cmcc,xr30m-emmc
+  DEVICE_PACKAGES := $(MT7981_USB_PKGS) f2fsck losetup mkf2fs kmod-fs-f2fs kmod-mmc \
+	luci-app-samba4
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += cmcc_xr30-emmc
+
 define Device/h3c_nx30pro
   DEVICE_VENDOR := H3C
   DEVICE_MODEL := NX30PRO
@@ -598,6 +628,23 @@ define Device/h3c_nx30pro
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += h3c_nx30pro
+
+define Device/honor_fur-602
+  DEVICE_VENDOR := HONOR
+  DEVICE_MODEL := FUR-602
+  DEVICE_DTS := mt7981-honor-fur-602
+  DEVICE_DTS_DIR := $(DTS_DIR)/mediatek
+  SUPPORTED_DEVICES := honor,fur-602
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 116736k
+  KERNEL_IN_UBI := 1
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += honor_fur-602
 
 define Device/konka_komi-a31
   DEVICE_VENDOR := KONKA
@@ -649,6 +696,40 @@ define Device/nokia_ea0326gmp
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += nokia_ea0326gmp
+
+define Device/newland_nl-wr8103
+  DEVICE_VENDOR := Newland
+  DEVICE_MODEL := NL-WR8103
+  DEVICE_DTS := mt7981-newland-nl-wr8103
+  DEVICE_DTS_DIR := $(DTS_DIR)/mediatek
+  SUPPORTED_DEVICES := newland,nl-wr8103
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 116736k
+  KERNEL_IN_UBI := 1
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += newland_nl-wr8103
+
+define Device/newland_nl-wr9103
+  DEVICE_VENDOR := Newland
+  DEVICE_MODEL := NL-WR9103
+  DEVICE_DTS := mt7981-newland-nl-wr9103
+  DEVICE_DTS_DIR := $(DTS_DIR)/mediatek
+  SUPPORTED_DEVICES := newland,nl-wr9103
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 116736k
+  KERNEL_IN_UBI := 1
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += newland_nl-wr9103
 
 define Device/nradio_wt9103
   DEVICE_VENDOR := NRADIO

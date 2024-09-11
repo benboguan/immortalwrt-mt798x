@@ -39,9 +39,15 @@ mediatek_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:wan" "6t@eth0"
 		;;
+	*honor,fur-602*)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "switch0" \
+			"1:lan:3" "2:lan:2" "3:lan:1" "0:wan" "6t@eth0"
+		;;
 	*clt,r30b1* |\
 	h3c,nx30pro |\
 	*imou,lc-hx3001* |\
+	*newland,nl-wr8103* |\
 	*konka,komi-a31*)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
@@ -58,11 +64,13 @@ mediatek_setup_interfaces()
 			"1:lan" "2:lan" "3:lan" "0:wan" "6t@eth0"
 		;;
 	abt,asr3000 |\
+	*cmcc,xr30* |\
 	*rax3000m*)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
 			"0:lan:3" "1:lan:2" "2:lan:1" "6u@eth0"
 		;;
+	*newland,nl-wr9103* |\
 	*nokia,ea0326gmp*)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
@@ -195,9 +203,10 @@ mediatek_setup_macs()
 		label_mac=$lan_mac
 		local wifi_mac="$(mtd_get_mac_binary $part_name 0x04)"
 		;;
+	cmcc,xr30-emmc|\
 	cmcc,rax3000m-emmc)
-		lan_mac=$(mmc_get_mac_binary factory 0x24)
-		wan_mac=$(mmc_get_mac_binary factory 0x2a)
+		lan_mac=$(mmc_get_mac_binary factory 0x2a)
+		wan_mac=$(mmc_get_mac_binary factory 0x24)
 		label_mac=$wan_mac
 		;;
 	*imou,lc-hx3001*)
@@ -276,6 +285,11 @@ mediatek_setup_macs()
 			local b1mac="$(macaddr_add $label_mac 3)"
 			echo "MacAddress=$b1mac" >> ${b1dat}
 		fi
+		;;
+	*newland,nl-wr8103*)
+		local wifi_mac=$(mtd_get_mac_binary Factory 0x4)
+		lan_mac=$(macaddr_add $wifi_mac -1)
+		wan_mac=$(macaddr_add $wifi_mac -2)
 		;;
 	*)
 		wan_mac=$(mtd_get_mac_binary $part_name $wan_mac_offset)
