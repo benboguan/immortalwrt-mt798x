@@ -64,7 +64,7 @@ drv_mtk_init_iface_config() {
 	config_add_string macfilter 'macfile:file' nasid mobility_domain r1_key_holder reassociation_deadline ft_over_ds
 	config_add_array 'maclist:list(macaddr)' r0kh r1kh
 
-	config_add_boolean wds wmm wnm_sleep_mode bss_transition mbo rrm_neighbor_report rrm_beacon_report ft_psk_generate_local pmk_r1_push
+	config_add_boolean wds wmm wnm_sleep_mode bss_transition proxy_arp mbo rrm_neighbor_report rrm_beacon_report ft_psk_generate_local pmk_r1_push
 	config_add_int apclipe short_preamble wpa_group_rekey rsn_preauth ocv
 	config_add_int max_listen_int ieee80211w time_advertisement 'port:port'
 	config_add_int disassoc_low_ack kicklow assocthres
@@ -90,7 +90,7 @@ mtk_ap_vif_pre_config() {
 		acct_port key key1 key2 key3 key4 wmm own_ip_addr own_radius_port macaddr short_preamble wpa_group_rekey \
 		ssid mode wps_pushbutton pin pbc isolate hidden disassoc_low_ack kicklow assocthres rsn_preauth \
 		ieee80211k ieee80211v ieee80211r ieee80211w macfilter nasid mobility_domain r1_key_holder reassociation_deadline r0kh r1kh \
-		ft_over_ds ft_psk_generate_local pmk_r1_push rrm_neighbor_report rrm_beacon_report wnm_sleep_mode bss_transition \
+		ft_over_ds ft_psk_generate_local pmk_r1_push rrm_neighbor_report rrm_beacon_report wnm_sleep_mode bss_transition proxy_arp \
 		mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv
 	json_get_values maclist maclist
 	set_default wmm 1
@@ -257,6 +257,7 @@ mtk_ap_vif_pre_config() {
 	ApK3Tp="${ApK3Tp}${K3Tp:-0};"
 	ApK4Tp="${ApK4Tp}${K4Tp:-0};"
 	ApHideESSID="${ApHideESSID}${hidden:-0};"
+	ApWmmCapable="${ApWmmCapable}${wmm};"
 	ApRADIUSServer="${ApRADIUSServer}${auth_server};"
 	ApRADIUSPort="${ApRADIUSPort}${auth_port};"
 	ApRADIUSAcctServer="${ApRADIUSAcctServer}${acct_server};"
@@ -267,6 +268,8 @@ mtk_ap_vif_pre_config() {
 	ApFtSupport="${ApFtSupport}${ieee80211r};"
 	ApNoForwarding="${ApNoForwarding}${isolate};"
 	ApRekeyInterval="${ApRekeyInterval}${wpa_group_rekey};"
+	ApBSS="${ApBSS}${bss_transition:-0};"
+	ApARP="${ApARP}${proxy_arp:-0};"
 	ApFtOtd="${ApFtOtd}${ft_over_ds:-0};"
 	ApFtOnly="${ApFtOnly}${ft_psk_generate_local:-0};"
 	ApFtRic="${ApFtRic}${pmk_r1_push:-0};"
@@ -336,7 +339,7 @@ mtk_wds_vif_pre_config() {
 
 	json_select config
 	json_get_vars disabled encryption key key1 key2 key3 key4 mode bssid wdsen wdsenctype wdskey wdswepid wdsphymode wdstxmcs
-	set_default wdsen 3
+	set_default wdsen 0
 	set_default wdsphymode "GREENFIELD"
 	json_select ..
 
@@ -406,8 +409,9 @@ mtk_wds_vif_pre_config() {
 		echo "Wds${WDSBssidNum}Key=${key}" >> $MTWIFI_PROFILE_PATH #WDS Key
 	fi
 
-	# Wdsen="${Wdsen}${wdsen};"
-	WdsPhyMode="${WdsPhyMode}${wdsphymode};"
+	WdsEnable="${WdsEnable}${wdsen:-0};"
+	WdsPhyMode="${WdsPhyMode}${wdsphymode:-0};"
+	echo "WdsNum=${WDSBssidNum:-0}" >> $MTWIFI_PROFILE_PATH
 
 	mt_cmd ifconfig $ifname up
 	mt_cmd echo "WDS interface $ifname now up."
@@ -419,7 +423,7 @@ mtk_sta_vif_pre_config() {
 
 	json_select config
 	json_get_vars disabled encryption key key1 key2 key3 key4 ssid mode bssid wps_pushbutton pin pbc ieee80211w macaddr \
-		apclipe mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv	
+		apclipe mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv
 	json_select ..
 
 	[ $stacount -gt 1 ] && {
@@ -1149,7 +1153,6 @@ APTxop=0;0;94;47
 AutoChannelSelect=${AutoChannelSelect:-0}
 AutoChannelSkipList=${ACSSKIP}
 AutoProvisionEn=0
-AutoRoaming=0
 BandSteering=0
 BasicRate=15
 BeaconPeriod=${beacon_int:-100}
@@ -1402,7 +1405,6 @@ WifiCert=1
 WiFiTest=0
 WirelessEvent=1
 WirelessMode=${WirelessMode}
-WNMBTMEnable=1
 WscConfMode=0
 WscConfStatus=2
 WscV2Support=0
@@ -1472,12 +1474,15 @@ EOF
 	ApK3Tp=""
 	ApK4Tp=""
 	ApHideESSID=""
+	ApWmmCapable=""
 	ApRRMEnable=""
 	ApFtSupport=""
 	ApNoForwarding=""
 	ApRekeyInterval=""
 	ApPMFMFPC=""
 	ApPMFMFPR=""
+	ApBSS=""
+	ApARP=""
 	ApFtOtd=""
 	ApFtOnly=""
 	ApFtRic=""
@@ -1494,7 +1499,7 @@ EOF
 	# eval sed -i 's/BssidNum=1/BssidNum=${BssidNum}/g' $MTWIFI_PROFILE_PATH
 	# echo "BssidNum=${ApBssidNum:-1}" >> $MTWIFI_PROFILE_PATH
 	echo "HideSSID=${ApHideESSID%?}" >> $MTWIFI_PROFILE_PATH
-	echo "WmmCapable=${wmm}" >> $MTWIFI_PROFILE_PATH
+	echo "WmmCapable=${ApWmmCapable%?}" >> $MTWIFI_PROFILE_PATH
 	echo "AuthMode=${ApAuthMode%?}" >> $MTWIFI_PROFILE_PATH
 	echo "EncrypType=${ApEncrypType%?}" >> $MTWIFI_PROFILE_PATH
 	echo "RADIUS_Server=${ApRADIUSServer%?}" >> $MTWIFI_PROFILE_PATH
@@ -1511,6 +1516,8 @@ EOF
 	echo "Key3Type=${ApK3Tp%?}" >> $MTWIFI_PROFILE_PATH
 	echo "Key4Type=${ApK4Tp%?}" >> $MTWIFI_PROFILE_PATH
 	echo "RekeyMethod=${ApRekeyMethod%?}" >> $MTWIFI_PROFILE_PATH
+	echo "WNMBTMEnable="${ApBSS%?}" >> $MTWIFI_PROFILE_PATH
+	echo "ProxyARPEnable="${ApARP%?}" >> $MTWIFI_PROFILE_PATH
 	echo "RRMEnable=${ApRRMEnable%?}" >> $MTWIFI_PROFILE_PATH
 	echo "FtSupport=${ApFtSupport%?}" >> $MTWIFI_PROFILE_PATH
 	echo "FtOtd=${ApFtOtd%?}" >> $MTWIFI_PROFILE_PATH
@@ -1531,6 +1538,7 @@ EOF
 
 #WDS接口
 	WDSBssidNum=0
+	WdsEnable=""
 	WdsList=""
 	WdsEncrypType=""
 	WdsDefKId=""
@@ -1538,8 +1546,8 @@ EOF
 	for_each_interface "wds" mtk_wds_vif_pre_config
 
 #For WDS profile merging......
-	echo "WdsNum=${WDSBssidNum:-0}" >> $MTWIFI_PROFILE_PATH
-	echo "WdsEnable=${wdsen:-0}" >> $MTWIFI_PROFILE_PATH
+	# echo "WdsNum=${WDSBssidNum:-0}" >> $MTWIFI_PROFILE_PATH
+	echo "WdsEnable=${WdsEnable%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsList=${WdsList%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsEncrypType=${WdsEncrypType%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsDefaultKeyID=${WdsDefKId%?}" >> $MTWIFI_PROFILE_PATH
@@ -1622,6 +1630,7 @@ EOF
 
 #FIXME:重新加载驱动
 	drv_mtk_cleanup ${phy_name}
+	source /etc/wireless/mediatek/DBDC_card*.dat
 
 #接口上线
 #加锁
