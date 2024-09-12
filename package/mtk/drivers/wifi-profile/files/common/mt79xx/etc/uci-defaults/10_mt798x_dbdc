@@ -4,8 +4,8 @@
 sed -i 's/multicast_to_unicast:-1/multicast_to_unicast:-0/g' /lib/netifd/netifd-wireless.sh
 
 # generate default wireless config
-[ ! -f /etc/config/wireless ] && [ "${ACTION}" = "add" ] && [ "${INTERFACE%%[0-9]}" = "ra" ] && {
+[ ! -f /etc/config/wireless ] && {
 	/sbin/wifi config
 }
-#
-#exit 0
+
+exit 0

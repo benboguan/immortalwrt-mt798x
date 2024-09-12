@@ -17,47 +17,6 @@ append DRIVERS "mtk"
 . /lib/functions.sh
 . /lib/functions/system.sh
 
-board=$(board_name)
-
-
-mtk_get_lan_mac() {
-	local lan_mac
-	Factory_part=$(find_mtd_part Factory)
-	case $board in
-		*)
-			[ -z "$Factory_part" ] && Factory_part=$(find_mtd_part factory)
-			lan_mac=$(dd bs=1 skip=57344 count=6 if=$Factory_part 2>/dev/null | /usr/sbin/maccalc bin2mac)
-			;;
-	esac
-
-	echo ${lan_mac}
-}
-
-mtk_get_1st_mac() {
-	local wlan_mac
-	Factory_part=$(find_mtd_part Factory)
-	case $board in
-		*)
-			[ -z "$Factory_part" ] && Factory_part=$(find_mtd_part factory)
-			wlan_mac=$(dd bs=1 skip=4 count=6 if=$Factory_part 2>/dev/null | /usr/sbin/maccalc bin2mac)
-			;;
-	esac
-
-	echo ${wlan_mac}
-}
-
-mtk_get_2nd_mac() {
-	local wlan_mac
-	Factory_part=$(find_mtd_part Factory)
-	case $board in
-		*)
-			[ -z "$Factory_part" ] && Factory_part=$(find_mtd_part factory)
-			wlan_mac=$(dd bs=1 skip=32768 count=6 if=$Factory_part 2>/dev/null | /usr/sbin/maccalc bin2mac)
-			;;
-	esac
-
-	echo ${wlan_mac}
-}
 
 is_11ax_dbdc_dev()
 {
@@ -84,37 +43,24 @@ is_support_11ax_ht160_dev()
 }
 
 detect_mtk() {
-	devidx=0
-	local macaddr wifi_mac base_mac
+	local base_mac
 	hostname=$(uci -q get system.@system[-1].hostname)
-	wifi_mac=$(uci -q get wireless.@wireless[-1].macaddr)
 	config_load wireless
 
 	[ -n "$(is_11ax_dbdc_dev)" -o -n "$(is_11ac_dbdc_dev)" ] || return 0
 
 	[ -d /sys/module/mt_wifi ] && {
-		for phyname in ra$devidx rax$devidx; do
-			while :; do
-				config_get type "$phyname" type
-				[ -n "$type" ] || break
-				devidx=$(($devidx + 1))
-			done
+		for phyname in ra0 rax0; do
+			config_get type "$phyname" type
 
-			case $board in
-				*)
-					base_mac=$(mtk_get_lan_mac)
-					;;
-			esac
-
-			[ -z "$base_mac" ] && base_mac=$(cat /sys/class/net/eth0/address)
+			base_mac=$(cat /sys/class/net/eth0/address)
 
 			[ "$type" == "mtk" ] || {
 				case $phyname in
-					ra$devidx)
+					ra0)
 						band="2g"
 						hwmode="11g"
 						noscan="1"
-						macaddr="$(mtk_get_1st_mac)"
 						[ -n "$(is_11ax_dbdc_dev)" ] && htmode=HE40 || htmode=HT40
 						[ -z "$hostname" ] && {
 							ssid="OpenWRT-2.4G-$(echo $base_mac | awk -F ":" '{print $5""$6 }'| tr a-z A-Z)"
@@ -122,11 +68,10 @@ detect_mtk() {
 							ssid="$hostname-2.4G"
 						}
 						;;
-					rax$devidx)
+					rax0)
 						band="5g"
 						hwmode="11a"
 #						noscan="1"
-						macaddr="$(mtk_get_2nd_mac)"
 						[ -n "$(is_support_11ax_ht160_dev)" ] && htmode=HE160 || htmode=VHT160 || {
 							[ -n "$(is_11ax_dbdc_dev)" ] && htmode=HE80 || htmode=VHT80
 						}
@@ -138,16 +83,9 @@ detect_mtk() {
 						;;
 				esac
 
-				if [ -n "$macaddr" ]; then
-					dev_id="set wireless.${phyname}.macaddr=${macaddr}"
-				else
-					dev_id="set wireless.${phyname}.macaddr=${wifi_mac}"
-				fi
-
 				uci -q batch <<-EOF
 					set wireless.${phyname}=wifi-device
 					set wireless.${phyname}.type=mtk
-					${dev_id}
 					set wireless.${phyname}.hwmode=$hwmode
 					set wireless.${phyname}.band=$band
 					set wireless.${phyname}.channel=auto
@@ -169,11 +107,9 @@ detect_mtk() {
 					set wireless.default_${phyname}.encryption=none
 EOF
 				uci -q commit wireless
-
-				devidx=$(($devidx + 1))
 			}
 		done
 	}
 
-#	return 0;
+	return 0;
 }

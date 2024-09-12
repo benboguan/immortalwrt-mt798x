@@ -1516,8 +1516,8 @@ EOF
 	echo "Key3Type=${ApK3Tp%?}" >> $MTWIFI_PROFILE_PATH
 	echo "Key4Type=${ApK4Tp%?}" >> $MTWIFI_PROFILE_PATH
 	echo "RekeyMethod=${ApRekeyMethod%?}" >> $MTWIFI_PROFILE_PATH
-	echo "WNMBTMEnable="${ApBSS%?}" >> $MTWIFI_PROFILE_PATH
-	echo "ProxyARPEnable="${ApARP%?}" >> $MTWIFI_PROFILE_PATH
+	echo "WNMBTMEnable=${ApBSS%?}" >> $MTWIFI_PROFILE_PATH
+	echo "ProxyARPEnable=${ApARP%?}" >> $MTWIFI_PROFILE_PATH
 	echo "RRMEnable=${ApRRMEnable%?}" >> $MTWIFI_PROFILE_PATH
 	echo "FtSupport=${ApFtSupport%?}" >> $MTWIFI_PROFILE_PATH
 	echo "FtOtd=${ApFtOtd%?}" >> $MTWIFI_PROFILE_PATH
