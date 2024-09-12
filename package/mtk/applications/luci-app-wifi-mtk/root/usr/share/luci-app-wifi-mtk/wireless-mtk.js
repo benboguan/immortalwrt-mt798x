@@ -1812,7 +1812,7 @@ return view.extend({
 						o.depends('ieee80211w', '1');
 						o.depends('ieee80211w', '2');
 
-						o.validate = function(section_id, value) {
+						/* o.validate = function(section_id, value) {
 							var modeopt = this.section.children.filter(function(o) { return o.option == 'mode' })[0],
 							modeval = modeopt.formvalue(section_id);
 
@@ -1821,7 +1821,7 @@ return view.extend({
 							}
 
 							return true;
-						}
+						} */
 
 						/* o = ss.taboption('encryption', form.Flag, 'wpa_disable_eapol_key_retries', _('Enable key reinstallation (KRACK) countermeasures'), _('Complicates key reinstallation attacks on the client side by disabling retransmission of EAPOL-Key frames that are used to install keys. This workaround might cause interoperability issues and reduced robustness of key negotiation especially in environments with heavy traffic load.'));
 						add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['psk2', 'psk-mixed', 'sae', 'sae-mixed', 'wpa-mixed', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });*/
