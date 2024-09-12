@@ -1630,7 +1630,6 @@ EOF
 
 #FIXME:重新加载驱动
 	drv_mtk_cleanup ${phy_name}
-	source /etc/wireless/mediatek/DBDC_card*.dat
 
 #接口上线
 #加锁
