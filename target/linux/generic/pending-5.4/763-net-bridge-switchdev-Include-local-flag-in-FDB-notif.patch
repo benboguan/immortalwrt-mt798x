@@ -37,7 +37,7 @@ Signed-off-by: Tobias Waldekranz <tobias@waldekranz.com>
  	struct hlist_node		fdb_node;
  	unsigned long			flags;
 +	unsigned char			added_by_user:1;
-+	unsigned char			local:1;
++	unsigned char			is_local:1;
  	unsigned char			offloaded:1;
  
  	/* write-heavy members should not affect lookups */
