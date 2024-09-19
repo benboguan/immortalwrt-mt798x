@@ -6262,15 +6262,13 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.c
  
  				/* mt7623_pad_clk_setup */
  				for (i = 0 ; i < NUM_TRGMII_CTRL; i++)
-@@ -358,7 +338,6 @@ static void mtk_mac_config(struct phylin
- 		val |= SYSCFG0_GE_MODE(ge_mode, mac->id);
- 		regmap_write(eth->ethsys, ETHSYS_SYSCFG0, val);
+@@ -360,4 +338,3 @@ static void mtk_mac_config(struct phylin
  
 -		mac->interface = state->interface;
  	}
  
  	/* SGMII */
-@@ -373,58 +349,18 @@ static void mtk_mac_config(struct phylin
+@@ -382,58 +358,18 @@ static void mtk_mac_config(struct phylin
  				   SYSCFG0_SGMII_MASK,
  				   ~(u32)SYSCFG0_SGMII_MASK);
  
@@ -6630,7 +6628,7 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.h
  /* GPIO port control registers for GMAC 2*/
  #define GPIO_OD33_CTRL8		0x4c0
  #define GPIO_BIAS_CTRL		0xed0
-@@ -1013,72 +1042,159 @@ struct mtk_napi {
+@@ -1013,72 +1042,152 @@ struct mtk_napi {
  };
  
  enum mkt_eth_capabilities {
@@ -7851,3 +7849,4 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.h
  #define MT7981_CAPS  (MTK_GMAC1_SGMII | MTK_GMAC2_SGMII | MTK_GMAC2_GEPHY | \
  		      MTK_MUX_GMAC12_TO_GEPHY_SGMII | MTK_QDMA | \
  		      MTK_MUX_U3_GMAC2_TO_QPHY | MTK_U3_COPHY_V2 | \
+ test-123456
