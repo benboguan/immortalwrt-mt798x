@@ -6262,13 +6262,29 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.c
  
  				/* mt7623_pad_clk_setup */
  				for (i = 0 ; i < NUM_TRGMII_CTRL; i++)
-@@ -360,4 +338,3 @@ static void mtk_mac_config(struct phylin
+@@ -351,14 +331,10 @@ static void mtk_mac_config(struct phylin
+ 		}
  
+ 		/* put the gmac into the right mode */
+-		spin_lock(&eth->syscfg0_lock);
+ 		regmap_read(eth->ethsys, ETHSYS_SYSCFG0, &val);
+ 		val &= ~SYSCFG0_GE_MODE(SYSCFG0_GE_MASK, mac->id);
+ 		val |= SYSCFG0_GE_MODE(ge_mode, mac->id);
+ 		regmap_write(eth->ethsys, ETHSYS_SYSCFG0, val);
+-		spin_unlock(&eth->syscfg0_lock);
+-
 -		mac->interface = state->interface;
  	}
  
  	/* SGMII */
-@@ -382,58 +358,18 @@ static void mtk_mac_config(struct phylin
+@@ -367,67 +343,24 @@ static void mtk_mac_config(struct phylin
+ 		/* The path GMAC to SGMII will be enabled once the SGMIISYS is
+ 		 * being setup done.
+ 		 */
+-		spin_lock(&eth->syscfg0_lock);
+ 		regmap_read(eth->ethsys, ETHSYS_SYSCFG0, &val);
+ 
+ 		regmap_update_bits(eth->ethsys, ETHSYS_SYSCFG0,
  				   SYSCFG0_SGMII_MASK,
  				   ~(u32)SYSCFG0_SGMII_MASK);
  
@@ -6283,8 +6299,10 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 -		else if (phylink_autoneg_inband(mode))
 -			err = mtk_sgmii_setup_mode_an(eth->sgmii, sid);
 -
--		if (err)
+-		if (err) {
+-			spin_unlock(&eth->syscfg0_lock);
 -			goto init_err;
+-		}
 -
 -		regmap_update_bits(eth->ethsys, ETHSYS_SYSCFG0,
 -				   SYSCFG0_SGMII_MASK, val);
@@ -6335,7 +6353,7 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.c
  
  	return;
  
-@@ -450,6 +383,35 @@ init_err:
+@@ -441,6 +374,35 @@ init_err:
  		mac->id, phy_modes(state->interface), err);
  }
  
@@ -6371,7 +6389,7 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.c
  static void mtk_mac_pcs_get_state(struct phylink_config *config,
  				  struct phylink_link_state *state)
  {
-@@ -493,14 +455,91 @@ static void mtk_mac_an_restart(struct ph
+@@ -484,14 +446,91 @@ static void mtk_mac_an_restart(struct ph
  static void mtk_mac_link_down(struct phylink_config *config, unsigned int mode,
  			      phy_interface_t interface)
  {
@@ -6465,7 +6483,7 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.c
  static void mtk_mac_link_up(struct phylink_config *config,
  			    struct phy_device *phy,
  			    unsigned int mode, phy_interface_t interface,
-@@ -508,10 +547,10 @@ static void mtk_mac_link_up(struct phyli
+@@ -499,10 +538,10 @@ static void mtk_mac_link_up(struct phyli
  {
  	struct mtk_mac *mac = container_of(config, struct mtk_mac,
  					   phylink_config);
@@ -6479,7 +6497,7 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.c
  }
  
  static void mtk_validate(struct phylink_config *config,
-@@ -602,6 +641,10 @@ static void mtk_validate(struct phylink_
+@@ -592,6 +631,10 @@ static void mtk_validate(struct phylink_
  }
  
  static const struct phylink_mac_ops mtk_phylink_ops = {
@@ -6490,7 +6508,7 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.c
  	.validate = mtk_validate,
  	.mac_pcs_get_state = mtk_mac_pcs_get_state,
  	.mac_an_restart = mtk_mac_an_restart,
-@@ -3576,6 +3619,51 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -3471,6 +3514,51 @@ static int mtk_add_mac(struct mtk_eth *e
  
  	mac->phylink_config.dev = &eth->netdev[id]->dev;
  	mac->phylink_config.type = PHYLINK_NETDEV;
@@ -6542,7 +6560,7 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.c
  
  	phylink = phylink_create(&mac->phylink_config,
  				 of_fwnode_handle(mac->of_node),
-@@ -3646,6 +3734,7 @@ free_netdev:
+@@ -3506,6 +3594,7 @@ free_netdev:
  	return err;
  }
  
@@ -6550,7 +6568,7 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.c
  static int mtk_probe(struct platform_device *pdev)
  {
  	struct device_node *mac_np;
-@@ -3711,7 +3800,6 @@ static int mtk_probe(struct platform_dev
+@@ -3571,7 +3660,6 @@ static int mtk_probe(struct platform_dev
  			return PTR_ERR(eth->infra);
  		}
  	}
@@ -6558,7 +6576,7 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.c
  	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SGMII)) {
  		eth->sgmii = devm_kzalloc(eth->dev, sizeof(*eth->sgmii),
  					  GFP_KERNEL);
-@@ -3719,7 +3807,7 @@ static int mtk_probe(struct platform_dev
+@@ -3579,7 +3667,7 @@ static int mtk_probe(struct platform_dev
  			return -ENOMEM;
  
  		err = mtk_sgmii_init(eth->sgmii, pdev->dev.of_node,
@@ -6628,7 +6646,7 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.h
  /* GPIO port control registers for GMAC 2*/
  #define GPIO_OD33_CTRL8		0x4c0
  #define GPIO_BIAS_CTRL		0xed0
-@@ -1013,72 +1042,152 @@ struct mtk_napi {
+@@ -1032,81 +1061,161 @@ struct mtk_napi {
  };
  
  enum mkt_eth_capabilities {
@@ -6691,11 +6709,15 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 -	MTK_INFRA_BIT,
 -	MTK_SHARED_SGMII_BIT,
 -	MTK_HWLRO_BIT,
+-	MTK_RSS_BIT,
 -	MTK_SHARED_INT_BIT,
 -	MTK_TRGMII_MT7621_CLK_BIT,
 -	MTK_QDMA_BIT,
 -	MTK_NETSYS_V2_BIT,
+ 	MTK_NETSYS_RX_V2_BIT,
 -	MTK_SOC_MT7628_BIT,
+-	MTK_RSTCTRL_PPE1_BIT,
+-	MTK_U3_COPHY_V2_BIT,
 +	MTK_TRGMII_BIT = 1,
 +	MTK_SGMII_BIT = 2,
 +	MTK_USXGMII_BIT = 3,
@@ -6764,10 +6786,15 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 -#define MTK_INFRA		BIT(MTK_INFRA_BIT)
 -#define MTK_SHARED_SGMII	BIT(MTK_SHARED_SGMII_BIT)
 -#define MTK_HWLRO		BIT(MTK_HWLRO_BIT)
+-#define MTK_RSS			BIT(MTK_RSS_BIT)
 -#define MTK_SHARED_INT		BIT(MTK_SHARED_INT_BIT)
 -#define MTK_TRGMII_MT7621_CLK	BIT(MTK_TRGMII_MT7621_CLK_BIT)
 -#define MTK_QDMA		BIT(MTK_QDMA_BIT)
+-#define MTK_NETSYS_V2		BIT(MTK_NETSYS_V2_BIT)
+ #define MTK_NETSYS_RX_V2	BIT(MTK_NETSYS_RX_V2_BIT)
 -#define MTK_SOC_MT7628		BIT(MTK_SOC_MT7628_BIT)
+-#define MTK_RSTCTRL_PPE1	BIT(MTK_RSTCTRL_PPE1_BIT)
+-#define MTK_U3_COPHY_V2		BIT(MTK_U3_COPHY_V2_BIT)
 +#define MTK_RGMII		BIT_ULL(MTK_RGMII_BIT)
 +#define MTK_TRGMII		BIT_ULL(MTK_TRGMII_BIT)
 +#define MTK_SGMII		BIT_ULL(MTK_SGMII_BIT)
@@ -6838,7 +6865,7 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.h
  
  #define MTK_GMAC1_RGMII		(MTK_ETH_PATH_GMAC1_RGMII | MTK_RGMII)
  #define MTK_GMAC1_TRGMII	(MTK_ETH_PATH_GMAC1_TRGMII | MTK_TRGMII)
-@@ -1093,7 +1202,12 @@ enum mkt_eth_capabilities {
+@@ -1114,7 +1221,12 @@ enum mkt_eth_capabilities {
  #define MTK_GMAC2_RGMII		(MTK_ETH_PATH_GMAC2_RGMII | MTK_RGMII)
  #define MTK_GMAC2_SGMII		(MTK_ETH_PATH_GMAC2_SGMII | MTK_SGMII)
  #define MTK_GMAC2_GEPHY		(MTK_ETH_PATH_GMAC2_GEPHY | MTK_GEPHY)
@@ -6851,27 +6878,22 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.h
  
  /* MUXes present on SoCs */
  /* 0: GDM1 -> GMAC1, 1: GDM1 -> ESW */
-@@ -1142,10 +1256,15 @@ enum mkt_eth_capabilities {
+@@ -1161,12 +1273,12 @@ enum mkt_eth_capabilities {
+ 
+ #define MT7986_CAPS   (MTK_GMAC1_SGMII | MTK_GMAC2_SGMII | \
                         MTK_MUX_GMAC12_TO_GEPHY_SGMII | MTK_QDMA | \
-                        MTK_NETSYS_V2)
+-                       MTK_NETSYS_V2 | MTK_NETSYS_RX_V2)
++			MTK_RSTCTRL_PPE1 | MTK_NETSYS_RX_V2)
  
--#define MT7981_CAPS   (MTK_GMAC1_SGMII | MTK_GMAC2_SGMII | MTK_GMAC2_GEPHY | \
--			MTK_MUX_GMAC12_TO_GEPHY_SGMII | MTK_QDMA | \
--			MTK_MUX_U3_GMAC2_TO_QPHY | MTK_U3_COPHY_V2 | \
+ #define MT7981_CAPS   (MTK_GMAC1_SGMII | MTK_GMAC2_SGMII | MTK_GMAC2_GEPHY | \
+ 			MTK_MUX_GMAC12_TO_GEPHY_SGMII | MTK_QDMA | \
+ 			MTK_MUX_U3_GMAC2_TO_QPHY | MTK_U3_COPHY_V2 | \
 -			MTK_NETSYS_V2)
-+// #define MT7981_CAPS   (MTK_GMAC1_SGMII | MTK_GMAC2_SGMII | MTK_GMAC2_GEPHY | \
-+// 			MTK_MUX_GMAC12_TO_GEPHY_SGMII | MTK_QDMA | \
-+// 			MTK_MUX_U3_GMAC2_TO_QPHY | MTK_U3_COPHY_V2 | \
-+// 			MTK_NETSYS_V2)
-+
-+#define MT7981_CAPS  (MTK_GMAC1_SGMII | MTK_GMAC2_SGMII | MTK_GMAC2_GEPHY | \
-+		      MTK_MUX_GMAC12_TO_GEPHY_SGMII | MTK_QDMA | \
-+		      MTK_MUX_U3_GMAC2_TO_QPHY | MTK_U3_COPHY_V2 | \
-+		      MTK_RSTCTRL_PPE1 | MTK_SRAM)
++			MTK_RSTCTRL_PPE1 | MTK_SRAM)
  
- struct mtk_tx_dma_desc_info {
- 	dma_addr_t	addr;
-@@ -1176,10 +1295,14 @@ struct mtk_tx_dma_desc_info {
+ /* struct mtk_eth_data -	This is the structure holding all differences
+  *				among various plaforms
+@@ -1181,11 +1298,21 @@ struct mtk_tx_dma_desc_info {
   */
  struct mtk_soc_data {
  	u32             ana_rgc3;
@@ -6881,15 +6903,21 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +	u64		required_clks;
  	bool		required_pctl;
  	netdev_features_t hw_features;
+ 	bool		has_sram;
 +	u8		version;
 +	bool		disable_pll_modes;
-+	u32	rx_irq_done_mask;
-+	u32	rx_dma_l4_valid;
++	struct {
++		u32	txd_size;
++		u32	rxd_size;
++		u32	rx_irq_done_mask;
++		u32	rx_dma_l4_valid;
++		u32	dma_max_len;
++		u32	dma_len_offset;
++	} txrx;
  };
  
  /* currently no SoC has more than 2 macs */
-
-@@ -1286,6 +1409,7 @@ struct mtk_eth {
+@@ -1270,6 +1397,7 @@ struct mtk_eth {
  	unsigned long			sysclk;
  	struct regmap			*ethsys;
  	struct regmap                   *infra;
@@ -6897,7 +6925,7 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.h
  	struct mtk_sgmii                *sgmii;
  	struct regmap			*pctl;
  	bool				hwlro;
-@@ -1336,6 +1460,8 @@ struct mtk_mac {
+@@ -1319,6 +1447,8 @@ struct mtk_mac {
  	struct mtk_hw_stats		*hw_stats;
  	__be32				hwlro_ip[MTK_MAX_LRO_IP_CNT];
  	int				hwlro_ip_cnt;
@@ -6906,7 +6934,7 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.h
  };
  
  /* the struct describing the SoC. these are declared in the soc_xyz.c files */
-@@ -1350,7 +1476,7 @@ u32 mtk_r32(struct mtk_eth *eth, unsigne
+@@ -1333,7 +1463,7 @@ u32 mtk_r32(struct mtk_eth *eth, unsigne
  u32 mtk_m32(struct mtk_eth *eth, u32 mask, u32 set, unsigned reg);
  
  int mtk_sgmii_init(struct mtk_sgmii *ss, struct device_node *np,
@@ -6915,10 +6943,10 @@ Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.h
  int mtk_sgmii_setup_mode_an(struct mtk_sgmii *ss, unsigned int id);
  int mtk_sgmii_setup_mode_force(struct mtk_sgmii *ss, unsigned int id,
  			       const struct phylink_link_state *state);
-@@ -1362,4 +1488,37 @@ int mtk_gmac_rgmii_path_setup(struct mtk
- int mtk_gmac_gephy_path_setup(struct mtk_eth *eth, int mac_id);
- int mtk_gmac_rgmii_path_setup(struct mtk_eth *eth, int mac_id);
- 
+@@ -1346,4 +1476,37 @@ void mtk_gdm_config(struct mtk
+ void ethsys_reset(struct mtk_eth *eth, u32 reset_bits);
+ int mtk_soc_extphy_init(struct mtk_eth *eth, int addr);
+ int mtk_mdio_busy_wait(struct mtk_eth *eth);
 +/* GMAC Identifier */
 +enum mtk_gmac_id {
 +	MTK_GMAC1_ID = 0,
@@ -7494,7 +7522,7 @@ Index: linux-5.4.284/include/linux/regmap.h
 ===================================================================
 --- linux-5.4.284.orig/include/linux/regmap.h
 +++ linux-5.4.284/include/linux/regmap.h
-@@ -1062,6 +1062,19 @@ static inline bool regmap_reg_in_range(u
+@@ -1081,6 +1081,19 @@ static inline bool regmap_reg_in_range(u
  	return reg >= range->range_min && reg <= range->range_max;
  }
  
@@ -7518,7 +7546,7 @@ Index: linux-5.4.284/include/net/dsa.h
 ===================================================================
 --- linux-5.4.284.orig/include/net/dsa.h
 +++ linux-5.4.284/include/net/dsa.h
-@@ -368,7 +368,9 @@ typedef int dsa_fdb_dump_cb_t(const unsi
+@@ -369,6 +369,9 @@ typedef int dsa_fdb_dump_cb_t(const unsi
  	enum dsa_tag_protocol (*get_tag_protocol)(struct dsa_switch *ds,
  						  int port,
  						  enum dsa_tag_protocol mprot);
@@ -7561,20 +7589,3 @@ Index: linux-5.4.284/net/dsa/port.c
  	.mac_config = dsa_port_phylink_mac_config,
  	.mac_an_restart = dsa_port_phylink_mac_an_restart,
  	.mac_link_down = dsa_port_phylink_mac_link_down,
-Index: linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-===================================================================
---- linux-5.4.284.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-+++ linux-5.4.284/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -1256,11 +1256,6 @@ enum mkt_eth_capabilities {
-                        MTK_MUX_GMAC12_TO_GEPHY_SGMII | MTK_QDMA | \
-                        MTK_NETSYS_V2)
- 
--// #define MT7981_CAPS   (MTK_GMAC1_SGMII | MTK_GMAC2_SGMII | MTK_GMAC2_GEPHY | \
--// 			MTK_MUX_GMAC12_TO_GEPHY_SGMII | MTK_QDMA | \
--// 			MTK_MUX_U3_GMAC2_TO_QPHY | MTK_U3_COPHY_V2 | \
--// 			MTK_NETSYS_V2)
--
- #define MT7981_CAPS  (MTK_GMAC1_SGMII | MTK_GMAC2_SGMII | MTK_GMAC2_GEPHY | \
- 		      MTK_MUX_GMAC12_TO_GEPHY_SGMII | MTK_QDMA | \
- 		      MTK_MUX_U3_GMAC2_TO_QPHY | MTK_U3_COPHY_V2 | \
- test-123456
