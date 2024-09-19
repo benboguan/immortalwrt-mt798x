@@ -30,6 +30,17 @@ Signed-off-by: Tobias Waldekranz <tobias@waldekranz.com>
  	   offloaded:1;
  };
  
+--- a/net/bridge/br_private.h
++++ b/net/bridge/br_private.h
+@@ -193,6 +193,8 @@ struct net_bridge_fdb_entry {
+ 	struct net_bridge_fdb_key	key;
+ 	struct hlist_node		fdb_node;
+ 	unsigned long			flags;
++	unsigned char			added_by_user:1;
++	unsigned char			local:1;
+ 	unsigned char			offloaded:1;
+ 
+ 	/* write-heavy members should not affect lookups */
 --- a/net/bridge/br_switchdev.c
 +++ b/net/bridge/br_switchdev.c
 @@ -109,6 +109,7 @@ br_switchdev_fdb_notify(const struct net
