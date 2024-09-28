@@ -657,6 +657,12 @@ static inline void hnat_set_alg(const struct nf_hook_state *state,
 	skb_hnat_alg(skb) = val;
 }
 
+static inline void hnat_set_tag(const struct nf_hook_state *state,
+				struct sk_buff *skb, int val)
+{
+	skb_hnat_magic_tag(skb) = val;
+}
+
 static inline void hnat_set_head_frags(const struct nf_hook_state *state,
 				       struct sk_buff *head_skb, int val,
 				       void (*fn)(const struct nf_hook_state *state,
@@ -922,8 +928,8 @@ mtk_hnat_ipv6_nf_pre_routing(void *priv, struct sk_buff *skb,
 		goto drop;
 
 	if (!IS_WHNAT(state->in) && IS_EXT(state->in) && IS_SPACE_AVAILABLE_HEAD(skb)) {
-		skb_hnat_alg(skb) = 0;
-		skb_hnat_magic_tag(skb) = HNAT_MAGIC_TAG;
+		hnat_set_head_frags(state, skb, 0, hnat_set_alg);
+		hnat_set_head_frags(state, skb, HNAT_MAGIC_TAG, hnat_set_tag);
 	}
 
 	if (!is_magic_tag_valid(skb))
@@ -995,8 +1001,8 @@ mtk_hnat_ipv4_nf_pre_routing(void *priv, struct sk_buff *skb,
 		goto drop;
 
 	if (!IS_WHNAT(state->in) && IS_EXT(state->in) && IS_SPACE_AVAILABLE_HEAD(skb)) {
-		skb_hnat_alg(skb) = 0;
-		skb_hnat_magic_tag(skb) = HNAT_MAGIC_TAG;
+		hnat_set_head_frags(state, skb, 0, hnat_set_alg);
+		hnat_set_head_frags(state, skb, HNAT_MAGIC_TAG, hnat_set_tag);
 	}
 
 	if (!is_magic_tag_valid(skb))
@@ -1058,8 +1064,8 @@ mtk_hnat_br_nf_local_in(void *priv, struct sk_buff *skb,
 		goto drop;
 
 	if (!IS_WHNAT(state->in) && IS_EXT(state->in) && IS_SPACE_AVAILABLE_HEAD(skb)) {
-		skb_hnat_alg(skb) = 0;
-		skb_hnat_magic_tag(skb) = HNAT_MAGIC_TAG;
+		hnat_set_head_frags(state, skb, 0, hnat_set_alg);
+		hnat_set_head_frags(state, skb, HNAT_MAGIC_TAG, hnat_set_tag);
 	}
 
 	if (!is_magic_tag_valid(skb))

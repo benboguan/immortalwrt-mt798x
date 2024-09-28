@@ -6,7 +6,7 @@
  
 +ifneq ($(filter mtk,$(IWINFO_BACKENDS)),)
 +	IWINFO_CFLAGS  += -DUSE_MTK
-+	IWINFO_LIB_OBJ += iwinfo_mtk.o iwinfo_mtk_rate.o
++	IWINFO_LIB_OBJ += iwinfo_mtk.o iwinfo_mtk_rate.o iwinfo_mtk_l1util.o
 +endif
 +
  ifneq ($(filter nl80211,$(IWINFO_BACKENDS)),)
