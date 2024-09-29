@@ -924,6 +924,7 @@ return view.extend({
 		s.addModalOptions = function(s) {
 			return network.getWifiNetwork(s.section).then(function(radioNet) {
 				var hwtype = uci.get('wireless', radioNet.getWifiDeviceName(), 'type');
+				var band = uci.get('wireless', radioNet.getWifiDeviceName(), 'band');
 				var o, ss;
 
 				o = s.option(form.SectionValue, '_device', form.NamedSection, radioNet.getWifiDeviceName(), 'wifi-device', _('Device Configuration'));
@@ -1414,20 +1415,22 @@ return view.extend({
 					crypto_modes.push(['wep-shared', _('WEP Shared Key'),         10]);
 				}
 				else if (hwtype == 'mtk') {
-					crypto_modes.push(['psk2',      'WPA2-PSK',                    35]);
-					crypto_modes.push(['psk-mixed', 'WPA-PSK/WPA2-PSK Mixed Mode', 22]);
-					crypto_modes.push(['psk',       'WPA-PSK',                     12]);
-					crypto_modes.push(['sae',       'WPA3-SAE',                     31]);
-					crypto_modes.push(['sae-mixed', 'WPA2-PSK/WPA3-SAE Mixed Mode', 30]);
-					crypto_modes.push(['wep-open',   _('WEP Open System'), 11]);
-					crypto_modes.push(['wep-shared', _('WEP Shared Key'),  10]);
-					crypto_modes.push(['wpa3', 'WPA3-EAP', 33]);
-					crypto_modes.push(['wpa3-mixed', 'WPA2-EAP/WPA3-EAP Mixed Mode', 32]);
 					crypto_modes.push(['wpa3-192', 'WPA3-EAP 192-bit Mode', 36]);
-					crypto_modes.push(['wpa-mixed', 'WPA-EAP/WPA2-EAP Mixed Mode', 21]);
-					crypto_modes.push(['wpa2', 'WPA2-EAP', 34]);
-					crypto_modes.push(['wpa',  'WPA-EAP',  20]);
+					crypto_modes.push(['wpa3', 'WPA3-EAP', 33]);
+					crypto_modes.push(['sae',       'WPA3-SAE',                     31]);
 					crypto_modes.push(['owe', 'OWE', 1]);
+					if (band != '6g') {
+						crypto_modes.push(['psk2',      'WPA2-PSK',                    35]);
+						crypto_modes.push(['psk-mixed', 'WPA-PSK/WPA2-PSK Mixed Mode', 22]);
+						crypto_modes.push(['psk',       'WPA-PSK',                     12]);
+						crypto_modes.push(['sae-mixed', 'WPA2-PSK/WPA3-SAE Mixed Mode', 30]);
+						crypto_modes.push(['wep-open',   _('WEP Open System'), 11]);
+						crypto_modes.push(['wep-shared', _('WEP Shared Key'),  10]);
+						crypto_modes.push(['wpa3-mixed', 'WPA2-EAP/WPA3-EAP Mixed Mode', 32]);
+						crypto_modes.push(['wpa-mixed', 'WPA-EAP/WPA2-EAP Mixed Mode', 21]);
+						crypto_modes.push(['wpa2', 'WPA2-EAP', 34]);
+						crypto_modes.push(['wpa',  'WPA-EAP',  20]);
+					}
 
 					encr.crypto_support = {
 						'ap': {
