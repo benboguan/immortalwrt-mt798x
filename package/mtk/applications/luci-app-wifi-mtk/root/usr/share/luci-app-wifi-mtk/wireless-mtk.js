@@ -1018,19 +1018,6 @@ return view.extend({
 					o.placeholder = 64;
 					o.datatype = 'range(1,128)';
 
-					o = ss.taboption('advanced', form.Value, 'frag', _('Fragmentation Threshold'));
-					o.datatype = 'min(256)';
-					o.placeholder = 2346;
-
-					o = ss.taboption('advanced', form.Value, 'rts', _('RTS/CTS Threshold'));
-					o.datatype = 'uinteger';
-					o.placeholder = 2347;
-
-					o = ss.taboption('advanced', form.Value, 'dtim_period', _('DTIM Interval'), _('Delivery Traffic Indication Message Interval'));
-					o.optional = true;
-					o.placeholder = 1;
-					o.datatype = 'range(1,255)';
-
 					o = ss.taboption('advanced', form.Value, 'beacon_int', _('Beacon Interval'));
 					o.datatype = 'range(20,999)';
 					o.placeholder = 100;
@@ -1301,6 +1288,22 @@ return view.extend({
 
 					o = ss.taboption('advanced', form.Flag, 'short_preamble', _('Short Preamble'));
 					o.default = o.enabled;
+					o.depends('mode', 'ap');
+
+					o = ss.taboption('advanced', form.Value, 'frag', _('Fragmentation Threshold'));
+					o.datatype = 'min(256)';
+					o.depends('mode', 'ap');
+					o.placeholder = 2346;
+
+					o = ss.taboption('advanced', form.Value, 'rts', _('RTS/CTS Threshold'));
+					o.datatype = 'uinteger';
+					o.depends('mode', 'ap');
+					o.placeholder = 2347;
+
+					o = ss.taboption('advanced', form.Value, 'dtim_period', _('DTIM Interval'), _('Delivery Traffic Indication Message Interval'));
+					o.optional = true;
+					o.placeholder = 1;
+					o.datatype = 'range(1,255)';
 					o.depends('mode', 'ap');
 
 					o = ss.taboption('advanced', form.Value, 'wpa_group_rekey', _('Time interval for rekeying GTK'), _('sec'));
