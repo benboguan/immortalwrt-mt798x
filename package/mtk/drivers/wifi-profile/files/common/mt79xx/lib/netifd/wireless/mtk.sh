@@ -41,7 +41,7 @@ drv_mtk_init_device_config() {
 	config_add_string path channel hwmode htmode country 'macaddr:macaddr' twt
 	config_add_string txburst cell_density
 	config_add_string distance
-	config_add_int beacon_int chanbw frag rts dtim_period vendor_vht vht_1024 mu_beamformer whnat
+	config_add_int beacon_int chanbw vendor_vht vht_1024 mu_beamformer whnat
 	config_add_int rxantenna txantenna antenna_gain txpower min_tx_power noscan
 	config_add_int num_global_macaddr multiple_bssid legacy_rates
 	config_add_boolean greenap diversity noscan ht_coex acs_exclude_dfs background_radar
@@ -65,7 +65,7 @@ drv_mtk_init_iface_config() {
 	config_add_array 'maclist:list(macaddr)' r0kh r1kh
 
 	config_add_boolean wds wmm wnm_sleep_mode bss_transition proxy_arp mbo rrm_neighbor_report rrm_beacon_report ft_psk_generate_local pmk_r1_push
-	config_add_int apclipe short_preamble wpa_group_rekey rsn_preauth ocv
+	config_add_int frag rts dtim_period apclipe short_preamble wpa_group_rekey rsn_preauth ocv
 	config_add_int max_listen_int ieee80211w time_advertisement 'port:port'
 	config_add_int disassoc_low_ack kicklow assocthres
 	config_add_string wdsenctype wdskey wdsphymode macaddr time_zone
@@ -91,7 +91,7 @@ mtk_ap_vif_pre_config() {
 		ssid mode wps_pushbutton pin pbc isolate hidden disassoc_low_ack kicklow assocthres rsn_preauth \
 		ieee80211k ieee80211v ieee80211r ieee80211w macfilter nasid mobility_domain r1_key_holder reassociation_deadline r0kh r1kh \
 		ft_over_ds ft_psk_generate_local pmk_r1_push rrm_neighbor_report rrm_beacon_report wnm_sleep_mode bss_transition proxy_arp \
-		mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv
+		frag rts dtim_period mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv
 	json_get_values maclist maclist
 	set_default wmm 1
 	set_default isolate 0
@@ -273,6 +273,9 @@ mtk_ap_vif_pre_config() {
 	ApFtOtd="${ApFtOtd}${ft_over_ds:-0};"
 	ApFtOnly="${ApFtOnly}${ft_psk_generate_local:-0};"
 	ApFtRic="${ApFtRic}${pmk_r1_push:-0};"
+	ApFrag="${ApFrag}${frag:-2346};"
+	ApRts="${ApRts}${rts:-2347};"
+	ApDtim="${ApDtim}${dtim_period:-1};"
 	Apmumimodl="${Apmumimodl}${mumimo_dl};"
 	Apmumimoul="${Apmumimoul}${mumimo_ul};"
 	Apofdmadl="${Apofdmadl}${ofdma_dl};"
@@ -764,8 +767,8 @@ drv_mtk_teardown() {
 drv_mtk_setup() {
 	json_select config
 	json_get_vars main_if phy_name macaddr channel mode hwmode htmode \
-		txpower country macfilter maclist greenap diversity frag \
-		rts hidden disabled ht_coex band #device所有配置项
+		txpower country macfilter maclist greenap diversity \
+		hidden disabled ht_coex band #device所有配置项
 		
 	json_get_vars \
 			noscan:1 \
@@ -776,9 +779,6 @@ drv_mtk_setup() {
 			whnat:1 \
 			legacy_rates:0 \
 			maxassoc:64 \
-			frag:2346 \
-			rts:2347 \
-			dtim_period:1 \
 			distance:0 \
 			beacon_int:100 \
 			greenfield:0 \
@@ -1198,7 +1198,6 @@ Dot11vMbssid=0
 DppEnable=1
 DscpPriMapBss=
 DscpPriMapEnable=1
-DtimPeriod=${dtim_period:-1}
 E2pAccessMode=2
 EAPifname=
 EDCCAEnable=1
@@ -1215,7 +1214,6 @@ FineAGC=0
 FixedTxMode=
 ForceRoamSupport=
 FQ_Enable=1
-FragThreshold=${frag:-2346}
 FreqDelta=0
 GreenAP=${greenap:-0}
 G_BAND_256QAM=${vendor_vht:-1}
@@ -1298,7 +1296,6 @@ RadioOn=1
 RDRegion=${RDRegion}
 RED_Enable=1
 RegDomain=Global
-RTSThreshold=${rts:-2347}
 ScsEnable=0
 SCSEnable=1
 session_timeout_interval=0
@@ -1486,6 +1483,9 @@ EOF
 	ApFtOtd=""
 	ApFtOnly=""
 	ApFtRic=""
+	ApFrag=""
+	ApRts=""
+	ApDtim=""
 	Apmumimodl=""
 	Apmumimoul=""
 	Apofdmadl=""
@@ -1532,6 +1532,9 @@ EOF
 	echo "PMFMFPR=${ApPMFMFPR%?}" >> $MTWIFI_PROFILE_PATH
 	echo "NoForwarding=${ApNoForwarding%?}" >> $MTWIFI_PROFILE_PATH
 	echo "RekeyInterval=${ApRekeyInterval%?}" >> $MTWIFI_PROFILE_PATH
+	echo "FragThreshold=${ApFrag%?}" >> $MTWIFI_PROFILE_PATH
+	echo "RTSThreshold=${ApRts%?}" >> $MTWIFI_PROFILE_PATH
+	echo "DtimPeriod=${ApDtim%?}" >> $MTWIFI_PROFILE_PATH
 	echo "TxPreamble=${short_preamble}" >> $MTWIFI_PROFILE_PATH
 	echo "KickStaRssiLow=${kicklow}" >> $MTWIFI_PROFILE_PATH
 	echo "AssocReqRssiThres=${assocthres}" >> $MTWIFI_PROFILE_PATH
