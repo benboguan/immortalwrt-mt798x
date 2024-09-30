@@ -11,7 +11,6 @@
 
 #include <linux/blkdev.h>
 #include <linux/buffer_head.h>
-#include <linux/cleancache.h>
 #include <linux/fs.h>
 #include <linux/highmem.h>
 #include <linux/kernel.h>
@@ -54,8 +53,6 @@ enum utf16_endian;
 #define E_NTFS_NONRESIDENT		556
 /* NTFS specific error code about punch hole. */
 #define E_NTFS_NOTALIGNED		557
-/* NTFS specific error code when on-disk struct is corrupted. */
-#define E_NTFS_CORRUPT			558
 
 
 /* sbi->flags */
@@ -93,8 +90,6 @@ struct ntfs_mount_options {
 	u16 fs_fmask_inv;
 	u16 fs_dmask_inv;
 
-	unsigned uid : 1;
-	unsigned gid : 1;
 	unsigned fmask : 1; /* fmask was set. */
 	unsigned dmask : 1; /*dmask was set. */
 	unsigned sys_immutable : 1; /* Immutable system files. */
@@ -105,7 +100,6 @@ struct ntfs_mount_options {
 	unsigned force : 1; /* RW mount dirty volume. */
 	unsigned noacsrules : 1; /* Exclude acs rules. */
 	unsigned prealloc : 1; /* Preallocate space when file is growing. */
-	unsigned nocase : 1; /* case insensitive. */
 };
 
 /* Special value to unpack and deallocate. */
@@ -311,7 +305,7 @@ struct ntfs_sb_info {
 #endif
 	} compress;
 
-	struct ntfs_mount_options options;
+	struct ntfs_mount_options *options;
 	struct ratelimit_state msg_ratelimit;
 };
 
@@ -351,7 +345,7 @@ struct ntfs_inode {
 	 * Usually i_valid <= inode->i_size.
 	 */
 	u64 i_valid;
-	struct timespec i_crtime;
+	struct timespec64 i_crtime;
 
 	struct mutex ni_lock;
 
@@ -471,7 +465,7 @@ bool al_delete_le(struct ntfs_inode *ni, enum ATTR_TYPE type, CLST vcn,
 int al_update(struct ntfs_inode *ni, int sync);
 static inline size_t al_aligned(size_t size)
 {
-	return size_add(size, 1023) & ~(size_t)1023;
+	return (size + 1023) & ~(size_t)1023;
 }
 
 /* Globals from bitfunc.c */
@@ -491,23 +485,11 @@ bool dir_is_empty(struct inode *dir);
 extern const struct file_operations ntfs_dir_operations;
 
 /* Globals from file.c */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-int ntfs_getattr(struct user_namespace *mnt_userns, const struct path *path,
+int ntfs_getattr(const struct path *path,
 		 struct kstat *stat, u32 request_mask, u32 flags);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
-int ntfs_getattr(const struct path *path, struct kstat *stat,
-		 u32 request_mask, u32 flags);
-#else
-int ntfs_getattr(struct vfsmount *mnt, struct dentry *dentry,
-		 struct kstat *stat);
-#endif
 void ntfs_sparse_cluster(struct inode *inode, struct page *page0, CLST vcn,
 			 CLST len);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-int ntfs3_setattr(struct user_namespace *mnt_userns, struct dentry *dentry,
-#else
 int ntfs3_setattr(struct dentry *dentry,
-#endif
 		  struct iattr *attr);
 int ntfs_file_open(struct inode *inode, struct file *file);
 int ntfs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
@@ -592,11 +574,9 @@ int ni_rename(struct ntfs_inode *dir_ni, struct ntfs_inode *new_dir_ni,
 bool ni_is_dirty(struct inode *inode);
 
 /* Globals from fslog.c */
-bool check_index_header(const struct INDEX_HDR *hdr, size_t bytes);
 int log_replay(struct ntfs_inode *ni, bool *initialized);
 
 /* Globals from fsntfs.c */
-struct buffer_head *ntfs_bread(struct super_block *sb, sector_t block);
 bool ntfs_fix_pre_write(struct NTFS_RECORD_HEADER *rhdr, size_t bytes);
 int ntfs_fix_post_read(struct NTFS_RECORD_HEADER *rhdr, size_t bytes,
 		       bool simple);
@@ -714,11 +694,7 @@ int ntfs_sync_inode(struct inode *inode);
 int ntfs_flush_inodes(struct super_block *sb, struct inode *i1,
 		      struct inode *i2);
 int inode_write_data(struct inode *inode, const void *data, size_t bytes);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-struct inode *ntfs_create_inode(struct user_namespace *mnt_userns,
-#else
 struct inode *ntfs_create_inode(
-#endif
 				struct inode *dir, struct dentry *dentry,
 				const struct cpu_str *uni, umode_t mode,
 				dev_t dev, const char *symname, u32 size,
@@ -737,7 +713,6 @@ struct dentry *ntfs3_get_parent(struct dentry *child);
 
 extern const struct inode_operations ntfs_dir_inode_operations;
 extern const struct inode_operations ntfs_special_inode_operations;
-extern const struct dentry_operations ntfs_dentry_ops;
 
 /* Globals from record.c */
 int mi_get(struct ntfs_sb_info *sbi, CLST rno, struct mft_inode **mi);
@@ -812,12 +787,12 @@ int run_pack(const struct runs_tree *run, CLST svcn, CLST len, u8 *run_buf,
 	     u32 run_buf_size, CLST *packed_vcns);
 int run_unpack(struct runs_tree *run, struct ntfs_sb_info *sbi, CLST ino,
 	       CLST svcn, CLST evcn, CLST vcn, const u8 *run_buf,
-	       int run_buf_size);
+	       u32 run_buf_size);
 
 #ifdef NTFS3_CHECK_FREE_CLST
 int run_unpack_ex(struct runs_tree *run, struct ntfs_sb_info *sbi, CLST ino,
 		  CLST svcn, CLST evcn, CLST vcn, const u8 *run_buf,
-		  int run_buf_size);
+		  u32 run_buf_size);
 #else
 #define run_unpack_ex run_unpack
 #endif
@@ -852,48 +827,26 @@ int wnd_extend(struct wnd_bitmap *wnd, size_t new_bits);
 void wnd_zone_set(struct wnd_bitmap *wnd, size_t Lcn, size_t Len);
 int ntfs_trim_fs(struct ntfs_sb_info *sbi, struct fstrim_range *range);
 
-void ntfs_bitmap_set_le(unsigned long *map, unsigned int start, int len);
-void ntfs_bitmap_clear_le(unsigned long *map, unsigned int start, int len);
-
 /* Globals from upcase.c */
 int ntfs_cmp_names(const __le16 *s1, size_t l1, const __le16 *s2, size_t l2,
 		   const u16 *upcase, bool bothcase);
 int ntfs_cmp_names_cpu(const struct cpu_str *uni1, const struct le_str *uni2,
 		       const u16 *upcase, bool bothcase);
-unsigned long ntfs_names_hash(const u16 *name, size_t len, const u16 *upcase,
-			      unsigned long hash);
 
 /* globals from xattr.c */
 #ifdef CONFIG_NTFS3_FS_POSIX_ACL
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
-struct posix_acl *ntfs_get_acl(struct inode *inode, int type, bool rcu);
-#else
 struct posix_acl *ntfs_get_acl(struct inode *inode, int type);
-#endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-int ntfs_set_acl(struct user_namespace *mnt_userns, struct inode *inode,
-#else
 int ntfs_set_acl(struct inode *inode,
-#endif
 		 struct posix_acl *acl, int type);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-int ntfs_init_acl(struct user_namespace *mnt_userns, struct inode *inode,
-#else
 int ntfs_init_acl(struct inode *inode,
-#endif
 		  struct inode *dir);
 #else
 #define ntfs_get_acl NULL
 #define ntfs_set_acl NULL
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-int ntfs_acl_chmod(struct user_namespace *mnt_userns, struct inode *inode);
-int ntfs_permission(struct user_namespace *mnt_userns, struct inode *inode,
-#else
 int ntfs_acl_chmod(struct inode *inode);
 int ntfs_permission(struct inode *inode,
-#endif
 		    int mask);
 ssize_t ntfs_listxattr(struct dentry *dentry, char *buffer, size_t size);
 extern const struct xattr_handler *ntfs_xattr_handlers[];
@@ -1003,7 +956,7 @@ static inline size_t bitmap_size(size_t bits)
 /*
  * kernel2nt - Converts in-memory kernel timestamp into nt time.
  */
-static inline __le64 kernel2nt(const struct timespec *ts)
+static inline __le64 kernel2nt(const struct timespec64 *ts)
 {
 	// 10^7 units of 100 nanoseconds one second
 	return cpu_to_le64(_100ns2seconds *
@@ -1014,7 +967,7 @@ static inline __le64 kernel2nt(const struct timespec *ts)
 /*
  * nt2kernel - Converts on-disk nt time into kernel timestamp.
  */
-static inline void nt2kernel(const __le64 tm, struct timespec *ts)
+static inline void nt2kernel(const __le64 tm, struct timespec64 *ts)
 {
 	u64 t = le64_to_cpu(tm) - _100ns2seconds * SecondsToStartOf1970;
 
@@ -1052,6 +1005,19 @@ static inline CLST bytes_to_cluster(const struct ntfs_sb_info *sbi, u64 size)
 static inline u64 bytes_to_block(const struct super_block *sb, u64 size)
 {
 	return (size + sb->s_blocksize - 1) >> sb->s_blocksize_bits;
+}
+
+static inline struct buffer_head *ntfs_bread(struct super_block *sb,
+					     sector_t block)
+{
+	struct buffer_head *bh = sb_bread(sb, block);
+
+	if (bh)
+		return bh;
+
+	ntfs_err(sb, "failed to read volume at offset 0x%llx",
+		 (u64)block << sb->s_blocksize_bits);
+	return NULL;
 }
 
 static inline struct ntfs_inode *ntfs_i(struct inode *inode)

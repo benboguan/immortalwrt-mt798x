@@ -10,9 +10,6 @@
 #include <linux/fs.h>
 #include <linux/log2.h>
 
-#include <linux/version.h>
-#include <linux/vmalloc.h>
-
 #include "debug.h"
 #include "ntfs.h"
 #include "ntfs_fs.h"
@@ -875,14 +872,11 @@ error:
  */
 int run_unpack(struct runs_tree *run, struct ntfs_sb_info *sbi, CLST ino,
 	       CLST svcn, CLST evcn, CLST vcn, const u8 *run_buf,
-	       int run_buf_size)
+	       u32 run_buf_size)
 {
 	u64 prev_lcn, vcn64, lcn, next_vcn;
 	const u8 *run_last, *run_0;
 	bool is_mft = ino == MFT_REC_MFT;
-
-	if (run_buf_size < 0)
-		return -EINVAL;
 
 	/* Check for empty. */
 	if (evcn + 1 == svcn)
@@ -1005,7 +999,7 @@ int run_unpack(struct runs_tree *run, struct ntfs_sb_info *sbi, CLST ino,
  */
 int run_unpack_ex(struct runs_tree *run, struct ntfs_sb_info *sbi, CLST ino,
 		  CLST svcn, CLST evcn, CLST vcn, const u8 *run_buf,
-		  int run_buf_size)
+		  u32 run_buf_size)
 {
 	int ret, err;
 	CLST next_vcn, lcn, len;
