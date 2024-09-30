@@ -71,7 +71,7 @@ static size_t wnd_scan(const ulong *buf, size_t wbit, u32 wpos, u32 wend,
 	while (wpos < wend) {
 		size_t free_len;
 		u32 free_bits, end;
-		u32 used = find_next_zero_bit(buf, wend, wpos);
+		u32 used = find_next_zero_bit_le(buf, wend, wpos);
 
 		if (used >= wend) {
 			if (*b_len < *prev_tail) {
@@ -97,7 +97,7 @@ static size_t wnd_scan(const ulong *buf, size_t wbit, u32 wpos, u32 wend,
 		 * Now we have a fragment [wpos, wend) staring with 0.
 		 */
 		end = wpos + to_alloc - *prev_tail;
-		free_bits = find_next_bit(buf, min(end, wend), wpos);
+		free_bits = find_next_bit_le(buf, min(end, wend), wpos);
 
 		free_len = *prev_tail + free_bits - wpos;
 
@@ -579,7 +579,7 @@ static int wnd_rescan(struct wnd_bitmap *wnd)
 			wbits = wnd->nbits - wbit;
 
 		do {
-			used = find_next_zero_bit(buf, wbits, wpos);
+			used = find_next_zero_bit_le(buf, wbits, wpos);
 
 			if (used > wpos && prev_tail) {
 				wnd_add_free_ext(wnd, wbit + wpos - prev_tail,
@@ -595,7 +595,7 @@ static int wnd_rescan(struct wnd_bitmap *wnd)
 				break;
 			}
 
-			frb = find_next_bit(buf, wbits, wpos);
+			frb = find_next_bit_le(buf, wbits, wpos);
 			if (frb >= wbits) {
 				/* Keep last free block. */
 				prev_tail += frb - wpos;
@@ -666,7 +666,9 @@ int wnd_init(struct wnd_bitmap *wnd, struct super_block *sb, size_t nbits)
 	if (!wnd->bits_last)
 		wnd->bits_last = wbits;
 
-	wnd->free_bits = kcalloc(wnd->nwnd, sizeof(u16), GFP_NOFS);
+	wnd->free_bits =
+		kvmalloc_array(wnd->nwnd, sizeof(u16), GFP_KERNEL | __GFP_ZERO);
+
 	if (!wnd->free_bits)
 		return -ENOMEM;
 
@@ -741,7 +743,7 @@ int wnd_set_free(struct wnd_bitmap *wnd, size_t bit, size_t bits)
 
 		lock_buffer(bh);
 
-		__bitmap_clear(buf, wbit, op);
+		ntfs_bitmap_clear_le(buf, wbit, op);
 
 		wnd->free_bits[iw] += op;
 
@@ -793,7 +795,7 @@ int wnd_set_used(struct wnd_bitmap *wnd, size_t bit, size_t bits)
 
 		lock_buffer(bh);
 
-		__bitmap_set(buf, wbit, op);
+		ntfs_bitmap_set_le(buf, wbit, op);
 		wnd->free_bits[iw] -= op;
 
 		set_buffer_uptodate(bh);
@@ -1370,7 +1372,7 @@ int wnd_extend(struct wnd_bitmap *wnd, size_t new_bits)
 		lock_buffer(bh);
 		buf = (ulong *)bh->b_data;
 
-		__bitmap_clear(buf, b0, blocksize * 8 - b0);
+		ntfs_bitmap_clear_le(buf, b0, blocksize * 8 - b0);
 		frb = wbits - __bitmap_weight(buf, wbits);
 		wnd->total_zeroes += frb - wnd->free_bits[iw];
 		wnd->free_bits[iw] = frb;
@@ -1432,7 +1434,7 @@ int ntfs_trim_fs(struct ntfs_sb_info *sbi, struct fstrim_range *range)
 
 	down_read_nested(&wnd->rw_lock, BITMAP_MUTEX_CLUSTERS);
 
-	for (; iw < wnd->nbits; iw++, wbit = 0) {
+	for (; iw < wnd->nwnd; iw++, wbit = 0) {
 		CLST lcn_wnd = iw * wbits;
 		struct buffer_head *bh;
 
@@ -1457,7 +1459,7 @@ int ntfs_trim_fs(struct ntfs_sb_info *sbi, struct fstrim_range *range)
 		buf = (ulong *)bh->b_data;
 
 		for (; wbit < wbits; wbit++) {
-			if (!test_bit(wbit, buf)) {
+			if (!test_bit_le(wbit, buf)) {
 				if (!len)
 					lcn = lcn_wnd + wbit;
 				len += 1;
@@ -1488,4 +1490,44 @@ out:
 	up_read(&wnd->rw_lock);
 
 	return err;
+}
+
+void ntfs_bitmap_set_le(unsigned long *map, unsigned int start, int len)
+{
+	unsigned long *p = map + BIT_WORD(start);
+	const unsigned int size = start + len;
+	int bits_to_set = BITS_PER_LONG - (start % BITS_PER_LONG);
+	unsigned long mask_to_set = cpu_to_le32(BITMAP_FIRST_WORD_MASK(start));
+
+	while (len - bits_to_set >= 0) {
+		*p |= mask_to_set;
+		len -= bits_to_set;
+		bits_to_set = BITS_PER_LONG;
+		mask_to_set = ~0UL;
+		p++;
+	}
+	if (len) {
+		mask_to_set &= cpu_to_le32(BITMAP_LAST_WORD_MASK(size));
+		*p |= mask_to_set;
+	}
+}
+
+void ntfs_bitmap_clear_le(unsigned long *map, unsigned int start, int len)
+{
+	unsigned long *p = map + BIT_WORD(start);
+	const unsigned int size = start + len;
+	int bits_to_clear = BITS_PER_LONG - (start % BITS_PER_LONG);
+	unsigned long mask_to_clear = cpu_to_le32(BITMAP_FIRST_WORD_MASK(start));
+
+	while (len - bits_to_clear >= 0) {
+		*p &= ~mask_to_clear;
+		len -= bits_to_clear;
+		bits_to_clear = BITS_PER_LONG;
+		mask_to_clear = ~0UL;
+		p++;
+	}
+	if (len) {
+		mask_to_clear &= cpu_to_le32(BITMAP_LAST_WORD_MASK(size));
+		*p &= ~mask_to_clear;
+	}
 }

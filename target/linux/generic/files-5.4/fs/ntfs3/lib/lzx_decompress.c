@@ -10,6 +10,8 @@
 
 #include "decompress_common.h"
 #include "lib.h"
+#include <linux/version.h>
+#include "../compat.h"
 
 /* Number of literal byte values  */
 #define LZX_NUM_CHARS			256
