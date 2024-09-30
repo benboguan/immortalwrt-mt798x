@@ -1,0 +1,88 @@
+/dts-v1/;
+#include "mt7981-spim-snand-7981rxxx.dtsi"
+
+/ {
+	model = "7981R128";
+	compatible = "mediatek,mt7981-spim-snand-7981r128";
+
+	leds {
+		LAN {
+			label = "LAN";
+			gpios = <&pio 8 1>;
+			default-state = "off";
+		};
+	};
+
+	sfp1: sfp-wan {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp1>;
+		los-gpios = <&pio 3 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpios = <&pio 35 GPIO_ACTIVE_LOW>;
+		tx-disable-gpios = <&pio 12 GPIO_ACTIVE_HIGH>;
+		tx-fault-gpios = <&pio 34 GPIO_ACTIVE_HIGH>;
+		maximum-power-milliwatt = <3000>;
+	};
+};
+
+&eth {
+	mdio: mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		phy5: phy@5 {
+			/* MXL_SLNW8 GPY211 */
+			compatible = "ethernet-phy-id67c9.de0a";
+			/* GPY211 Address */
+			reg = <5>;
+			reset-gpios = <&pio 7 1>;     /* GPIO7 */
+			reset-assert-us = <600>;
+			reset-deassert-us = <20000>;
+			phy-mode = "2500base-x";
+		};
+
+		switch@0 {
+			compatible = "mediatek,mt7531";
+			reg = <31>;
+			reset-gpios = <&pio 39 0>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@1 {
+					reg = <1>;
+					label = "lan1";
+				};
+
+				port@5 {
+					reg = <5>;
+					label = "lan2";
+					phy-mode = "2500base-x";
+					phy-handle = <&phy5>;
+				};
+
+				port@6 {
+					reg = <6>;
+					label = "cpu";
+					ethernet = <&gmac0>;
+					phy-mode = "2500base-x";
+
+					fixed-link {
+						speed = <2500>;
+						full-duplex;
+						pause;
+					};
+				};
+			};
+		};
+	};
+};
+
+&xhci {
+	mediatek,u3p-dis-msk = <0x0>;
+	phys = <&u2port0 PHY_TYPE_USB2>,
+		<&u3port0 PHY_TYPE_USB3>;
+	pinctrl-0 = <&usb_pwr_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};

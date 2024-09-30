@@ -32,6 +32,17 @@ livinet,zr-3020)
 	ucidef_set_led_netdev "wlan2g" "WLAN2G" "blue:wlan2g" "ra0" "link"
 	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan5g" "rax0" "link"
 	;;
+mediatek,mt7981-spim-snand-7981r128)
+	ucidef_set_led_netdev "lan" "LAN" "LAN" "lan2" "link"
+	ucidef_set_led_netdev "sfp" "SFP" "SFP" "eth1" "link"
+	ucidef_set_led_netdev "wifi5g" "WIFI5G" "WIFI5G" "rax0" "link"
+	ucidef_set_led_netdev "wifi2g" "WIFI2G" "WIFI2G" "ra0" "link"
+	;;
+mediatek,mt7981-spim-snand-7981r125)
+	ucidef_set_led_netdev "sfp" "SFP" "SFP" "eth1" "link"
+	ucidef_set_led_netdev "wifi5g" "WIFI5G" "WIFI5G" "rax0" "link"
+	ucidef_set_led_netdev "wifi2g" "WIFI2G" "WIFI2G" "ra0" "link"
+	;;
 xiaomi,mi-router-wr30u*)
 	ucidef_set_led_netdev "network" "NETWORK" "blue:network" "eth1"
 	;;
