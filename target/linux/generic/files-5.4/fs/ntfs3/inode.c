@@ -47,8 +47,8 @@ static struct inode *ntfs_read_mft(struct inode *inode,
 
 	inode->i_op = NULL;
 	/* Setup 'uid' and 'gid' */
-	inode->i_uid = sbi->options.fs_uid;
-	inode->i_gid = sbi->options.fs_gid;
+	inode->i_uid = sbi->options->fs_uid;
+	inode->i_gid = sbi->options->fs_gid;
 
 	err = mi_init(&ni->mi, sbi, ino);
 	if (err)
@@ -81,7 +81,7 @@ static struct inode *ntfs_read_mft(struct inode *inode,
 			 le16_to_cpu(ref->seq), le16_to_cpu(rec->seq));
 		goto out;
 	} else if (!is_rec_inuse(rec)) {
-		err = -ESTALE;
+		err = -EINVAL;
 		ntfs_err(sb, "Inode r=%x is not in use!", (u32)ino);
 		goto out;
 	}
@@ -92,19 +92,11 @@ static struct inode *ntfs_read_mft(struct inode *inode,
 		goto out;
 	}
 
-	if (!is_rec_base(rec)) {
-		err = -EINVAL;
-		goto out;
-	}
+	if (!is_rec_base(rec))
+		goto Ok;
 
 	/* Record should contain $I30 root. */
 	is_dir = rec->flags & RECORD_FLAG_DIR;
-
-	/* MFT_REC_MFT is not a dir */
-	if (is_dir && ino == MFT_REC_MFT) {
-		err = -EINVAL;
-		goto out;
-	}
 
 	inode->i_generation = le16_to_cpu(rec->seq);
 
@@ -136,16 +128,6 @@ next_attr:
 	roff = attr->non_res ? 0 : le16_to_cpu(attr->res.data_off);
 	rsize = attr->non_res ? 0 : le32_to_cpu(attr->res.data_size);
 	asize = le32_to_cpu(attr->size);
-
-	if (le16_to_cpu(attr->name_off) + attr->name_len > asize)
-		goto out;
-
-	if (attr->non_res) {
-		t64 = le64_to_cpu(attr->nres.alloc_size);
-		if (le64_to_cpu(attr->nres.data_size) > t64 ||
-		    le64_to_cpu(attr->nres.valid_size) > t64)
-			goto out;
-	}
 
 	switch (attr->type) {
 	case ATTR_STD:
@@ -242,7 +224,7 @@ next_attr:
 			inode_set_bytes(inode, rsize);
 		}
 
-		mode = S_IFREG | (0777 & sbi->options.fs_fmask_inv);
+		mode = S_IFREG | (0777 & sbi->options->fs_fmask_inv);
 
 		if (!attr->non_res) {
 			ni->ni_flags |= NI_FLAG_RESIDENT;
@@ -265,6 +247,7 @@ next_attr:
 			goto out;
 
 		root = Add2Ptr(attr, roff);
+		is_root = true;
 
 		if (attr->name_len != ARRAY_SIZE(I30_NAME) ||
 		    memcmp(attr_name(attr), I30_NAME, sizeof(I30_NAME)))
@@ -277,7 +260,6 @@ next_attr:
 		if (!is_dir)
 			goto next_attr;
 
-		is_root = true;
 		ni->ni_flags |= NI_FLAG_DIR;
 
 		err = indx_init(&ni->dir, sbi, attr, INDEX_MUTEX_I30);
@@ -285,7 +267,7 @@ next_attr:
 			goto out;
 
 		mode = sb->s_root
-			       ? (S_IFDIR | (0777 & sbi->options.fs_dmask_inv))
+			       ? (S_IFDIR | (0777 & sbi->options->fs_dmask_inv))
 			       : (S_IFDIR | 0777);
 		goto next_attr;
 
@@ -382,13 +364,7 @@ next_attr:
 attr_unpack_run:
 	roff = le16_to_cpu(attr->nres.run_off);
 
-	if (roff > asize) {
-		err = -EINVAL;
-		goto out;
-	}
-
 	t64 = le64_to_cpu(attr->nres.svcn);
-
 	err = run_unpack_ex(run, sbi, ino, t64, le64_to_cpu(attr->nres.evcn),
 			    t64, Add2Ptr(attr, roff), asize - roff);
 	if (err < 0)
@@ -402,6 +378,7 @@ end_enum:
 		goto out;
 
 	if (!is_match && name) {
+		/* Reuse rec as buffer for ascii name. */
 		err = -ENOENT;
 		goto out;
 	}
@@ -416,7 +393,6 @@ end_enum:
 
 	if (names != le16_to_cpu(rec->hard_links)) {
 		/* Correct minor error on the fly. Do not mark inode as dirty. */
-		ntfs_inode_warn(inode, "Correct links count -> %u.", names);
 		rec->hard_links = cpu_to_le16(names);
 		ni->mi.dirty = true;
 	}
@@ -454,13 +430,12 @@ end_enum:
 	} else if (fname && fname->home.low == cpu_to_le32(MFT_REC_EXTEND) &&
 		   fname->home.seq == cpu_to_le16(MFT_REC_EXTEND)) {
 		/* Records in $Extend are not a files or general directories. */
-		inode->i_op = &ntfs_file_inode_operations;
 	} else {
 		err = -EINVAL;
 		goto out;
 	}
 
-	if ((sbi->options.sys_immutable &&
+	if ((sbi->options->sys_immutable &&
 	     (std5->fa & FILE_ATTRIBUTE_SYSTEM)) &&
 	    !S_ISFIFO(mode) && !S_ISSOCK(mode) && !S_ISLNK(mode)) {
 		inode->i_flags |= S_IMMUTABLE;
@@ -474,6 +449,7 @@ end_enum:
 		inode->i_flags |= S_NOSEC;
 	}
 
+Ok:
 	if (ino == MFT_REC_MFT && !sb->s_root)
 		sbi->mft.ni = NULL;
 
@@ -526,9 +502,6 @@ struct inode *ntfs_iget5(struct super_block *sb, const struct MFT_REF *ref,
 		/* Inode overlaps? */
 		make_bad_inode(inode);
 	}
-
-	if (IS_ERR(inode) && name)
-		ntfs_set_state(sb->s_fs_info, NTFS_DIRTY_ERROR);
 
 	return inode;
 }
@@ -731,37 +704,6 @@ static int ntfs_readpage(struct file *file, struct page *page)
 	return mpage_readpage(page, ntfs_get_block);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
-static void ntfs_readahead(struct readahead_control *rac)
-{
-	struct address_space *mapping = rac->mapping;
-	struct inode *inode = mapping->host;
-	struct ntfs_inode *ni = ntfs_i(inode);
-	u64 valid;
-	loff_t pos;
-
-	if (is_resident(ni)) {
-		/* No readahead for resident. */
-		return;
-	}
-
-	if (is_compressed(ni)) {
-		/* No readahead for compressed. */
-		return;
-	}
-
-	valid = ni->i_valid;
-	pos = readahead_pos(rac);
-
-	if (valid < i_size_read(inode) && pos <= valid &&
-	    valid < pos + readahead_length(rac)) {
-		/* Range cross 'valid'. Read it page by page. */
-		return;
-	}
-
-	mpage_readahead(rac, ntfs_get_block);
-}
-#else
 static int ntfs_readpages(struct file *file, struct address_space *mapping,
 		struct list_head *pages, unsigned int nr_pages)
 {
@@ -776,7 +718,6 @@ static int ntfs_readpages(struct file *file, struct address_space *mapping,
 
 	return mpage_readpages(mapping, pages, nr_pages, ntfs_get_block);
 }
-#endif
 
 static int ntfs_get_block_direct_IO_R(struct inode *inode, sector_t iblock,
 				      struct buffer_head *bh_result, int create)
@@ -801,7 +742,6 @@ static ssize_t ntfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
 	loff_t vbo = iocb->ki_pos;
 	loff_t end;
 	int wr = iov_iter_rw(iter) & WRITE;
-	size_t iter_count = iov_iter_count(iter);
 	loff_t valid;
 	ssize_t ret;
 
@@ -815,13 +755,10 @@ static ssize_t ntfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
 				 wr ? ntfs_get_block_direct_IO_W
 				    : ntfs_get_block_direct_IO_R);
 
-	if (ret > 0)
-		end = vbo + ret;
-	else if (wr && ret == -EIOCBQUEUED)
-		end = vbo + iter_count;
-	else
+	if (ret <= 0)
 		goto out;
 
+	end = vbo + ret;
 	valid = ni->i_valid;
 	if (wr) {
 		if (end > valid && !S_ISBLK(inode->i_mode)) {
@@ -1211,11 +1148,7 @@ out:
 	return ERR_PTR(err);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-struct inode *ntfs_create_inode(struct user_namespace *mnt_userns,
-#else
 struct inode *ntfs_create_inode(
-#endif
 				struct inode *dir, struct dentry *dentry,
 				const struct cpu_str *uni, umode_t mode,
 				dev_t dev, const char *symname, u32 size,
@@ -1292,7 +1225,7 @@ struct inode *ntfs_create_inode(
 		 *	}
 		 */
 	} else if (S_ISREG(mode)) {
-		if (sbi->options.sparse) {
+		if (sbi->options->sparse) {
 			/* Sparsed regular file, cause option 'sparse'. */
 			fa = FILE_ATTRIBUTE_SPARSE_FILE |
 			     FILE_ATTRIBUTE_ARCHIVE;
@@ -1332,11 +1265,7 @@ struct inode *ntfs_create_inode(
 		goto out3;
 	}
 	inode = &ni->vfs_inode;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-	inode_init_owner(mnt_userns, inode, dir, mode);
-#else
 	inode_init_owner(inode, dir, mode);
-#endif
 	mode = inode->i_mode;
 
 	inode->i_atime = inode->i_mtime = inode->i_ctime = ni->i_crtime =
@@ -1635,11 +1564,7 @@ struct inode *ntfs_create_inode(
 
 #ifdef CONFIG_NTFS3_FS_POSIX_ACL
 	if (!S_ISLNK(mode) && (sb->s_flags & SB_POSIXACL)) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-		err = ntfs_init_acl(mnt_userns, inode, dir);
-#else
 		err = ntfs_init_acl(inode, dir);
-#endif
 		if (err)
 			goto out7;
 	} else
@@ -1680,19 +1605,16 @@ out6:
 		ntfs_remove_reparse(sbi, IO_REPARSE_TAG_SYMLINK, &new_de->ref);
 
 out5:
-	if (!S_ISDIR(mode))
-		run_deallocate(sbi, &ni->file.run, false);
+	if (S_ISDIR(mode) || run_is_empty(&ni->file.run))
+		goto out4;
+
+	run_deallocate(sbi, &ni->file.run, false);
 
 out4:
 	clear_rec_inuse(rec);
 	clear_nlink(inode);
 	ni->mi.dirty = false;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
 	discard_new_inode(inode);
-#else
-	unlock_new_inode(inode);
-	iput(inode);
-#endif
 out3:
 	ntfs_mark_rec_free(sbi, ino);
 
@@ -2000,15 +1922,13 @@ const struct inode_operations ntfs_link_inode_operations = {
 	.setattr	= ntfs3_setattr,
 	.listxattr	= ntfs_listxattr,
 	.permission	= ntfs_permission,
+	.get_acl	= ntfs_get_acl,
+	.set_acl	= ntfs_set_acl,
 };
 
 const struct address_space_operations ntfs_aops = {
 	.readpage	= ntfs_readpage,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
-	.readahead = ntfs_readahead,
-#else
 	.readpages = ntfs_readpages,
-#endif
 	.writepage	= ntfs_writepage,
 	.writepages	= ntfs_writepages,
 	.write_begin	= ntfs_write_begin,
@@ -2020,10 +1940,6 @@ const struct address_space_operations ntfs_aops = {
 
 const struct address_space_operations ntfs_aops_cmpr = {
 	.readpage	= ntfs_readpage,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
-	.readahead = ntfs_readahead,
-#else
 	.readpages = ntfs_readpages,
-#endif
 };
 // clang-format on

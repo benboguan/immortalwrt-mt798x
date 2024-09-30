@@ -10,8 +10,6 @@
 #include <linux/fs.h>
 #include <linux/kernel.h>
 
-#include <linux/version.h>
-
 #include "debug.h"
 #include "ntfs.h"
 #include "ntfs_fs.h"
@@ -156,7 +154,7 @@ int ntfs_fix_post_read(struct NTFS_RECORD_HEADER *rhdr, size_t bytes,
 	/* Check errors. */
 	if ((fo & 1) || fo + fn * sizeof(short) > SECTOR_SIZE || !fn-- ||
 	    fn * SECTOR_SIZE > bytes) {
-		return -E_NTFS_CORRUPT;
+		return -EINVAL; /* Native chkntfs returns ok! */
 	}
 
 	/* Get fixup pointer. */
@@ -620,13 +618,13 @@ next:
 						 NULL, 0, NULL, NULL))
 					goto next;
 
-				__clear_bit_le(ir - MFT_REC_RESERVED,
+				__clear_bit(ir - MFT_REC_RESERVED,
 					    &sbi->mft.reserved_bitmap);
 			}
 		}
 
 		/* Scan 5 bits for zero. Bit 0 == MFT_REC_RESERVED */
-		zbit = find_next_zero_bit_le(&sbi->mft.reserved_bitmap,
+		zbit = find_next_zero_bit(&sbi->mft.reserved_bitmap,
 					  MFT_REC_FREE, MFT_REC_RESERVED);
 		if (zbit >= MFT_REC_FREE) {
 			sbi->mft.next_reserved = MFT_REC_FREE;
@@ -694,7 +692,7 @@ found:
 	if (*rno >= MFT_REC_FREE)
 		wnd_set_used(wnd, *rno, 1);
 	else if (*rno >= MFT_REC_RESERVED && sbi->mft.reserved_bitmap_inited)
-		__set_bit_le(*rno - MFT_REC_RESERVED, &sbi->mft.reserved_bitmap);
+		__set_bit(*rno - MFT_REC_RESERVED, &sbi->mft.reserved_bitmap);
 
 out:
 	if (!mft)
@@ -720,7 +718,7 @@ void ntfs_mark_rec_free(struct ntfs_sb_info *sbi, CLST rno)
 		else
 			wnd_set_free(wnd, rno, 1);
 	} else if (rno >= MFT_REC_RESERVED && sbi->mft.reserved_bitmap_inited) {
-		__clear_bit_le(rno - MFT_REC_RESERVED, &sbi->mft.reserved_bitmap);
+		__clear_bit(rno - MFT_REC_RESERVED, &sbi->mft.reserved_bitmap);
 	}
 
 	if (rno < wnd_zone_bit(wnd))
@@ -833,14 +831,9 @@ int ntfs_update_mftmirr(struct ntfs_sb_info *sbi, int wait)
 {
 	int err;
 	struct super_block *sb = sbi->sb;
-	u32 blocksize;
+	u32 blocksize = sb->s_blocksize;
 	sector_t block1, block2;
 	u32 bytes;
-
-	if (!sb)
-		return -EINVAL;
-
-	blocksize = sb->s_blocksize;
 
 	if (!(sbi->flags & NTFS_FLAGS_MFTMIRR))
 		return 0;
@@ -960,11 +953,18 @@ out:
 	if (err)
 		return err;
 
-	mark_inode_dirty_sync(&ni->vfs_inode);
+	mark_inode_dirty(&ni->vfs_inode);
 	/* verify(!ntfs_update_mftmirr()); */
 
-	/* write mft record on disk. */
-	err = _ni_write_inode(&ni->vfs_inode, 1);
+	/*
+	 * If we used wait=1, sync_inode_metadata waits for the io for the
+	 * inode to finish. It hangs when media is removed.
+	 * So wait=0 is sent down to sync_inode_metadata
+	 * and filemap_fdatawrite is used for the data blocks.
+	 */
+	err = sync_inode_metadata(&ni->vfs_inode, 0);
+	if (!err)
+		err = filemap_fdatawrite(ni->vfs_inode.i_mapping);
 
 	return err;
 }
@@ -981,30 +981,6 @@ static inline __le32 security_hash(const void *sd, size_t bytes)
 	while (bytes--)
 		hash = ((hash >> 0x1D) | (hash << 3)) + le32_to_cpu(*ptr++);
 	return cpu_to_le32(hash);
-}
-
-/*
- * simple wrapper for sb_bread_unmovable.
- */
-struct buffer_head *ntfs_bread(struct super_block *sb, sector_t block)
-{
-	struct ntfs_sb_info *sbi = sb->s_fs_info;
-	struct buffer_head *bh;
-
-	if (unlikely(block >= sbi->volume.blocks)) {
-		/* prevent generic message "attempt to access beyond end of device" */
-		ntfs_err(sb, "try to read out of volume at offset 0x%llx",
-			 (u64)block << sb->s_blocksize_bits);
-		return NULL;
-	}
-
-	bh = sb_bread_unmovable(sb, block);
-	if (bh)
-		return bh;
-
-	ntfs_err(sb, "failed to read volume at offset 0x%llx",
-		 (u64)block << sb->s_blocksize_bits);
-	return NULL;
 }
 
 int ntfs_sb_read(struct super_block *sb, u64 lbo, size_t bytes, void *buffer)
@@ -1623,7 +1599,7 @@ int ntfs_bio_fill_1(struct ntfs_sb_info *sbi, const struct runs_tree *run)
 		lbo = (u64)lcn << cluster_bits;
 		len = (u64)clen << cluster_bits;
 new_bio:
-		new = ntfs_alloc_bio(BIO_MAX_VECS);
+		new = ntfs_alloc_bio(BIO_MAX_PAGES);
 		if (!new) {
 			err = -ENOMEM;
 			break;
@@ -1705,7 +1681,6 @@ struct ntfs_inode *ntfs_new_inode(struct ntfs_sb_info *sbi, CLST rno, bool dir)
 
 out:
 	if (err) {
-		make_bad_inode(inode);
 		iput(inode);
 		ni = ERR_PTR(err);
 	}
@@ -1898,12 +1873,9 @@ int ntfs_security_init(struct ntfs_sb_info *sbi)
 		goto out;
 	}
 
-	if(!(root_sdh = resident_data_ex(attr, sizeof(struct INDEX_ROOT))) ||
-	    root_sdh->type != ATTR_ZERO ||
-	    root_sdh->rule != NTFS_COLLATION_TYPE_SECURITY_HASH ||
-	    offsetof(struct INDEX_ROOT, ihdr) +
-			le32_to_cpu(root_sdh->ihdr.used) >
-			le32_to_cpu(attr->res.data_size)) {
+	root_sdh = resident_data(attr);
+	if (root_sdh->type != ATTR_ZERO ||
+	    root_sdh->rule != NTFS_COLLATION_TYPE_SECURITY_HASH) {
 		err = -EINVAL;
 		goto out;
 	}
@@ -1919,12 +1891,9 @@ int ntfs_security_init(struct ntfs_sb_info *sbi)
 		goto out;
 	}
 
-	if(!(root_sii = resident_data_ex(attr, sizeof(struct INDEX_ROOT))) ||
-	    root_sii->type != ATTR_ZERO ||
-	    root_sii->rule != NTFS_COLLATION_TYPE_UINT ||
-	    offsetof(struct INDEX_ROOT, ihdr) +
-			le32_to_cpu(root_sii->ihdr.used) >
-			le32_to_cpu(attr->res.data_size)) {
+	root_sii = resident_data(attr);
+	if (root_sii->type != ATTR_ZERO ||
+	    root_sii->rule != NTFS_COLLATION_TYPE_UINT) {
 		err = -EINVAL;
 		goto out;
 	}
@@ -2481,12 +2450,10 @@ void mark_as_free_ex(struct ntfs_sb_info *sbi, CLST lcn, CLST len, bool trim)
 {
 	CLST end, i;
 	struct wnd_bitmap *wnd = &sbi->used.bitmap;
-	bool dirty = false;
 
 	down_write_nested(&wnd->rw_lock, BITMAP_MUTEX_CLUSTERS);
 	if (!wnd_is_used(wnd, lcn, len)) {
-		/* mark volume as dirty out of wnd->rw_lock */
-		dirty = true;
+		ntfs_set_state(sbi, NTFS_DIRTY_ERROR);
 
 		end = lcn + len;
 		len = 0;
@@ -2518,8 +2485,6 @@ void mark_as_free_ex(struct ntfs_sb_info *sbi, CLST lcn, CLST len, bool trim)
 
 out:
 	up_write(&wnd->rw_lock);
-	if (dirty)
-		ntfs_set_state(sbi, NTFS_DIRTY_ERROR);
 }
 
 /*

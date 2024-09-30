@@ -10,8 +10,6 @@
 #include <linux/random.h>
 #include <linux/slab.h>
 
-#include <linux/version.h>
-
 #include "debug.h"
 #include "ntfs.h"
 #include "ntfs_fs.h"
@@ -467,7 +465,7 @@ static inline bool is_rst_area_valid(const struct RESTART_HDR *rhdr)
 {
 	const struct RESTART_AREA *ra;
 	u16 cl, fl, ul;
-	u32 off, l_size, seq_bits;
+	u32 off, l_size, file_dat_bits, file_size_round;
 	u16 ro = le16_to_cpu(rhdr->ra_off);
 	u32 sys_page = le32_to_cpu(rhdr->sys_page_size);
 
@@ -513,14 +511,12 @@ static inline bool is_rst_area_valid(const struct RESTART_HDR *rhdr)
 	/* Make sure the sequence number bits match the log file size. */
 	l_size = le64_to_cpu(ra->l_size);
 
-	seq_bits = sizeof(u64) * 8 + 3;
-	while (l_size) {
-		l_size >>= 1;
-		seq_bits -= 1;
-	}
-
-	if (seq_bits != le32_to_cpu(ra->seq_num_bits))
+	file_dat_bits = sizeof(u64) * 8 - le32_to_cpu(ra->seq_num_bits);
+	file_size_round = 1u << (file_dat_bits + 3);
+	if (file_size_round != l_size &&
+	    (file_size_round < l_size || (file_size_round / 2) > l_size)) {
 		return false;
+	}
 
 	/* The log page data offset and record header length must be quad-aligned. */
 	if (!IS_ALIGNED(le16_to_cpu(ra->data_off), 8) ||
@@ -1136,7 +1132,7 @@ static int read_log_page(struct ntfs_log *log, u32 vbo,
 		return -EINVAL;
 
 	if (!*buffer) {
-		to_free = kmalloc(log->page_size, GFP_NOFS);
+		to_free = kmalloc(bytes, GFP_NOFS);
 		if (!to_free)
 			return -ENOMEM;
 		*buffer = to_free;
@@ -1184,7 +1180,12 @@ static int log_read_rst(struct ntfs_log *log, u32 l_size, bool first,
 			struct restart_info *info)
 {
 	u32 skip, vbo;
-	struct RESTART_HDR *r_page = NULL;
+	struct RESTART_HDR *r_page = kmalloc(DefaultLogPageSize, GFP_NOFS);
+
+	if (!r_page)
+		return -ENOMEM;
+
+	memset(info, 0, sizeof(struct restart_info));
 
 	/* Determine which restart area we are looking for. */
 	if (first) {
@@ -1198,6 +1199,7 @@ static int log_read_rst(struct ntfs_log *log, u32 l_size, bool first,
 	/* Loop continuously until we succeed. */
 	for (; vbo < l_size; vbo = 2 * vbo + skip, skip = 0) {
 		bool usa_error;
+		u32 sys_page_size;
 		bool brst, bchk;
 		struct RESTART_AREA *ra;
 
@@ -1249,6 +1251,24 @@ static int log_read_rst(struct ntfs_log *log, u32 l_size, bool first,
 		if (bchk || ra->client_idx[1] == LFS_NO_CLIENT_LE) {
 			info->valid_page = true;
 			goto check_result;
+		}
+
+		/* Read the entire restart area. */
+		sys_page_size = le32_to_cpu(r_page->sys_page_size);
+		if (DefaultLogPageSize != sys_page_size) {
+			kfree(r_page);
+			r_page = kzalloc(sys_page_size, GFP_NOFS);
+			if (!r_page)
+				return -ENOMEM;
+
+			if (read_log_page(log, vbo,
+					  (struct RECORD_PAGE_HDR **)&r_page,
+					  &usa_error)) {
+				/* Ignore any errors. */
+				kfree(r_page);
+				r_page = NULL;
+				continue;
+			}
 		}
 
 		if (is_client_area_valid(r_page, usa_error)) {
@@ -2173,10 +2193,8 @@ file_is_valid:
 
 			if (!page) {
 				page = kmalloc(log->page_size, GFP_NOFS);
-				if (!page) {
-					err = -ENOMEM;
-					goto out;
-				}
+				if (!page)
+					return -ENOMEM;
 			}
 
 			/*
@@ -2581,7 +2599,7 @@ static int read_next_log_rec(struct ntfs_log *log, struct lcb *lcb, u64 *lsn)
 	return find_log_rec(log, *lsn, lcb);
 }
 
-bool check_index_header(const struct INDEX_HDR *hdr, size_t bytes)
+static inline bool check_index_header(const struct INDEX_HDR *hdr, size_t bytes)
 {
 	__le16 mask;
 	u32 min_de, de_off, used, total;
@@ -2710,9 +2728,6 @@ static inline bool check_attr(const struct MFT_REC *rec,
 		    dsize > le64_to_cpu(attr->nres.alloc_size)) {
 			return false;
 		}
-
-		if (run_off > asize)
-			return false;
 
 		if (run_unpack(NULL, sbi, 0, svcn, evcn, svcn,
 			       Add2Ptr(attr, run_off), asize - run_off) < 0) {
@@ -3631,7 +3646,7 @@ move_data:
 			goto dirty_vol;
 		}
 
-		ntfs_bitmap_set_le(Add2Ptr(buffer_le, roff), bmp_off, bmp_bits);
+		__bitmap_set(Add2Ptr(buffer_le, roff), bmp_off, bmp_bits);
 		a_dirty = true;
 		break;
 
@@ -3645,7 +3660,7 @@ move_data:
 			goto dirty_vol;
 		}
 
-		ntfs_bitmap_clear_le(Add2Ptr(buffer_le, roff), bmp_off, bmp_bits);
+		__bitmap_clear(Add2Ptr(buffer_le, roff), bmp_off, bmp_bits);
 		a_dirty = true;
 		break;
 
@@ -3776,11 +3791,10 @@ int log_replay(struct ntfs_inode *ni, bool *initialized)
 	if (!log)
 		return -ENOMEM;
 
-	memset(&rst_info, 0, sizeof(struct restart_info));
-
 	log->ni = ni;
 	log->l_size = l_size;
 	log->one_page_buf = kmalloc(page_size, GFP_NOFS);
+
 	if (!log->one_page_buf) {
 		err = -ENOMEM;
 		goto out;
@@ -3828,7 +3842,6 @@ int log_replay(struct ntfs_inode *ni, bool *initialized)
 	if (rst_info.vbo)
 		goto check_restart_area;
 
-	memset(&rst_info2, 0, sizeof(struct restart_info));
 	err = log_read_rst(log, l_size, false, &rst_info2);
 
 	/* Determine which restart area to use. */
@@ -4072,10 +4085,8 @@ process_log:
 		if (client == LFS_NO_CLIENT_LE) {
 			/* Insert "NTFS" client LogFile. */
 			client = ra->client_idx[0];
-			if (client == LFS_NO_CLIENT_LE) {
-				err = -EINVAL;
-				goto out;
-			}
+			if (client == LFS_NO_CLIENT_LE)
+				return -EINVAL;
 
 			t16 = le16_to_cpu(client);
 			cr = ca + t16;
@@ -4262,10 +4273,6 @@ check_attribute_names:
 	rec_len -= t32;
 
 	attr_names = kmemdup(Add2Ptr(lrh, t32), rec_len, GFP_NOFS);
-	if (!attr_names) {
-		err = -ENOMEM;
-		goto out;
-	}
 
 	lcb_put(lcb);
 	lcb = NULL;
@@ -4760,12 +4767,6 @@ fake_attr:
 		u16 roff = le16_to_cpu(attr->nres.run_off);
 		CLST svcn = le64_to_cpu(attr->nres.svcn);
 
-		if (roff > t32) {
-			kfree(oa->attr);
-			oa->attr = NULL;
-			goto fake_attr;
-		}
-
 		err = run_unpack(&oa->run0, sbi, inode->i_ino, svcn,
 				 le64_to_cpu(attr->nres.evcn), svcn,
 				 Add2Ptr(attr, roff), t32 - roff);
@@ -5054,7 +5055,7 @@ undo_action_next:
 		goto add_allocated_vcns;
 
 	vcn = le64_to_cpu(lrh->target_vcn);
-	vcn &= ~(u64)(log->clst_per_page - 1);
+	vcn &= ~(log->clst_per_page - 1);
 
 add_allocated_vcns:
 	for (i = 0, vcn = le64_to_cpu(lrh->target_vcn),
