@@ -17,6 +17,9 @@
 #include <linux/string.h>
 #include <linux/types.h>
 
+#include <linux/version.h>
+#include "compat.h"
+
 #include "debug.h"
 
 /* TODO: Check 4K MFT record and 512 bytes cluster. */
@@ -436,9 +439,6 @@ static inline u64 attr_svcn(const struct ATTRIB *attr)
 	return attr->non_res ? le64_to_cpu(attr->nres.svcn) : 0;
 }
 
-/* The size of resident attribute by its resident size. */
-#define BYTES_PER_RESIDENT(b) (0x18 + (b))
-
 static_assert(sizeof(struct ATTRIB) == 0x48);
 static_assert(sizeof(((struct ATTRIB *)NULL)->res) == 0x08);
 static_assert(sizeof(((struct ATTRIB *)NULL)->nres) == 0x38);
@@ -520,11 +520,9 @@ struct ATTR_LIST_ENTRY {
 	__le64 vcn;		// 0x08: Starting VCN of this attribute.
 	struct MFT_REF ref;	// 0x10: MFT record number with attribute.
 	__le16 id;		// 0x18: struct ATTRIB ID.
-	__le16 name[3];		// 0x1A: Just to align. To get real name can use bNameOffset.
+	__le16 name[];		// 0x1A: Just to align. To get real name can use name_off.
 
 }; // sizeof(0x20)
-
-static_assert(sizeof(struct ATTR_LIST_ENTRY) == 0x20);
 
 static inline u32 le_size(u8 name_len)
 {
