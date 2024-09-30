@@ -744,6 +744,8 @@ setup_model()
 	*7986*)
 		MT7986_whnat $num_of_wifi $usbnet
 		;;
+	mediatek,mt7981-spim-snand-7981r125 |\
+	mediatek,mt7981-spim-snand-7981r128 |\
 	*mt3000* |\
 	glinet,x3000-emmc |\
 	*xe3000* |\

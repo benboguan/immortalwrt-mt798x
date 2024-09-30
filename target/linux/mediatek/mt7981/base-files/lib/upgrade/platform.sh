@@ -189,6 +189,8 @@ platform_do_upgrade() {
 	case "$board" in
 	xiaomi,mi-router-wr30u-112m|\
 	xiaomi,mi-router-ax3000t|\
+	mediatek,mt7981-spim-snand-7981r125 |\
+	mediatek,mt7981-spim-snand-7981r128 |\
 	*mt3000* |\
 	glinet,x3000-emmc |\
 	*xe3000* |\
@@ -241,6 +243,8 @@ platform_check_image() {
 	[ "$#" -gt 1 ] && return 1
 
 	case "$board" in
+	mediatek,mt7981-spim-snand-7981r125 |\
+	mediatek,mt7981-spim-snand-7981r128 |\
 	*mt3000* |\
 	glinet,x3000-emmc |\
 	*xe3000* |\
