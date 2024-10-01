@@ -1,4 +1,7 @@
-// CopyRight SX-7981R128 Update By nanchuci
+// SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
+/*
+ * Copyright SX-7981R128 Update By nanchuci
+ */
 
 /dts-v1/;
 #include "mt7981.dtsi"
@@ -18,25 +21,25 @@
 
 		SFP {
 			label = "SFP";
-			gpios = <&pio 4 1>;
+			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
 
 		WIFI5G {
 			label = "WIFI5G";
-			gpios = <&pio 5 1>;
+			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
 
 		WIFI2G {
 			label = "WIFI2G";
-			gpios = <&pio 6 1>;
+			gpios = <&pio 6 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
 
 		POWER {
 			label = "POWER";
-			gpios = <&pio 13 1>;
+			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 	};
@@ -44,7 +47,7 @@
 	gpio-keys {
 		compatible = "gpio-keys";
 
-		reset {
+		reset-button {
 			label = "reset";
 			linux,code = <KEY_RESTART>;
 			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
@@ -58,6 +61,33 @@
 		i2c-gpio,delay-us = <2>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+	};
+
+	reg_1p8v: regulator-1p8v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-1.8V";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	reg_3p3v: regulator-3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		enable-active-high;
+		regulator-boot-on;
 	};
 
 	nmbm_spim_nand {
@@ -85,7 +115,7 @@
 				reg = <0x0100000 0x0080000>;
 			};
 
-			factory:partition@180000 {
+			factory: partition@180000 {
 				label = "Factory";
 				reg = <0x180000 0x0200000>;
 			};
@@ -97,9 +127,17 @@
 
 			partition@580000 {
 				label = "ubi";
+				// reg = <0x580000 0x4000000>;
 				reg = <0x580000 0x7280000>;
 			};
 		};
+	};
+
+	gsw: gsw@0 {
+		compatible = "mediatek,mt753x";
+		mediatek,ethsys = <&ethsys>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 	};
 };
 
@@ -117,34 +155,11 @@
 	status = "okay";
 };
 
-&eth {
-	status = "okay";
-
-	gmac0: mac@0 {
-		compatible = "mediatek,eth-mac";
-		reg = <0>;
-		phy-mode = "2500base-x";
-
-		fixed-link {
-			speed = <2500>;
-			full-duplex;
-			pause;
-		};
-	};
-
-	gmac1: mac@1 {
-		compatible = "mediatek,eth-mac";
-		reg = <1>;
-		phy-mode = "2500base-x";
-		managed = "in-band-status";
-		sfp = <&sfp1>;
-	};
-};
-
 &hnat {
 	mtketh-wan = "eth1";
-	mtketh-lan = "lan";
+	mtketh-lan = "eth0";
 	mtketh-max-gmac = <2>;
+	ext-devices-prefix = "usb", "wwan";
 	status = "okay";
 };
 
@@ -152,19 +167,48 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&spi0_flash_pins>;
 	status = "okay";
+
 	spi_nand: spi_nand@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "spi-nand";
 		reg = <0>;
 		spi-max-frequency = <52000000>;
+
+		spi-cal-enable;
+		spi-cal-mode = "read-data";
+		spi-cal-datalen = <7>;
+		spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4E 0x41 0x4E 0x44>;
+		spi-cal-addrlen = <5>;
+		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
+
 		spi-tx-bus-width = <4>;
 		spi-rx-bus-width = <4>;
+		mediatek,nmbm;
+		mediatek,bmt-max-ratio = <1>;
+		mediatek,bmt-max-reserved-blocks = <64>;
+	};
+};
+
+&spi1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spic_pins>;
+	status = "disabled";
+
+	slb9670: slb9670@0 {
+		compatible = "infineon,slb9670";
+		reg = <0>; /* CE0 */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		spi-cal-enable;
+		spi-cal-mode = "read-data";
+		spi-cal-datalen = <2>;
+		spi-cal-data = /bits/ 8 <0x00 0x1b>;
+		spi-max-frequency = <20000000>;
 	};
 };
 
 &pio {
-
 	i2c_pins: i2c-pins-g0 {
 		mux {
 			function = "i2c";
