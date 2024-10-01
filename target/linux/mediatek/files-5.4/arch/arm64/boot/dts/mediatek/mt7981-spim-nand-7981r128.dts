@@ -1,5 +1,5 @@
 /dts-v1/;
-#include "mt7981-spim-snand-7981rxxx.dtsi"
+#include "mt7981-spim-nand-7981rxxx.dtsi"
 
 / {
 	model = "7981R128";
@@ -8,12 +8,12 @@
 	leds {
 		LAN {
 			label = "LAN";
-			gpios = <&pio 8 1>;
+			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
 	};
 
-	sfp1: sfp-wan {
+	sfp1: sfp-lan {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c_sfp1>;
 		los-gpios = <&pio 3 GPIO_ACTIVE_HIGH>;
@@ -25,6 +25,35 @@
 };
 
 &eth {
+	status = "okay";
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "2500base-x";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "2500base-x";
+		phy-handle = <&phy6>;
+		managed = "in-band-status";
+		sfp = <&sfp1>;
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
+
 	mdio: mdio-bus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -38,42 +67,64 @@
 			reset-assert-us = <600>;
 			reset-deassert-us = <20000>;
 			phy-mode = "2500base-x";
+			maxlinear,led-reg = <0x3c0 0x330 0x0 0x0>;
 		};
 
-		switch@0 {
-			compatible = "mediatek,mt7531";
-			reg = <31>;
-			reset-gpios = <&pio 39 0>;
+		phy6: phy@6 {
+			compatible = "ethernet-phy-id03a2.9461";
+			reg = <6>;
+			phy-mode = "2500base-x";
+			nvmem-cells = <&phy_calibration>;
+			nvmem-cell-names = "phy-cal-data";
+		};
+	};
+};
 
-			ports {
-				#address-cells = <1>;
-				#size-cells = <0>;
+&gsw {
+	mediatek,mdio = <&mdio>;
+	mediatek,portmap = "ll";
+	mediatek,mdio_master_pinmux = <1>;
+	reset-gpios = <&pio 39 0>;
+	interrupt-parent = <&pio>;
+	interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
+	status = "okay";
 
-				port@1 {
-					reg = <1>;
-					label = "lan1";
-				};
+	port5: port@5 {
+		compatible = "mediatek,mt753x-port";
+		reg = <5>;
+		phy-mode = "sgmii";
 
-				port@5 {
-					reg = <5>;
-					label = "lan2";
-					phy-mode = "2500base-x";
-					phy-handle = <&phy5>;
-				};
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
 
-				port@6 {
-					reg = <6>;
-					label = "cpu";
-					ethernet = <&gmac0>;
-					phy-mode = "2500base-x";
+	port6: port@6 {
+		compatible = "mediatek,mt753x-port";
+		/* mediatek,ssc-on; */
+		reg = <6>;
+		phy-mode = "sgmii";
 
-					fixed-link {
-						speed = <2500>;
-						full-duplex;
-						pause;
-					};
-				};
-			};
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+		};
+	};
+};
+
+&pio {
+	usb_pwr_pins: usb-pins {
+		mux {
+			function = "jtag";
+			groups = "wo0_jtag_0";
+		};
+
+		power {
+			pins = "WO_JTAG_JTCLK";
+			drive-strength = <MTK_DRIVE_8mA>;
+			mediatek,pull-up-adv = <1>;
 		};
 	};
 };
@@ -81,7 +132,7 @@
 &xhci {
 	mediatek,u3p-dis-msk = <0x0>;
 	phys = <&u2port0 PHY_TYPE_USB2>,
-		<&u3port0 PHY_TYPE_USB3>;
+	       <&u3port0 PHY_TYPE_USB3>;
 	pinctrl-0 = <&usb_pwr_pins>;
 	pinctrl-names = "default";
 	status = "okay";
