@@ -1,0 +1,31 @@
+Index: linux-5.4.211/drivers/net/dsa/mt7530.c
+===================================================================
+--- linux-5.4.211.orig/drivers/net/dsa/mt7530.c
++++ linux-5.4.211/drivers/net/dsa/mt7530.c
+@@ -1420,6 +1420,8 @@ mt7530_port_vlan_add(struct dsa_switch *
+ 	struct mt7530_priv *priv = ds->priv;
+ 	u16 vid;
+ 
++	/*Return here due to HW VLAN should handle from zysh */
++	return;
+ 	mutex_lock(&priv->reg_mutex);
+ 
+ 	for (vid = vlan->vid_begin; vid <= vlan->vid_end; ++vid) {
+@@ -1445,6 +1447,8 @@ mt7530_port_vlan_del(struct dsa_switch *
+ 	struct mt7530_priv *priv = ds->priv;
+ 	u16 vid, pvid;
+ 
++	/*Return here due to HW VLAN should handle from zysh */
++	return 0;
+ 	mutex_lock(&priv->reg_mutex);
+ 
+ 	pvid = priv->ports[port].pvid;
+@@ -1705,6 +1709,8 @@ setup_unused_ports(struct dsa_switch *ds
+ 	u32 egtag_val = 0;
+ 	int i;
+ 
++	/* Return here due to no need setup unused port and reserve VLAN2 */
++	return 0;
+ 	if (!pm)
+ 		return 0;
+ 

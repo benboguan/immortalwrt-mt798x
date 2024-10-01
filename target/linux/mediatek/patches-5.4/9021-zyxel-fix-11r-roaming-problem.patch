@@ -1,0 +1,15 @@
+--- a/net/bridge/br_input.c
++++ b/net/bridge/br_input.c
+@@ -169,6 +169,12 @@ int br_handle_frame_finish(struct net *n
+ 			dst->used = now;
+ 		br_forward(dst->dst, skb, local_rcv, false);
+ 	} else {
++		/* Fix 802.11r in vlan issue. bridge will pass proto type=RRB 0x890D
++		*  more detail please refer redmine 44504
++		*/
++		if (eth_hdr(skb)->h_proto == htons(0x890D))
++			return br_pass_frame_up(skb);
++			
+ 		if (!mcast_hit)
+ 			br_flood(br, skb, pkt_type, local_rcv, false);
+ 		else

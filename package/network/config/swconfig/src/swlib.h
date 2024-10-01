@@ -108,6 +108,9 @@ enum swlib_port_flags {
 enum swlib_link_flags {
 	SWLIB_LINK_FLAG_EEE_100BASET = (1 << 0),
 	SWLIB_LINK_FLAG_EEE_1000BASET = (1 << 1),
+	SWLIB_LINK_FLAG_EEE_2500BASET = (1 << 2),
+	SWLIB_LINK_FLAG_EEE_5000BASET = (1 << 2),
+	SWLIB_LINK_FLAG_EEE_10000BASET = (1 << 3),
 };
 
 struct switch_dev;

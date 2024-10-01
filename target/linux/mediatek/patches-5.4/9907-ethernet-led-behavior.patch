@@ -1,0 +1,36 @@
+Index: linux-5.4.211/drivers/net/dsa/mt7531_phy.c
+===================================================================
+--- linux-5.4.211.orig/drivers/net/dsa/mt7531_phy.c
++++ linux-5.4.211/drivers/net/dsa/mt7531_phy.c
+@@ -1280,6 +1280,31 @@ static void mt7531_phy_setting(struct ds
+ 		val = switch_phy_read(ds, i, MII_ADVERTISE);
+ 		val |= ADVERTISE_PAUSE_ASYM;
+ 		switch_phy_write(ds, i, MII_ADVERTISE, val);
++
++		/* Enable self-control LED */
++		val = tc_phy_read_dev_reg(ds, i, PHY_DEV1F, 0x21);
++		val |= 1 << 15;
++		tc_phy_write_dev_reg(ds, i, PHY_DEV1F, 0x21, val);
++
++		/* Turn on LED0 when Link 1000 */
++		val = tc_phy_read_dev_reg(ds, i, PHY_DEV1F, 0x24);
++		val |= (1 << 14 | 1 << 0);
++		tc_phy_write_dev_reg(ds, i, PHY_DEV1F, 0x24, val);
++
++		/* Blink LED0 when 1000Mbps TRX Activity */
++		val = tc_phy_read_dev_reg(ds, i, PHY_DEV1F, 0x25);
++		val |= (1 << 1 | 1 << 0);
++		tc_phy_write_dev_reg(ds, i, PHY_DEV1F, 0x25, val);
++
++		/* Turn on LED1 when Link 100 or 10 */
++		val = tc_phy_read_dev_reg(ds, i, PHY_DEV1F, 0x26);
++		val |= (1 << 14 | 1 << 2 | 1 << 1);
++		tc_phy_write_dev_reg(ds, i, PHY_DEV1F, 0x26, val);
++
++		/* Blink LED1 when 100Mbps or 10Mbps TRX Activity */
++		val = tc_phy_read_dev_reg(ds, i, PHY_DEV1F, 0x27);
++		val |= (1 << 5 | 1 << 4 | 1 << 3 | 1 << 2);
++		tc_phy_write_dev_reg(ds, i, PHY_DEV1F, 0x27, val);
+ 	}
+ }
+ 

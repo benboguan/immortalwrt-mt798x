@@ -1,0 +1,12 @@
+Index: linux-5.4.211/drivers/net/dsa/mt7530.c
+===================================================================
+--- linux-5.4.211.orig/drivers/net/dsa/mt7530.c
++++ linux-5.4.211/drivers/net/dsa/mt7530.c
+@@ -1047,6 +1047,7 @@ mt7530_stp_state_set(struct dsa_switch *
+ 
+ 	switch (state) {
+ 	case BR_STATE_DISABLED:
++		return;
+ 		stp_state = MT7530_STP_DISABLED;
+ 		break;
+ 	case BR_STATE_BLOCKING:

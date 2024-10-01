@@ -59,6 +59,9 @@ static struct nla_policy link_policy[SWITCH_LINK_ATTR_MAX] = {
 	[SWITCH_LINK_SPEED] = { .type = NLA_U32 },
 	[SWITCH_LINK_FLAG_EEE_100BASET] = { .type = NLA_FLAG },
 	[SWITCH_LINK_FLAG_EEE_1000BASET] = { .type = NLA_FLAG },
+	[SWITCH_LINK_FLAG_EEE_2500BASET] = { .type = NLA_FLAG },
+	[SWITCH_LINK_FLAG_EEE_5000BASET] = { .type = NLA_FLAG },
+	[SWITCH_LINK_FLAG_EEE_10000BASET] = { .type = NLA_FLAG },
 };
 
 static inline void *
@@ -238,6 +241,12 @@ store_link_val(struct nl_msg *msg, struct nlattr *nla, struct switch_val *val)
 		link->eee |= SWLIB_LINK_FLAG_EEE_100BASET;
 	if (tb[SWITCH_LINK_FLAG_EEE_1000BASET])
 		link->eee |= SWLIB_LINK_FLAG_EEE_1000BASET;
+	if (tb[SWITCH_LINK_FLAG_EEE_2500BASET])
+		link->eee |= SWLIB_LINK_FLAG_EEE_2500BASET;
+	if (tb[SWITCH_LINK_FLAG_EEE_5000BASET])
+		link->eee |= SWLIB_LINK_FLAG_EEE_5000BASET;
+	if (tb[SWITCH_LINK_FLAG_EEE_10000BASET])
+		link->eee |= SWLIB_LINK_FLAG_EEE_10000BASET;
 
 out:
 	return err;

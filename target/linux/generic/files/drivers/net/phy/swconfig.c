@@ -812,6 +812,18 @@ swconfig_send_link(struct sk_buff *msg, struct genl_info *info, int attr,
 		if (nla_put_flag(msg, SWITCH_LINK_FLAG_EEE_1000BASET))
 			goto nla_put_failure;
 	}
+	if (link->eee & ADVERTISED_2500baseT_Full) {
+		if (nla_put_flag(msg, SWITCH_LINK_FLAG_EEE_2500BASET))
+			goto nla_put_failure;
+	}
+	if (link->eee & ADVERTISED_5000baseT_Full) {
+		if (nla_put_flag(msg, SWITCH_LINK_FLAG_EEE_5000BASET))
+			goto nla_put_failure;
+	}
+	if (link->eee & ADVERTISED_10000baseT_Full) {
+		if (nla_put_flag(msg, SWITCH_LINK_FLAG_EEE_10000BASET))
+			goto nla_put_failure;
+	}
 	nla_nest_end(msg, p);
 
 	return err;
@@ -1212,6 +1224,15 @@ switch_generic_set_link(struct switch_dev *dev, int port,
 			break;
 		case SWITCH_PORT_SPEED_1000:
 			bmcr |= BMCR_SPEED1000;
+			break;
+		case SWITCH_PORT_SPEED_2500:
+			bmcr |= BMCR_SPEED2500;
+			break;
+		case SWITCH_PORT_SPEED_5000:
+			bmcr |= BMCR_SPEED5000;
+			break;
+		case SWITCH_PORT_SPEED_10000:
+			bmcr |= BMCR_SPEED10000;
 			break;
 		default:
 			return -ENOTSUPP;

@@ -94,6 +94,12 @@ speed_str(int speed)
 		return "100baseT";
 	case 1000:
 		return "1000baseT";
+	case 2500:
+		return "2500baseT";
+	case 5000:
+		return "5000baseT";
+	case 10000:
+		return "10000baseT";
 	default:
 		break;
 	}
@@ -133,6 +139,9 @@ print_attr_val(const struct switch_attr *attr, const struct switch_val *val)
 				link->rx_flow ? "rxflow " : "",
 				link->eee & SWLIB_LINK_FLAG_EEE_100BASET ? "eee100 " : "",
 				link->eee & SWLIB_LINK_FLAG_EEE_1000BASET ? "eee1000 " : "",
+				link->eee & SWLIB_LINK_FLAG_EEE_2500BASET ? "eee2500 " : "",
+				link->eee & SWLIB_LINK_FLAG_EEE_5000BASET ? "eee5000 " : "",
+				link->eee & SWLIB_LINK_FLAG_EEE_10000BASET ? "eee10000 " : "",
 				link->aneg ? "auto" : "");
 		else
 			printf("port:%d link:down", val->port_vlan);
