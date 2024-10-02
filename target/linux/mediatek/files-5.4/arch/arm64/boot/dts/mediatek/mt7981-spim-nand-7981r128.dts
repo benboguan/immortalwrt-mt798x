@@ -1,5 +1,6 @@
 /dts-v1/;
 #include "mt7981.dtsi"
+
 / {
 	model = "7981R128";
 	compatible = "mediatek,mt7981-spim-snand-7981r128";
@@ -9,7 +10,7 @@
 		led-failsafe = &POWER;
 		led-running = &POWER;
 		led-upgrade = &POWER;
-	};		
+	};
 
 	chosen {
 		bootargs = "console=ttyS0,115200n1 loglevel=8  \
@@ -125,7 +126,7 @@
 			partition@0 {
 				label = "BL2";
 				reg = <0x00000 0x0100000>;
-				read-only;
+				#read-only;
 			};
 
 			partition@100000 {
@@ -185,8 +186,8 @@
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
 		phy-mode = "2500base-x";
-		managed = "in-band-status";
-		sfp = <&sfp1>;
+		//managed = "in-band-status";
+		//sfp = <&sfp1>;
 	};
 
 	mdio: mdio-bus {
@@ -220,7 +221,7 @@
 		};
 	};
 
-	port6: port@6 {
+	/* port6: port@6 {
 		compatible = "mediatek,mt753x-port";
 		mediatek,ssc-on;
 		reg = <6>;
@@ -229,7 +230,7 @@
 			speed = <2500>;
 			full-duplex;
 		};
-	};
+	}; */
 };
 
 &hnat {

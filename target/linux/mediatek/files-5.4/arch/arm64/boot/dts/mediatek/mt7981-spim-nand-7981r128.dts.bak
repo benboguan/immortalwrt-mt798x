@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
 /*
- * Copyright SX-7981R128 Update By nanchuci
+ * Copyright zhaolaibin SX-7981R128 Update By nanchuci
  */
 
 /dts-v1/;
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input.h>
-
 #include "mt7981.dtsi"
 
 / {
+	model = "7981R128";
+	compatible = "mediatek,mt7981-spim-snand-7981r128";
+
 	aliases {
-		led-boot = &power_led;
-		led-failsafe = &power_led;
-		led-running = &power_led;
-		led-upgrade = &power_led;
+		led-boot = &POWER;
+		led-failsafe = &POWER;
+		led-running = &POWER;
+		led-upgrade = &POWER;
 	};
 
 	chosen {
@@ -29,25 +29,31 @@
 	leds {
 		compatible = "gpio-leds";
 
-		SFP {
+		SFP: sfp {
 			label = "SFP";
 			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
 
-		WIFI5G {
+		WIFI5G: wifi5g {
 			label = "WIFI5G";
 			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
 
-		WIFI2G {
+		WIFI2G: wifi2g {
 			label = "WIFI2G";
 			gpios = <&pio 6 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
 
-		power_led: POWER {
+		LAN: lan {
+			label = "LAN";
+			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		POWER: power {
 			label = "POWER";
 			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
 			default-state = "on";
@@ -78,6 +84,16 @@
 		i2c-gpio,delay-us = <2>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+	};
+
+	sfp1: sfp-lan {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp1>;
+		los-gpios = <&pio 3 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpios = <&pio 35 GPIO_ACTIVE_LOW>;
+		tx-disable-gpios = <&pio 12 GPIO_ACTIVE_HIGH>;
+		tx-fault-gpios = <&pio 34 GPIO_ACTIVE_HIGH>;
+		maximum-power-milliwatt = <3000>;
 	};
 
 	reg_1p8v: regulator-1p8v {
@@ -144,7 +160,6 @@
 
 			partition@580000 {
 				label = "ubi";
-				// reg = <0x580000 0x4000000>;
 				reg = <0x580000 0x7280000>;
 			};
 		};
@@ -163,6 +178,93 @@
 
 &watchdog {
 	status = "okay";
+};
+
+&eth {
+	status = "okay";
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "2500base-x";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "2500base-x";
+		phy-handle = <&phy5>;
+	};
+
+	mdio: mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reset-gpios = <&pio 7 1>;
+		reset-delay-us = <600>;
+
+		phy5: phy@5 {
+			/* MaxLinear GPY211C0VC (SLNW8) */
+			compatible = "ethernet-phy-id67c9.de0a";
+			//compatible = "ethernet-phy-ieee802.3-c45";
+			/* GPY211 Address */
+			reg = <5>;
+			//phy-mode = "2500base-x";
+			//reset-gpios = <&pio 7 1>;
+			//reset-assert-us = <600>;
+			reset-deassert-us = <20000>;
+			maxlinear,led-reg = <0x3b0 0x0 0x0 0x3c0>;
+		};
+
+		/* phy6: phy@6 {
+			compatible = "ethernet-phy-id03a2.9461";
+			//phy-mode = "2500base-x";
+			reg = <6>;
+			managed = "in-band-status";
+			sfp = <&sfp1>;
+		}; */
+	};
+};
+
+&gsw {
+	mediatek,mdio = <&mdio>;
+	mediatek,portmap = "llw";
+	mediatek,mdio_master_pinmux = <1>;
+	reset-gpios = <&pio 39 0>;
+	interrupt-parent = <&pio>;
+	interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
+	status = "okay";
+
+	/* port5: port@5 {
+		compatible = "mediatek,mt753x-port";
+		reg = <5>;
+		phy-mode = "sgmii";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+		};
+	}; */
+
+	port6: port@6 {
+		compatible = "mediatek,mt753x-port";
+		mediatek,ssc-on;
+		reg = <6>;
+		phy-mode = "sgmii";
+		managed = "in-band-status";
+		sfp = <&sfp1>;
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+		};
+	};
 };
 
 &hnat {
@@ -184,19 +286,14 @@
 		compatible = "spi-nand";
 		reg = <0>;
 		spi-max-frequency = <52000000>;
-
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
 		spi-cal-enable;
 		spi-cal-mode = "read-data";
 		spi-cal-datalen = <7>;
-		spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4E 0x41 0x4E 0x44>;
+		spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4E 0x41 0x4E 0x44>; /* 'SPINAND' */
 		spi-cal-addrlen = <5>;
 		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
-
-		spi-tx-bus-width = <4>;
-		spi-rx-bus-width = <4>;
-		mediatek,nmbm;
-		mediatek,bmt-max-ratio = <1>;
-		mediatek,bmt-max-reserved-blocks = <64>;
 	};
 };
 
@@ -293,4 +390,26 @@
 			groups = "uart2_1";
 		};
 	};
+
+	usb_pwr_pins: usb-pins {
+		mux {
+			function = "jtag";
+			groups = "wo0_jtag_0";
+		};
+
+		power {
+			pins = "WO_JTAG_JTCLK";
+			drive-strength = <MTK_DRIVE_8mA>;
+			mediatek,pull-up-adv = <1>;
+		};
+	};
+};
+
+&xhci {
+	mediatek,u3p-dis-msk = <0x0>;
+	phys = <&u2port0 PHY_TYPE_USB2>,
+	       <&u3port0 PHY_TYPE_USB3>;
+	pinctrl-0 = <&usb_pwr_pins>;
+	pinctrl-names = "default";
+	status = "okay";
 };

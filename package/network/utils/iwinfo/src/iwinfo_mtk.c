@@ -160,6 +160,27 @@ static int mtk_get_band(const char *ifname)
 	return -1;
 }
 
+static int mtk_freq2channel(int freq)
+{
+	if (freq == 2484)
+		return 14;
+	else if (freq < 2484)
+		return (freq - 2407) / 5;
+	else if (freq >= 4910 && freq <= 4980)
+		return (freq - 4000) / 5;
+	else if (freq < 5925)
+		return (freq - 5000) / 5;
+	else if (freq == 5935)
+		return 2;
+	else if (freq <= 45000) /* DMG band lower limit */
+		/* see 802.11ax D6.1 27.3.22.2 */
+		return (freq - 5950) / 5;
+	else if (freq >= 58320 && freq <= 70200)
+		return (freq - 56160) / 2160;
+	else
+		return 0;
+}
+
 static int mtk_channel2freq(int channel, enum MTK_CH_BAND band)
 {
 	if (channel < 1)
@@ -320,7 +341,7 @@ static int mtk_get_center_chan1(const char *ifname, int *buf)
 
 	if (mtk_ioctl(ifname, RT_PRIV_IOCTL, &wrq) >= 0)
 	{
-		channel = mtk_get_channel(ifname, &channel);
+		channel = mtk_freq2channel(*buf);
 		wrq.u.data.length = sizeof(wmode);
 		wrq.u.data.pointer = &wmode;
 		wrq.u.data.flags = RT_OID_802_11_PHY_MODE;
