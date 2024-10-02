@@ -1,0 +1,22 @@
+Index: linux-5.4.194/net/core/dev.c
+===================================================================
+--- linux-5.4.194.orig/net/core/dev.c
++++ linux-5.4.194/net/core/dev.c
+@@ -4885,6 +4885,9 @@ skip_classify:
+ 			goto another_round;
+ 		else if (unlikely(!skb))
+ 			goto out;
++		/* bypass the unexpected VLAN packet receive via rx_handler */
++		else
++			goto skip_rx_handler;
+ 	}
+ 
+ 	rx_handler = rcu_dereference(skb->dev->rx_handler);
+@@ -4908,6 +4911,7 @@ skip_classify:
+ 		}
+ 	}
+ 
++skip_rx_handler:
+ 	if (unlikely(skb_vlan_tag_present(skb))) {
+ check_vlan_id:
+ 		if (skb_vlan_tag_get_id(skb)) {

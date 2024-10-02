@@ -265,8 +265,8 @@ static int mt753x_get_port_link(struct switch_dev *dev, int port,
 		link->speed = SWITCH_PORT_SPEED_1000;
 		break;
 	case MAC_SPD_2500:
-		/* TODO: swconfig has no support for 2500 now */
-		link->speed = SWITCH_PORT_SPEED_UNKNOWN;
+		/* TODO: fix swconfig support for 2500 now */
+		link->speed = SWITCH_PORT_SPEED_2500;
 		break;
 	}
 

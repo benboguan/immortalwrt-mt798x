@@ -1,0 +1,14 @@
+--- a/kernel/time/timer.c
++++ b/kernel/time/timer.c
+@@ -820,8 +820,9 @@ static inline void detach_timer(struct t
+ 	struct hlist_node *entry = &timer->entry;
+ 
+ 	debug_deactivate(timer);
+-
+-	__hlist_del(entry);
++	
++	if(entry != NULL)
++		__hlist_del(entry);
+ 	if (clear_pending)
+ 		entry->pprev = NULL;
+ 	entry->next = LIST_POISON2;
