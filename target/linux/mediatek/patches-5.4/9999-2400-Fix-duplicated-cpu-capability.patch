@@ -1,0 +1,18 @@
+Index: linux-5.4.284/arch/arm64/kernel/cpu_errata.c
+===================================================================
+--- linux-5.4.284.orig/arch/arm64/kernel/cpu_errata.c
++++ linux-5.4.284/arch/arm64/kernel/cpu_errata.c
+@@ -987,13 +987,6 @@
+ 		.cpu_enable = cpu_enable_ssbd_mitigation,
+ 		.midr_range_list = arm64_ssb_cpus,
+ 	},
+-	{
+-		.desc = "Spectre-BHB",
+-		.capability = ARM64_SPECTRE_BHB,
+-		.type = ARM64_CPUCAP_LOCAL_CPU_ERRATUM,
+-		.matches = is_spectre_bhb_affected,
+-		.cpu_enable = spectre_bhb_enable_mitigation,
+-	},
+ #ifdef CONFIG_ARM64_ERRATUM_1418040
+ 	{
+ 		.desc = "ARM erratum 1418040",
