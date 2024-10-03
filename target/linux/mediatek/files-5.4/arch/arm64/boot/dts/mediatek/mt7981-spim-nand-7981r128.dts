@@ -200,6 +200,9 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
+		reset-gpios = <&pio 7 1>;
+		reset-delay-us = <600>;
+
 		phy5: phy@5 {
 			/* MaxLinear GPY211C0VC (SLNW8) */
 			compatible = "ethernet-phy-id67c9.de0a";
@@ -207,8 +210,8 @@
 			/* GPY211 Address */
 			reg = <5>;
 			//phy-mode = "2500base-x";
-			reset-gpios = <&pio 7 1>;
-			reset-assert-us = <600>;
+			//reset-gpios = <&pio 7 1>;
+			//reset-assert-us = <600>;
 			reset-deassert-us = <20000>;
 			maxlinear,led-reg = <0x3b0 0x70 0x80 0x3c0>;
 		};
@@ -242,9 +245,9 @@
 		};
 	};
 
-	port6: port@6 {
+	/* port6: port@6 {
 		compatible = "mediatek,mt753x-port";
-		/* mediatek,ssc-on; */
+		//mediatek,ssc-on;
 		reg = <6>;
 		phy-mode = "sgmii";
 
@@ -252,7 +255,7 @@
 			speed = <2500>;
 			full-duplex;
 		};
-	};
+	}; */
 };
 
 &hnat {
