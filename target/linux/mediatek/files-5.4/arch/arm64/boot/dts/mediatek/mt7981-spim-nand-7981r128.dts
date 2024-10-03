@@ -233,7 +233,7 @@
 
 &gsw {
 	mediatek,mdio = <&mdio>;
-	mediatek,portmap = "llw";
+	mediatek,portmap = "lwl";
 	mediatek,mdio_master_pinmux = <1>;
 	reset-gpios = <&pio 39 0>;
 	interrupt-parent = <&pio>;
@@ -248,22 +248,21 @@
 		fixed-link {
 			speed = <2500>;
 			full-duplex;
+			pause;
 		};
 	};
 
-	/* port6: port@6 {
+	port6: port@6 {
 		compatible = "mediatek,mt753x-port";
-		mediatek,ssc-on;
+		/* mediatek,ssc-on; */
 		reg = <6>;
 		phy-mode = "sgmii";
-		managed = "in-band-status";
-		sfp = <&sfp1>;
 
 		fixed-link {
 			speed = <2500>;
 			full-duplex;
 		};
-	}; */
+	};
 };
 
 &hnat {
