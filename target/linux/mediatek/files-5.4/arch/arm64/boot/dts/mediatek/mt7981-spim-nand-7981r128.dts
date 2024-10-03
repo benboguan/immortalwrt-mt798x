@@ -57,8 +57,8 @@
 			default-state = "off";
 		};
 
-		LAN: lan {
-			label = "LAN";
+		WAN: wan {
+			label = "WAN";
 			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
@@ -178,15 +178,9 @@
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
 		phy-mode = "2500base-x";
+		label = "lan2";
 		managed = "in-band-status";
 		sfp = <&sfp1>;
-
-		fixed-link {
-			speed = <2500>;
-			full-duplex;
-			pause;
-			label = "lan2";
-		};
 	};
 
 	gmac1: mac@1 {
