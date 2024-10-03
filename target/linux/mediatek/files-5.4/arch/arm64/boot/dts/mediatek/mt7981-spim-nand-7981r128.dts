@@ -96,15 +96,6 @@
 		maximum-power-milliwatt = <3000>;
 	};
 
-	reg_1p8v: regulator-1p8v {
-		compatible = "regulator-fixed";
-		regulator-name = "fixed-1.8V";
-		regulator-min-microvolt = <1800000>;
-		regulator-max-microvolt = <1800000>;
-		regulator-boot-on;
-		regulator-always-on;
-	};
-
 	reg_3p3v: regulator-3p3v {
 		compatible = "regulator-fixed";
 		regulator-name = "fixed-3.3V";
@@ -194,7 +185,6 @@
 			speed = <2500>;
 			full-duplex;
 			pause;
-			phy-handle = <&phy6>;
 			label = "lan2";
 		};
 	};
@@ -213,14 +203,14 @@
 		phy5: phy@5 {
 			/* MaxLinear GPY211C0VC (SLNW8) */
 			compatible = "ethernet-phy-id67c9.de0a";
-			//compatible = "ethernet-phy-ieee802.3-c45";
+			/* compatible = "ethernet-phy-ieee802.3-c45"; */
 			/* GPY211 Address */
 			reg = <5>;
 			//phy-mode = "2500base-x";
 			reset-gpios = <&pio 7 1>;
 			reset-assert-us = <600>;
 			reset-deassert-us = <20000>;
-			maxlinear,led-reg = <0x3b0 0x3c0 0x0 0x0>;
+			maxlinear,led-reg = <0x3b0 0x70 0x80 0x3c0>;
 		};
 
 		/* phy6: phy@6 {
@@ -394,5 +384,7 @@
 	mediatek,u3p-dis-msk = <0x0>;
 	phys = <&u2port0 PHY_TYPE_USB2>,
 	       <&u3port0 PHY_TYPE_USB3>;
+	vusb33-supply = <&reg_3p3v>;
+	vbus-supply = <&usb_vbus>;
 	status = "okay";
 };
