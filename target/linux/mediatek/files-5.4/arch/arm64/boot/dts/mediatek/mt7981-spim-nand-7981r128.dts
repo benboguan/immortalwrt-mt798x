@@ -178,9 +178,13 @@
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
 		phy-mode = "2500base-x";
-		label = "lan2";
-		managed = "in-band-status";
-		sfp = <&sfp1>;
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+			label = "lan2";
+		};
 	};
 
 	gmac1: mac@1 {
@@ -188,12 +192,6 @@
 		reg = <1>;
 		phy-mode = "2500base-x";
 		phy-handle = <&phy5>;
-
-		fixed-link {
-			speed = <2500>;
-			full-duplex;
-			pause;
-		};
 	};
 
 	mdio: mdio-bus {
