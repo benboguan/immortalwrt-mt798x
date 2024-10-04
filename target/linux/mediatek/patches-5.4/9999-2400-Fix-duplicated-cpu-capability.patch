@@ -1,7 +1,5 @@
-Index: linux-5.4.284/arch/arm64/kernel/cpu_errata.c
-===================================================================
---- linux-5.4.284.orig/arch/arm64/kernel/cpu_errata.c
-+++ linux-5.4.284/arch/arm64/kernel/cpu_errata.c
+--- a/arch/arm64/kernel/cpu_errata.c
++++ b/arch/arm64/kernel/cpu_errata.c
 @@ -987,13 +987,6 @@
  		.cpu_enable = cpu_enable_ssbd_mitigation,
  		.midr_range_list = arm64_ssb_cpus,

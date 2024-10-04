@@ -57,8 +57,8 @@
 			default-state = "off";
 		};
 
-		WAN: wan {
-			label = "WAN";
+		LAN: lan {
+			label = "LAN";
 			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
@@ -86,7 +86,7 @@
 		#size-cells = <0>;
 	};
 
-	sfp1: sfp-lan {
+	sfp1: sfp-wan {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c_sfp1>;
 		los-gpios = <&pio 3 GPIO_ACTIVE_HIGH>;
@@ -183,7 +183,6 @@
 			speed = <2500>;
 			full-duplex;
 			pause;
-			label = "lan2";
 		};
 	};
 
@@ -191,7 +190,8 @@
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
 		phy-mode = "2500base-x";
-		phy-handle = <&phy5>;
+		managed = "in-band-status";
+		sfp = <&sfp1>;
 	};
 
 	mdio: mdio-bus {
@@ -204,25 +204,25 @@
 			/* compatible = "ethernet-phy-ieee802.3-c45"; */
 			/* GPY211 Address */
 			reg = <5>;
-			//phy-mode = "2500base-x";
+			phy-mode = "2500base-x";
 			reset-gpios = <&pio 7 1>;
 			reset-assert-us = <600>;
 			reset-deassert-us = <20000>;
-			maxlinear,led-reg = <0x0 0x0 0x0 0x0>;
+			maxlinear,led-reg = <0x3b0 0x70 0x80 0x3c0>;
 		};
 
-		/* phy6: phy@6 {
-			compatible = "ethernet-phy-id67c9.de0a";
-			//phy-mode = "2500base-x";
+		phy6: phy@6 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			phy-mode = "2500base-x";
 			reg = <6>;
-		}; */
+		};
 	};
 };
 
 &gsw {
 	mediatek,mdio = <&mdio>;
 	mediatek,portmap = "ll";
-	mediatek,mdio_master_pinmux = <0>;
+	mediatek,mdio_master_pinmux = <1>;
 	reset-gpios = <&pio 39 0>;
 	interrupt-parent = <&pio>;
 	interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
@@ -236,12 +236,13 @@
 		fixed-link {
 			speed = <2500>;
 			full-duplex;
+			pause;
 		};
 	};
 
-	/* port6: port@6 {
+	port6: port@6 {
 		compatible = "mediatek,mt753x-port";
-		//mediatek,ssc-on;
+		/* mediatek,ssc-on; */
 		reg = <6>;
 		phy-mode = "sgmii";
 
@@ -249,7 +250,7 @@
 			speed = <2500>;
 			full-duplex;
 		};
-	}; */
+	};
 };
 
 &hnat {
