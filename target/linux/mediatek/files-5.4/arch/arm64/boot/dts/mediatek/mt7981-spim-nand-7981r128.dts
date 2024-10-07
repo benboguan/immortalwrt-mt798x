@@ -209,7 +209,7 @@
 			reset-gpios = <&pio 7 1>;
 			reset-assert-us = <600>;
 			reset-deassert-us = <20000>;
-			maxlinear,led-reg = <0x70 0x80 0x0 0x0>;
+			maxlinear,led-reg = <0x0 0x0 0x0 0x0>;
 		};
 	};
 };
