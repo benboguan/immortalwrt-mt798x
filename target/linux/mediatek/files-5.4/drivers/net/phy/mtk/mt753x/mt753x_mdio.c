@@ -667,6 +667,7 @@ static int mt753x_mdio_register(struct gsw_mt753x *gsw)
 	ret = of_mdiobus_register(gsw->gphy_bus, mii_np);
 
 	if (ret) {
+		devm_mdiobus_free(gsw->dev, gsw->gphy_bus);
 		gsw->gphy_bus = NULL;
 	} else {
 		if (gsw->phy_status_poll)

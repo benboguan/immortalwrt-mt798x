@@ -366,6 +366,9 @@
 /* QDMA RX DMA Pointer Register */
 #define MTK_QRX_DRX_IDX0	(QDMA_BASE + 0x10c)
 
+/* QDMA Page Configuration Register */
+#define MTK_QDMA_PAGE	(QDMA_BASE + 0x1f0)
+
 /* QDMA Global Configuration Register */
 #define MTK_QDMA_GLO_CFG	(QDMA_BASE + 0x204)
 #define MTK_RX_2B_OFFSET	BIT(31)
@@ -1221,6 +1224,21 @@ struct mtk_reset_event {
 	u32 count[32];
 };
 
+/* struct mtk_phylink_priv - This is the structure holding private data for phylink
+ * @desc:		Pointer to the memory holding info about the phylink gpio
+ * @id:			The element is used to record the phy index of phylink
+ * @phyaddr:		The element is used to record the phy address of phylink
+ * @link:		The element is used to record the phy link status of phylink
+ */
+struct mtk_phylink_priv {
+	struct net_device	*dev;
+	struct gpio_desc	*desc;
+	char			label[16];
+	int			id;
+	int			phyaddr;
+	int			link;
+};
+
 /* struct mtk_eth -	This is the main datasructure for holding the state
  *			of the driver
  * @dev:		The device pointer
@@ -1315,6 +1333,7 @@ struct mtk_mac {
 	struct device_node		*of_node;
 	struct phylink			*phylink;
 	struct phylink_config		phylink_config;
+	struct mtk_phylink_priv		phylink_priv;
 	struct mtk_eth			*hw;
 	struct mtk_hw_stats		*hw_stats;
 	__be32				hwlro_ip[MTK_MAX_LRO_IP_CNT];
