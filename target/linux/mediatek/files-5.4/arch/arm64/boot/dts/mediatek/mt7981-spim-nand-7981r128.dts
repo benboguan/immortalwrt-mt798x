@@ -70,13 +70,6 @@
 		};
 	};
 
-	gsw: gsw@0 {
-		compatible = "mediatek,mt753x";
-		mediatek,ethsys = <&ethsys>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-	};
-
 	i2c_sfp1: i2c-gpio-0 {
 		compatible = "i2c-gpio";
 		sda-gpios = <&pio 9 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
@@ -151,9 +144,16 @@
 
 			partition@580000 {
 				label = "ubi";
-				reg = <0x580000 0x7200000>;
+				reg = <0x580000 0x7280000>;
 			};
 		};
+	};
+
+	gsw: gsw@0 {
+		compatible = "mediatek,mt753x";
+		mediatek,ethsys = <&ethsys>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 	};
 };
 
@@ -178,6 +178,15 @@
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
 		phy-mode = "2500base-x";
+		managed = "in-band-status";
+		sfp = <&sfp1>;
+	};
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "2500base-x";
+		phy-handle = <&phy5>;
 
 		fixed-link {
 			speed = <2500>;
@@ -186,31 +195,38 @@
 		};
 	};
 
-	gmac1: mac@1 {
-		compatible = "mediatek,eth-mac";
-		reg = <1>;
-		phy-mode = "2500base-x";
-		managed = "in-band-status";
-		sfp = <&sfp1>;
-	};
-
 	mdio: mdio-bus {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		phy6: phy@6 {
+		phy5: phy@5 {
 			/* MaxLinear GPY211C0VC (SLNW8) */
-			compatible = "ethernet-phy-id67c9.de0a";
-			/* compatible = "ethernet-phy-ieee802.3-c45"; */
+			//compatible = "ethernet-phy-id67c9.de0a";
+			compatible = "ethernet-phy-ieee802.3-c45";
 			/* GPY211 Address */
-			reg = <6>;
+			reg = <5>;
 			phy-mode = "2500base-x";
 			reset-gpios = <&pio 7 1>;
 			reset-assert-us = <600>;
 			reset-deassert-us = <20000>;
-			//maxlinear,led-reg = <0x3b0 0x0 0x0 0x3c0>;
+			maxlinear,led-reg = <0x3b0 0x0 0x0 0x3c0>;
+		};
+
+		phy6: phy@6 {
+			compatible = "ethernet-phy-id67c9.de0a";
+			//compatible = "ethernet-phy-ieee802.3-c45";
+			phy-mode = "2500base-x";
+			reg = <6>;
 		};
 	};
+};
+
+&hnat {
+	mtketh-wan = "eth1";
+	mtketh-lan = "eth0";
+	mtketh-max-gmac = <2>;
+	ext-devices-prefix = "usb", "wwan", "rmnet";
+	status = "okay";
 };
 
 &gsw {
@@ -222,25 +238,28 @@
 	interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
 	status = "okay";
 
+	port5: port@5 {
+		compatible = "mediatek,mt753x-port";
+		reg = <5>;
+		phy-mode = "2500base-x";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+		};
+	};
+
 	port6: port@6 {
 		compatible = "mediatek,mt753x-port";
+		//mediatek,ssc-on;
 		reg = <6>;
 		phy-mode = "sgmii";
 
 		fixed-link {
 			speed = <2500>;
 			full-duplex;
-			pause;
 		};
 	};
-};
-
-&hnat {
-	mtketh-wan = "eth1";
-	mtketh-lan = "eth0";
-	mtketh-max-gmac = <2>;
-	ext-devices-prefix = "usb", "wwan", "rmnet";
-	status = "okay";
 };
 
 &spi0 {
