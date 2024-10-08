@@ -183,8 +183,6 @@
 			speed = <2500>;
 			full-duplex;
 			pause;
-			phy-handle = <&phy5>;
-			label = "lan2";
 		};
 	};
 
@@ -192,7 +190,6 @@
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
 		phy-mode = "2500base-x";
-		phy-handle = <&phy6>;
 		managed = "in-band-status";
 		sfp = <&sfp1>;
 	};
@@ -215,6 +212,7 @@
 
 		phy6: phy@6 {
 			compatible = "ethernet-phy-ieee802.3-c45";
+			phy-mode = "2500base-x";
 			reg = <6>;
 		};
 	};
@@ -222,14 +220,14 @@
 
 &gsw {
 	mediatek,mdio = <&mdio>;
-	//mediatek,portmap = "ll";
+	mediatek,portmap = "llw";
 	mediatek,mdio_master_pinmux = <1>;
 	reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
 	interrupt-parent = <&pio>;
 	interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
 	status = "okay";
 
-	/* port5: port@5 {
+	port5: port@5 {
 		compatible = "mediatek,mt753x-port";
 		reg = <5>;
 		phy-mode = "sgmii";
@@ -237,9 +235,8 @@
 		fixed-link {
 			speed = <2500>;
 			full-duplex;
-			pause;
 		};
-	}; */
+	};
 
 	port6: port@6 {
 		compatible = "mediatek,mt753x-port";
@@ -287,18 +284,18 @@
 &spi1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&spic_pins>;
-	status = "disabled";
+	status = "okay";
 
-	slb9670: slb9670@0 {
-		compatible = "infineon,slb9670";
-		reg = <0>; /* CE0 */
-		#address-cells = <1>;
-		#size-cells = <0>;
-		spi-cal-enable;
-		spi-cal-mode = "read-data";
-		spi-cal-datalen = <2>;
-		spi-cal-data = /bits/ 8 <0x00 0x1b>;
-		spi-max-frequency = <20000000>;
+	proslic_spi: proslic_spi@0 {
+		compatible = "silabs,proslic_spi";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		spi-cpha = <1>;
+		spi-cpol = <1>;
+		channel_count = <1>;
+		debug_level = <4>;       /* 1 = TRC, 2 = DBG, 4 = ERR */
+		reset_gpio = <&pio 15 0>;
+		ig,enable-spi = <1>;     /* 1: Enable, 0: Disable */
 	};
 };
 

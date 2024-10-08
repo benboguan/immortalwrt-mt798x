@@ -1,0 +1,47 @@
+Index: linux-5.4.211/drivers/net/dsa/mt7530.c
+===================================================================
+--- linux-5.4.211.orig/drivers/net/dsa/mt7530.c
++++ linux-5.4.211/drivers/net/dsa/mt7530.c
+@@ -22,6 +22,8 @@
+ 
+ #include "mt7530.h"
+ 
++struct dsa_switch *zld_ds_ptr;
++
+ /* String, offset, and register size in bytes if different from 4 bytes */
+ static const struct mt7530_mib_desc mt7530_mib[] = {
+ 	MIB_DESC(1, 0x00, "TxDrop"),
+@@ -805,6 +807,12 @@ mt7531_ind_phy_read(struct dsa_switch *d
+ 	return ret;
+ }
+ 
++int zld_mt7531_ind_phy_read(int port, int regnum)
++{
++	return mt7531_ind_phy_read(zld_ds_ptr, port, regnum);
++}
++EXPORT_SYMBOL(zld_mt7531_ind_phy_read);
++
+ static int
+ mt7531_ind_phy_write(struct dsa_switch *ds, int port, int regnum,
+ 		     u16 data)
+@@ -825,6 +833,12 @@ mt7531_ind_phy_write(struct dsa_switch *
+ 	return ret;
+ }
+ 
++int zld_mt7531_ind_phy_write(int port, int regnum, u16 data)
++{
++	return mt7531_ind_phy_write(zld_ds_ptr, port, regnum, data);
++}
++EXPORT_SYMBOL(zld_mt7531_ind_phy_write);
++
+ static void
+ mt7530_get_strings(struct dsa_switch *ds, int port, u32 stringset,
+ 		   uint8_t *data)
+@@ -2760,6 +2774,7 @@ mt7530_probe(struct mdio_device *mdiodev
+ 
+ 	priv->bus = mdiodev->bus;
+ 	priv->dev = &mdiodev->dev;
++	zld_ds_ptr = priv->ds;
+ 	priv->ds->priv = priv;
+ 	priv->ds->ops = &mt7530_switch_ops;
+ 	mutex_init(&priv->reg_mutex);

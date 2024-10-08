@@ -471,7 +471,7 @@ static int mt7531_mac_port_setup(struct gsw_mt753x *gsw, u32 port,
 			 */
 			speed = port_cfg->speed;
 			if (port_cfg->speed == MAC_SPD_2500)
-				speed = MAC_SPD_1000;
+				speed = MAC_SPD_2500;
 
 			pmcr |= FORCE_MODE_LNK | FORCE_LINK |
 				FORCE_MODE_SPD | FORCE_MODE_DPX |
