@@ -178,21 +178,20 @@
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
 		phy-mode = "2500base-x";
-		managed = "in-band-status";
-		sfp = <&sfp1>;
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};	
 	};
 
 	gmac1: mac@1 {
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
 		phy-mode = "2500base-x";
-		phy-handle = <&phy5>;
-
-                fixed-link {
-                        speed = <2500>;
-                        full-duplex;
-                        pause;
-                };
+		managed = "in-band-status";
+		sfp = <&sfp1>;
 	};
 
 	mdio: mdio-bus {
@@ -207,11 +206,15 @@
 			reset-gpios = <&pio 7 1>;
 			reset-assert-us = <600>;
 			reset-deassert-us = <20000>;
-			maxlinear,led-reg = <0x3f0 0x330 0x0 0x0>;
+			maxlinear,led-reg = <0xfff 0xfff 0xfff 0xfff>;
 		};
 
 		phy6: phy@6 {
-			compatible = "ethernet-phy-ieee802.3-c45";
+			compatible = "ethernet-phy-id67c9.de0a";
+			phy-mode = "2500base-x";
+			reset-assert-us = <600>;
+			reset-deassert-us = <20000>;
+			maxlinear,led-reg = <0x0 0x0 0x0 0x0>;
 			reg = <6>;
 		};
 	};
@@ -239,7 +242,7 @@
 
 	port6: port@6 {
 		compatible = "mediatek,mt753x-port";
-		mediatek,ssc-on;
+		/* mediatek,ssc-on; */
 		reg = <6>;
 		phy-mode = "sgmii";
 
@@ -253,7 +256,6 @@
 
 &hnat {
 	mtketh-wan = "eth1";
-	mtketh-ppd = "eth1";
 	mtketh-lan = "eth0";
 	mtketh-max-gmac = <2>;
 	ext-devices-prefix = "usb", "wwan", "rmnet";
