@@ -180,15 +180,6 @@
 		phy-mode = "2500base-x";
 		managed = "in-band-status";
 		sfp = <&sfp1>;
-
-		fixed-link {
-			speed = <2500>;
-			full-duplex;
-			pause;
-			link-gpio = <&pio 38 0>;
-			phy-handle = <&phy6>;
-			label = "lan2";
-		};
 	};
 
 	gmac1: mac@1 {
@@ -196,27 +187,35 @@
 		reg = <1>;
 		phy-mode = "2500base-x";
 		phy-handle = <&phy5>;
+
+                fixed-link {
+                        speed = <2500>;
+                        full-duplex;
+                        pause;
+                };
 	};
 
 	mdio: mdio-bus {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		reset-gpios = <&pio 7 1>;
-		reset-delay-us = <600>;
-
 		phy5: phy@5 {
 			/* MaxLinear GPY211C0VC (SLNW8) */
-			//compatible = "ethernet-phy-id67c9.de0a";
-			compatible = "ethernet-phy-ieee802.3-c45";
+			compatible = "ethernet-phy-id67c9.de0a";
 			/* GPY211 Address */
 			reg = <5>;
-			maxlinear,led-reg = <0x0 0x0 0x0 0x0>;
+			reset-gpios = <&pio 7 1>;
+			reset-assert-us = <600>;
+			reset-deassert-us = <20000>;
+			phy-mode = "2500base-x";
+			maxlinear,led-reg = <0x3f0 0x0 0x0 0x0>; /* enable led0 for all link/act, and disable led1~3 */
 		};
 
 		phy6: phy@6 {
+			//compatible = "ethernet-phy-ieee802.3-c45";
 			compatible = "ethernet-phy-id67c9.de0a";
 			reg = <6>;
+			maxlinear,led-reg = <0x3f0 0x0 0x0 0x0>; /* enable led0 for all link/act, and disable led1~3 */
 		};
 	};
 };
