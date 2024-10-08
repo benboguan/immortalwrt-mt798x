@@ -79,7 +79,7 @@
 		#size-cells = <0>;
 	};
 
-	sfp1: sfp-wan {
+	sfp1: sfp-lan {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c_sfp1>;
 		los-gpios = <&pio 3 GPIO_ACTIVE_HIGH>;
@@ -178,25 +178,33 @@
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
 		phy-mode = "2500base-x";
-
-		fixed-link {
-			speed = <2500>;
-			full-duplex;
-			pause;
-		};
+		managed = "in-band-status";
+		sfp = <&sfp1>;
 	};
 
 	gmac1: mac@1 {
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
 		phy-mode = "2500base-x";
-		managed = "in-band-status";
-		sfp = <&sfp1>;
+		phy-handle = <&phy5>;
+
+                fixed-link {
+                        speed = <2500>;
+                        full-duplex;
+                        pause;
+                };
 	};
 
 	mdio: mdio-bus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+
+		phy1: phy@1 {
+			compatible = "ethernet-phy-id03a2.9461";
+			reg = <1>;
+			nvmem-cells = <&phy_calibration>;
+			nvmem-cell-names = "phy-cal-data";
+		};
 
 		phy5: phy@5 {
 			/* MaxLinear GPY211C0VC (SLNW8) */
@@ -206,24 +214,31 @@
 			reset-gpios = <&pio 7 1>;
 			reset-assert-us = <600>;
 			reset-deassert-us = <20000>;
-			maxlinear,led-reg = <0x3f0 0x0 0x0 0x0>; /* enable led0 for all link/act, and disable led1~3 */
-		};
-
-		phy6: phy@6 {
-			compatible = "ethernet-phy-ieee802.3-c45";
-			reg = <6>;
+			maxlinear,led-reg = <0x3c0 0x330 0x0 0x0>;
 		};
 	};
 };
 
 &gsw {
 	mediatek,mdio = <&mdio>;
-	mediatek,portmap = "ll";
+	mediatek,portmap = "wll";
 	mediatek,mdio_master_pinmux = <1>;
 	reset-gpios = <&pio 39 0>;
 	interrupt-parent = <&pio>;
 	interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
 	status = "okay";
+
+	port1: port@1 {
+		compatible = "mediatek,mt753x-port";
+		mediatek,ssc-on;
+		reg = <1>;
+		phy-mode = "sgmii";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+		};
+	};
 
 	port5: port@5 {
 		compatible = "mediatek,mt753x-port";
@@ -233,17 +248,7 @@
 		fixed-link {
 			speed = <2500>;
 			full-duplex;
-		};
-	};
-
-	port6: port@6 {
-		compatible = "mediatek,mt753x-port";
-		mediatek,ssc-on;
-		reg = <6>;
-		phy-mode = "sgmii";
-		fixed-link {
-			speed = <2500>;
-			full-duplex;
+			pause;
 		};
 	};
 };
