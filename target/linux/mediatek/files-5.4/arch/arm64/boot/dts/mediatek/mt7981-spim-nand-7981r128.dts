@@ -79,7 +79,7 @@
 		#size-cells = <0>;
 	};
 
-	sfp1: sfp-lan {
+	sfp1: sfp-wan {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c_sfp1>;
 		los-gpios = <&pio 3 GPIO_ACTIVE_HIGH>;
@@ -178,21 +178,20 @@
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
 		phy-mode = "2500base-x";
-		managed = "in-band-status";
-		sfp = <&sfp1>;
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
 	};
 
 	gmac1: mac@1 {
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
 		phy-mode = "2500base-x";
-		phy-handle = <&phy5>;
-
-                fixed-link {
-                        speed = <2500>;
-                        full-duplex;
-                        pause;
-                };
+		managed = "in-band-status";
+		sfp = <&sfp1>;
 	};
 
 	mdio: mdio-bus {
@@ -207,22 +206,19 @@
 			reset-gpios = <&pio 7 1>;
 			reset-assert-us = <600>;
 			reset-deassert-us = <20000>;
-			phy-mode = "2500base-x";
 			maxlinear,led-reg = <0x3f0 0x0 0x0 0x0>; /* enable led0 for all link/act, and disable led1~3 */
 		};
 
 		phy6: phy@6 {
-			//compatible = "ethernet-phy-ieee802.3-c45";
-			compatible = "ethernet-phy-id67c9.de0a";
+			compatible = "ethernet-phy-ieee802.3-c45";
 			reg = <6>;
-			maxlinear,led-reg = <0x3f0 0x0 0x0 0x0>; /* enable led0 for all link/act, and disable led1~3 */
 		};
 	};
 };
 
 &gsw {
 	mediatek,mdio = <&mdio>;
-	mediatek,portmap = "wll";
+	mediatek,portmap = "ll";
 	mediatek,mdio_master_pinmux = <1>;
 	reset-gpios = <&pio 39 0>;
 	interrupt-parent = <&pio>;
@@ -242,7 +238,7 @@
 
 	port6: port@6 {
 		compatible = "mediatek,mt753x-port";
-		/* mediatek,ssc-on; */
+		mediatek,ssc-on;
 		reg = <6>;
 		phy-mode = "sgmii";
 		fixed-link {
