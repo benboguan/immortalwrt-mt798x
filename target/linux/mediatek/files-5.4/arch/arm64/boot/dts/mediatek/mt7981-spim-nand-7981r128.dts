@@ -57,8 +57,8 @@
 			default-state = "off";
 		};
 
-		LAN: lan {
-			label = "LAN";
+		WAN: wan {
+			label = "WAN";
 			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
@@ -199,13 +199,6 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		phy1: phy@1 {
-			compatible = "ethernet-phy-id03a2.9461";
-			reg = <1>;
-			nvmem-cells = <&phy_calibration>;
-			nvmem-cell-names = "phy-cal-data";
-		};
-
 		phy5: phy@5 {
 			/* MaxLinear GPY211C0VC (SLNW8) */
 			compatible = "ethernet-phy-id67c9.de0a";
@@ -214,7 +207,12 @@
 			reset-gpios = <&pio 7 1>;
 			reset-assert-us = <600>;
 			reset-deassert-us = <20000>;
-			maxlinear,led-reg = <0x3c0 0x330 0x0 0x0>;
+			maxlinear,led-reg = <0x3f0 0x330 0x0 0x0>;
+		};
+
+		phy6: phy@6 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			reg = <6>;
 		};
 	};
 };
@@ -228,10 +226,9 @@
 	interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
 	status = "okay";
 
-	port1: port@1 {
+	port5: port@5 {
 		compatible = "mediatek,mt753x-port";
-		mediatek,ssc-on;
-		reg = <1>;
+		reg = <5>;
 		phy-mode = "sgmii";
 
 		fixed-link {
@@ -240,9 +237,10 @@
 		};
 	};
 
-	port5: port@5 {
+	port6: port@6 {
 		compatible = "mediatek,mt753x-port";
-		reg = <5>;
+		mediatek,ssc-on;
+		reg = <6>;
 		phy-mode = "sgmii";
 
 		fixed-link {
@@ -255,6 +253,7 @@
 
 &hnat {
 	mtketh-wan = "eth1";
+	mtketh-ppd = "eth1";
 	mtketh-lan = "eth0";
 	mtketh-max-gmac = <2>;
 	ext-devices-prefix = "usb", "wwan", "rmnet";
