@@ -183,6 +183,8 @@
 			speed = <2500>;
 			full-duplex;
 			pause;
+			phy-handle = <&phy5>;
+			label = "lan2";
 		};
 	};
 
@@ -190,6 +192,7 @@
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
 		phy-mode = "2500base-x";
+		phy-handle = <&phy6>;
 		managed = "in-band-status";
 		sfp = <&sfp1>;
 	};
@@ -219,14 +222,14 @@
 
 &gsw {
 	mediatek,mdio = <&mdio>;
-	mediatek,portmap = "ll";
+	//mediatek,portmap = "ll";
 	mediatek,mdio_master_pinmux = <1>;
 	reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
 	interrupt-parent = <&pio>;
 	interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
 	status = "okay";
 
-	port5: port@5 {
+	/* port5: port@5 {
 		compatible = "mediatek,mt753x-port";
 		reg = <5>;
 		phy-mode = "sgmii";
@@ -236,7 +239,7 @@
 			full-duplex;
 			pause;
 		};
-	};
+	}; */
 
 	port6: port@6 {
 		compatible = "mediatek,mt753x-port";
