@@ -190,7 +190,7 @@
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
 		phy-mode = "2500base-x";
-		phy-handle = <&phy6>;
+		phy-handle = <&phy0>;
 		managed = "in-band-status";
 		sfp = <&sfp1>;
 	};
@@ -198,6 +198,12 @@
 	mdio: mdio-bus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+
+		phy0: phy@6 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			phy-mode = "2500base-x";
+			reg = <6>;
+		};
 
 		phy5: phy@5 {
 			/* MaxLinear GPY211C0VC (SLNW8) */
@@ -209,20 +215,14 @@
 			reset-deassert-us = <20000>;
 			phy-mode = "2500base-x";
 			maxlinear,led-drive-vdd;
-			maxlinear,led-reg = <0x03f0 0x0 0x0 0x0>;
-		};
-
-		phy6: phy@6 {
-			compatible = "ethernet-phy-ieee802.3-c45";
-			phy-mode = "2500base-x";
-			reg = <6>;
+			maxlinear,led-reg = <0x00f0 0x0 0x0 0x0>;
 		};
 	};
 };
 
 &gsw {
 	mediatek,mdio = <&mdio>;
-	mediatek,portmap = "lll";
+	mediatek,portmap = "llw";
 	mediatek,mdio_master_pinmux = <1>;
 	reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
 	interrupt-parent = <&pio>;
@@ -234,15 +234,15 @@
 		reg = <5>;
 		phy-mode = "sgmii";
 
-		fixed-link {
+		/* fixed-link {
 			speed = <2500>;
 			full-duplex;
 			pause;
-		};
+		}; */
 	};
 
 	port6: port@6 {
-		compatible = "mediatek,mt753x-port";
+		//compatible = "mediatek,mt753x-port";
 		//mediatek,ssc-on;
 		reg = <6>;
 		phy-mode = "sgmii";
