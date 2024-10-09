@@ -16,6 +16,7 @@ struct t_phydev {
 };
 
 #define PHY_MIISTAT 0x18
+#define PHY_LED		0x1B	/* LED control */
 
 #define PHY_MIISTAT_SPD_MASK	GENMASK(2, 0)
 #define PHY_MIISTAT_DPX		BIT(3)
@@ -38,6 +39,9 @@ void gpy211_status_timer(struct work_struct *t);
 
 #define MAXLINEAR_MAX_LED_INDEX 4
 
+/* LED */
+#define VSPEC1_LED(x)		(0x1 + x)
+
 static int gpy211_phy_config_init(struct phy_device *phydev)
 {
 	return 0;
@@ -54,6 +58,7 @@ int gpy211_phy_probe(struct phy_device *phydev)
 	int i=0;
 	u32 phyid1;
 	int buf = 0;
+	u16 val = 0xff00;
 
 	/*
 	 * After reset signal to GPY211B1VC(SSTEP SLN8A), the chip may take 600 ms to bootup complete.
@@ -74,6 +79,12 @@ int gpy211_phy_probe(struct phy_device *phydev)
 	}else {
 		phydev_info(phydev, "driver wait %d ms for phy ready!\n", (MAX_RETRY_TIMES-i)*10);
 	}
+
+	if (of_property_read_bool(of_node, "maxlinear,led-drive-vdd"))
+		val &= 0x0fff;
+
+	/* Enable LED function handling on all ports*/
+	phy_write(phydev, PHY_LED, val);
 
 	ret = of_property_read_u32_array(of_node, "maxlinear,led-reg", reg_value, MAXLINEAR_MAX_LED_INDEX);
 
