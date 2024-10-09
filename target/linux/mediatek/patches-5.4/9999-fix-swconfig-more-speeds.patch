@@ -216,7 +216,7 @@
  	default:
  		WARN_ON(1);
  		goto done;
-@@ -632,12 +746,54 @@ swconfig_parse_link(struct sk_buff *msg, struct nlattr *nla,
+@@ -623,12 +737,54 @@ swconfig_parse_link(struct sk_buff *msg, struct nlattr *nla,
  	return 0;
  }
  
@@ -271,7 +271,7 @@
  	int err = -EINVAL;
  
  	if (!capable(CAP_NET_ADMIN))
-@@ -700,12 +856,38 @@ swconfig_set_attr(struct sk_buff *skb, struct genl_info *info)
+@@ -691,12 +847,38 @@ swconfig_set_attr(struct sk_buff *skb, struct genl_info *info)
  			err = 0;
  		}
  		break;
@@ -310,9 +310,9 @@
  	swconfig_put_dev(dev);
  	return err;
  }
-@@ -1018,6 +1200,11 @@ static struct genl_ops swconfig_ops[] = {
- 		.policy = switch_policy,
- #endif
+@@ -999,6 +1181,11 @@ static struct genl_ops swconfig_ops[] = {
+ 		.validate = GENL_DONT_VALIDATE_STRICT | GENL_DONT_VALIDATE_DUMP,
+ 		.doit = swconfig_list_attrs,
  	},
 +	{
 +		.cmd = SWITCH_CMD_LIST_REG,
@@ -321,10 +321,10 @@
 +	},
  	{
  		.cmd = SWITCH_CMD_LIST_PORT,
- #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,2,0)
-@@ -1038,6 +1225,11 @@ static struct genl_ops swconfig_ops[] = {
- 		.policy = switch_policy,
- #endif
+ 		.validate = GENL_DONT_VALIDATE_STRICT | GENL_DONT_VALIDATE_DUMP,
+@@ -1009,6 +1208,11 @@ static struct genl_ops swconfig_ops[] = {
+ 		.validate = GENL_DONT_VALIDATE_STRICT | GENL_DONT_VALIDATE_DUMP,
+ 		.doit = swconfig_get_attr,
  	},
 +	{
 +		.cmd = SWITCH_CMD_GET_REG,
@@ -333,10 +333,10 @@
 +	},
  	{
  		.cmd = SWITCH_CMD_GET_VLAN,
- #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,2,0)
-@@ -1058,6 +1250,11 @@ static struct genl_ops swconfig_ops[] = {
- 		.policy = switch_policy,
- #endif
+ 		.validate = GENL_DONT_VALIDATE_STRICT | GENL_DONT_VALIDATE_DUMP,
+@@ -1019,6 +1219,11 @@ static struct genl_ops swconfig_ops[] = {
+ 		.validate = GENL_DONT_VALIDATE_STRICT | GENL_DONT_VALIDATE_DUMP,
+ 		.doit = swconfig_get_attr,
  	},
 +	{
 +		.cmd = SWITCH_CMD_SET_REG,
@@ -345,7 +345,7 @@
 +	},
  	{
  		.cmd = SWITCH_CMD_SET_GLOBAL,
- #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,2,0)
+ 		.validate = GENL_DONT_VALIDATE_STRICT | GENL_DONT_VALIDATE_DUMP,
 --- a/drivers/net/phy/swconfig_leds.c
 +++ b/drivers/net/phy/swconfig_leds.c
 @@ -24,10 +24,16 @@
@@ -477,7 +477,7 @@
  	SWITCH_TYPE_NOVAL,
  };
  
-@@ -110,9 +118,17 @@ enum {
+@@ -110,9 +118,20 @@ enum {
  	SWITCH_LINK_SPEED,
  	SWITCH_LINK_FLAG_EEE_100BASET,
  	SWITCH_LINK_FLAG_EEE_1000BASET,
