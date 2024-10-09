@@ -186,13 +186,7 @@
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
 		phy-mode = "2500base-x";
-
-		fixed-link {
-			speed = <2500>;
-			full-duplex;
-			pause;
-		};
-
+		phy-handle = <&phy5>;
 	};
 
 	mdio: mdio-bus {
@@ -200,23 +194,17 @@
 		#size-cells = <0>;
 
 		phy5: phy@5 {
-			compatible = "ethernet-phy-ieee802.3-c45";
-			//phy-mode = "2500base-x";
-			reg = <5>;
-		};
-
-		phy6: phy@6 {
 			/* MaxLinear GPY211C0VC (SLNW8) */
 			compatible = "ethernet-phy-id67c9.de0a";
 			//compatible = "ethernet-phy-ieee802.3-c45";
 			/* GPY211 Address */
-			reg = <6>;
+			reg = <5>;
 			reset-gpios = <&pio 7 GPIO_ACTIVE_LOW>;
 			reset-assert-us = <600>;
 			reset-deassert-us = <20000>;
-			//phy-mode = "2500base-x";
+			phy-mode = "2500base-x";
 			maxlinear,led-drive-vdd;
-			maxlinear,led-reg = <0x03f0 0x0 0x0 0x0>;
+			maxlinear,led-reg = <0x30 0x40 0x80 0x0>;
 		};
 	};
 };
@@ -255,7 +243,8 @@
 };
 
 &hnat {
-	mtketh-wan = "eth1";
+	mtketh-wan = "eth0.2";
+	mtketh-ppd = "eth0.1";
 	mtketh-lan = "eth0";
 	mtketh-max-gmac = <2>;
 	ext-devices-prefix = "usb", "wwan", "rmnet";
