@@ -190,6 +190,7 @@
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
 		phy-mode = "2500base-x";
+		phy-handle = <&phy6>;
 		managed = "in-band-status";
 		sfp = <&sfp1>;
 	};
@@ -207,7 +208,8 @@
 			reset-assert-us = <600>;
 			reset-deassert-us = <20000>;
 			phy-mode = "2500base-x";
-			maxlinear,led-reg = <0x3c0 0x330 0x70 0x80>;
+			maxlinear,led-drive-vdd;
+			maxlinear,led-reg = <0x03f0 0x0 0x0 0x0>;
 		};
 
 		phy6: phy@6 {
@@ -220,7 +222,7 @@
 
 &gsw {
 	mediatek,mdio = <&mdio>;
-	mediatek,portmap = "llw";
+	mediatek,portmap = "lll";
 	mediatek,mdio_master_pinmux = <1>;
 	reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
 	interrupt-parent = <&pio>;
@@ -235,6 +237,7 @@
 		fixed-link {
 			speed = <2500>;
 			full-duplex;
+			pause;
 		};
 	};
 
