@@ -35,9 +35,7 @@ cmcc,rax3000m)
 	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x80000" "0x20000" "4"
 	;;
 *honor,fur-602* |\
-*imou,lc-hx3001* |\
-mediatek,mt7981-spim-snand-7981r125 |\
-mediatek,mt7981-spim-snand-7981r128)
+*imou,lc-hx3001*)
 	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x80000" "0x80000" "1"
 	;;
 xiaomi,mi-router-ax3000t* |\
@@ -45,6 +43,8 @@ xiaomi,mi-router-wr30u* |\
 xiaomi,redmi-router-ax6000*)
 	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x10000" "0x20000" "1"
 	;;
+mediatek,mt7981-spim-snand-7981r125 |\
+mediatek,mt7981-spim-snand-7981r128 |\
 nradio,wt9103 |\
 *konka,komi-a31*)
 	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x20000" "0x80000" "1"

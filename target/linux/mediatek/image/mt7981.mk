@@ -53,7 +53,7 @@ define Device/mt7981-spim-nand-7981r125
   DEVICE_MODEL := mt7981-spim-nand-7981r125
   DEVICE_DTS := mt7981-spim-nand-7981r125
   DEVICE_DTS_DIR := $(DTS_DIR)/mediatek
-  DEVICE_PACKAGES := $(MT7981_USB_PKGS) luci-app-samba4
+  DEVICE_PACKAGES := $(MT7981_USB_PKGS)
   SUPPORTED_DEVICES := mediatek,mt7981-spim-snand-7981r125
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
@@ -71,7 +71,7 @@ define Device/mt7981-spim-nand-7981r128
   DEVICE_MODEL := mt7981-spim-nand-7981r128
   DEVICE_DTS := mt7981-spim-nand-7981r128
   DEVICE_DTS_DIR := $(DTS_DIR)/mediatek
-  DEVICE_PACKAGES := $(MT7981_USB_PKGS) luci-app-samba4
+  DEVICE_PACKAGES := $(MT7981_USB_PKGS)
   SUPPORTED_DEVICES := mediatek,mt7981-spim-snand-7981r128
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
