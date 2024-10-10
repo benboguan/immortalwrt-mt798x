@@ -57,8 +57,8 @@
 			default-state = "off";
 		};
 
-		WAN: wan {
-			label = "WAN";
+		LAN: lan {
+			label = "LAN";
 			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
@@ -79,7 +79,7 @@
 		#size-cells = <0>;
 	};
 
-	sfp1: sfp-lan {
+	sfp1: sfp-wan {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c_sfp1>;
 		los-gpios = <&pio 3 GPIO_ACTIVE_HIGH>;
@@ -189,15 +189,6 @@
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
 		phy-mode = "2500base-x";
-		managed = "in-band-status";
-		sfp = <&sfp1>;
-	};
-
-	gmac1: mac@1 {
-		compatible = "mediatek,eth-mac";
-		reg = <1>;
-		phy-mode = "2500base-x";
-		phy-handle = <&phy0>;
 
 		fixed-link {
 			speed = <2500>;
@@ -206,11 +197,26 @@
 		};
 	};
 
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "2500base-x";
+		phy-handle = <&phy0>;
+		managed = "in-band-status";
+		sfp = <&sfp1>;
+	};
+
 	mdio: mdio-bus {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		phy0: ethernet-phy@5 {
+		phy0: phy@0 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			reg = <0>;
+			phy-mode = "2500base-x";
+		};
+
+		phy5: phy@5 {
 			/* MaxLinear GPY211C0VC (SLNW8) */
 			compatible = "ethernet-phy-id67c9.de0a";
 			//compatible = "ethernet-phy-ieee802.3-c45";
@@ -228,7 +234,7 @@
 
 &gsw {
 	mediatek,mdio = <&mdio>;
-	mediatek,portmap = "wl";
+	mediatek,portmap = "ll";
 	mediatek,mdio_master_pinmux = <1>;
 	reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
 	interrupt-parent = <&pio>;
@@ -249,7 +255,7 @@
 
 	port6: port@6 {
 		compatible = "mediatek,mt753x-port";
-		/* mediatek,ssc-on; */
+		mediatek,ssc-on;
 		reg = <6>;
 		phy-mode = "sgmii";
 
