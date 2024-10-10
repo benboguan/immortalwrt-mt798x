@@ -201,7 +201,6 @@
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
 		phy-mode = "2500base-x";
-		phy-handle = <&phy0>;
 		managed = "in-band-status";
 		sfp = <&sfp1>;
 	};
@@ -210,11 +209,11 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		phy0: phy@0 {
+		/* phy0: phy@0 {
 			compatible = "ethernet-phy-ieee802.3-c45";
 			reg = <0>;
 			phy-mode = "2500base-x";
-		};
+		}; */
 
 		phy5: phy@5 {
 			/* MaxLinear GPY211C0VC (SLNW8) */
@@ -226,8 +225,8 @@
 			reset-assert-us = <600>;
 			reset-deassert-us = <20000>;
 			phy-mode = "2500base-x";
-			maxlinear,led-drive-vdd;
-			maxlinear,led-reg = <0x03f0 0x0 0x0 0x0>;
+			//maxlinear,led-drive-vdd;
+			maxlinear,led-reg = <0x3c0 0x330 0x0 0x0>;
 		};
 	};
 };
@@ -255,7 +254,7 @@
 
 	port6: port@6 {
 		compatible = "mediatek,mt753x-port";
-		mediatek,ssc-on;
+		/* mediatek,ssc-on; */
 		reg = <6>;
 		phy-mode = "sgmii";
 
