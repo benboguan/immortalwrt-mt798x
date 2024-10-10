@@ -219,8 +219,7 @@
 			reset-assert-us = <600>;
 			reset-deassert-us = <20000>;
 			phy-mode = "2500base-x";
-			//maxlinear,led-drive-vdd;
-			//maxlinear,led-reg = <0x3c0 0x330 0x0 0x0>;
+			maxlinear,led-reg = <0x3c0 0x330 0x3c0 0x330>;
 		};
 	};
 };
@@ -248,7 +247,7 @@
 
 	port6: port@6 {
 		compatible = "mediatek,mt753x-port";
-		/* mediatek,ssc-on; */
+		mediatek,ssc-on;
 		reg = <6>;
 		phy-mode = "sgmii";
 
