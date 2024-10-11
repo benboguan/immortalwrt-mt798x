@@ -207,6 +207,20 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
+		swphy1: phy@1 {
+			compatible = "ethernet-phy-id03a2.9441";
+			reg = <1>;
+			mediatek,led-reg = <
+				0x21 0x8009 /* BASIC_CTRL-Enable self-control LED */
+				// 0x22 0x0c00 /* ON_DURATION */
+				// 0x23 0x1400 /* BLINK_DURATION */
+				0x24 0xc007 /* LED0_ON_CTRL-Turn on LED0 when Link 1000 */
+				0x25 0x0000 /* LED0_BLINK_CTRL-Blink LED0 when 1000Mbps TRX Activity */
+				0x26 0xc007 /* LED1_ON_CTRL-Turn on LED1 when Link 100 or 10 */
+				0x27 0x0003 /* LED1_BLINK_CTRL-Blink LED1 when 100Mbps or 10Mbps TRX Activity */
+			>;
+		};
+
 		phy5: phy@5 {
 			/* MaxLinear GPY211C0VC (SLNW8) */
 			compatible = "ethernet-phy-id67c9.de0a";
@@ -231,27 +245,6 @@
 	interrupt-parent = <&pio>;
 	interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
 	status = "okay";
-
-	port1: port@1 {
-		compatible = "mediatek,mt753x-port";
-		reg = <1>;
-		phy-mode = "gmii";
-		mediatek,led-reg = <
-			0x21 0x8009 /* BASIC_CTRL-Enable self-control LED */
-			// 0x22 0x0c00 /* ON_DURATION */
-			// 0x23 0x1400 /* BLINK_DURATION */
-			0x24 0xc007 /* LED0_ON_CTRL-Turn on LED0 when Link 1000 */
-			0x25 0x0000 /* LED0_BLINK_CTRL-Blink LED0 when 1000Mbps TRX Activity */
-			0x26 0xc007 /* LED1_ON_CTRL-Turn on LED1 when Link 100 or 10 */
-			0x27 0x0003 /* LED1_BLINK_CTRL-Blink LED1 when 100Mbps or 10Mbps TRX Activity */
-		>;
-
-		fixed-link {
-			speed = <1000>;
-			full-duplex;
-			pause;
-		};
-	};
 
 	port5: port@5 {
 		compatible = "mediatek,mt753x-port";
