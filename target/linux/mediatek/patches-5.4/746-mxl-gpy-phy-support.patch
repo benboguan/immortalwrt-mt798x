@@ -2,7 +2,7 @@ diff --git a/drivers/net/phy/Kconfig b/drivers/net/phy/Kconfig
 index e0f724a..1f74ff2 100644
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -511,6 +511,12 @@ config MARVELL_10G_PHY
+@@ -516,6 +516,12 @@ config MARVELL_10G_PHY
  	---help---
  	  Support for the Marvell Alaska MV88X3310 and compatible PHYs.
  
@@ -24,7 +24,7 @@ index e3c411f..7b44a98 100644
  obj-$(CONFIG_MARVELL_PHY)	+= marvell.o
  obj-$(CONFIG_MARVELL_10G_PHY)	+= marvell10g.o
 +obj-$(CONFIG_MAXLINEAR_GPHY)	+= mxl-gpy.o
- obj-$(CONFIG_MEDIATEK_GE_PHY)	+= mediatek-ge.o
+ obj-$(CONFIG_MEDIATEK_GE_PHY)	+= mediatek-ge.o mtk-ge.o
  obj-$(CONFIG_MESON_GXL_PHY)	+= meson-gxl.o
  obj-$(CONFIG_MICREL_KS8995MA)	+= spi_ks8995.o
 diff --git a/drivers/net/phy/mxl-gpy.c b/drivers/net/phy/mxl-gpy.c
