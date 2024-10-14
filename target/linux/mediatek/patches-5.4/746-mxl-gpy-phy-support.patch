@@ -38,16 +38,6 @@ index e3c411f..7b44a98 100644
  
  /**
   * hwmon_is_bad_char - Is the char invalid in a hwmon name
---- a/include/linux/phy.h
-+++ b/include/linux/phy.h
-@@ -1145,6 +1145,7 @@ int phy_drivers_register(struct
- 			 struct module *owner);
- void phy_state_machine(struct work_struct *work);
- void phy_queue_state_machine(struct phy_device *phydev, unsigned long jiffies);
-+void phy_trigger_machine(struct phy_device *phydev);
- void phy_mac_interrupt(struct phy_device *phydev);
- void phy_start_machine(struct phy_device *phydev);
- void phy_stop_machine(struct phy_device *phydev);
 diff --git a/drivers/net/phy/mxl-gpy.c b/drivers/net/phy/mxl-gpy.c
 new file mode 100644
 index 0000000..7304278
@@ -712,7 +702,7 @@ index 0000000..7304278
 +			return IRQ_NONE;
 +	}
 +
-+	phy_trigger_machine(phydev);
++	phy_queue_state_machine(phydev, 0);
 +
 +	return IRQ_HANDLED;
 +}
