@@ -27,6 +27,27 @@ index e3c411f..7b44a98 100644
  obj-$(CONFIG_MEDIATEK_GE_PHY)	+= mediatek-ge.o mtk-ge.o
  obj-$(CONFIG_MESON_GXL_PHY)	+= meson-gxl.o
  obj-$(CONFIG_MICREL_KS8995MA)	+= spi_ks8995.o
+--- a/include/linux/hwmon.h
++++ b/include/linux/hwmon.h
+@@ -415,6 +415,8 @@ struct device *
+ 
+ void hwmon_device_unregister(struct device *dev);
+ void devm_hwmon_device_unregister(struct device *dev);
++char *hwmon_sanitize_name(const char *name);
++char *devm_hwmon_sanitize_name(struct device *dev, const char *name);
+ 
+ /**
+  * hwmon_is_bad_char - Is the char invalid in a hwmon name
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -1145,6 +1145,7 @@ int phy_drivers_register(struct
+ 			 struct module *owner);
+ void phy_state_machine(struct work_struct *work);
+ void phy_queue_state_machine(struct phy_device *phydev, unsigned long jiffies);
++void phy_trigger_machine(struct phy_device *phydev);
+ void phy_mac_interrupt(struct phy_device *phydev);
+ void phy_start_machine(struct phy_device *phydev);
+ void phy_stop_machine(struct phy_device *phydev);
 diff --git a/drivers/net/phy/mxl-gpy.c b/drivers/net/phy/mxl-gpy.c
 new file mode 100644
 index 0000000..7304278
@@ -57,7 +78,7 @@ index 0000000..7304278
 +#define PHY_ID_GPY115C		0x67C9DF10
 +#define PHY_ID_GPY211B		0x67C9DE08
 +#define PHY_ID_GPY211C		0x67C9DE10
-+#define PHY_ID_GPY211S		0x67C9DE0A
++#define PHY_ID_GPY211C0	0x67C9DE0A
 +#define PHY_ID_GPY212B		0x67C9DE09
 +#define PHY_ID_GPY212C		0x67C9DE20
 +#define PHY_ID_GPY215B		0x67C9DF04
@@ -209,7 +230,7 @@ index 0000000..7304278
 +	return 0444;
 +}
 +
-+static const struct hwmon_channel_info * const gpy_hwmon_info[] = {
++static const struct hwmon_channel_info gpy_hwmon_info[] = {
 +	HWMON_CHANNEL_INFO(temp, HWMON_T_INPUT),
 +	NULL
 +};
@@ -230,7 +251,7 @@ index 0000000..7304278
 +	struct device *hwmon_dev;
 +	char *hwmon_name;
 +
-+	hwmon_name = dev_get_valid_name(dev, dev_name(dev));
++	hwmon_name = devm_hwmon_sanitize_name(dev, dev_name(dev));
 +	if (IS_ERR(hwmon_name))
 +		return PTR_ERR(hwmon_name);
 +
@@ -691,7 +712,7 @@ index 0000000..7304278
 +			return IRQ_NONE;
 +	}
 +
-+	phy_state_machine(phydev);
++	phy_trigger_machine(phydev);
 +
 +	return IRQ_HANDLED;
 +}
@@ -932,8 +953,8 @@ index 0000000..7304278
 +		.set_loopback	= gpy_loopback,
 +	},
 +	{
-+		PHY_ID_MATCH_MODEL(PHY_ID_GPY211S),
-+		.name		= "Maxlinear Ethernet GPY211S",
++		PHY_ID_MATCH_MODEL(PHY_ID_GPY211C0),
++		.name		= "Maxlinear Ethernet GPY211C0",
 +		.get_features	= genphy_c45_pma_read_abilities,
 +		.config_init	= gpy_config_init,
 +		.probe		= gpy_probe,
