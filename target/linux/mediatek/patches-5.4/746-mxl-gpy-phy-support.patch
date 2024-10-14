@@ -27,23 +27,12 @@ index e3c411f..7b44a98 100644
  obj-$(CONFIG_MEDIATEK_GE_PHY)	+= mediatek-ge.o mtk-ge.o
  obj-$(CONFIG_MESON_GXL_PHY)	+= meson-gxl.o
  obj-$(CONFIG_MICREL_KS8995MA)	+= spi_ks8995.o
---- a/include/linux/hwmon.h
-+++ b/include/linux/hwmon.h
-@@ -415,6 +415,8 @@ struct device *
- 
- void hwmon_device_unregister(struct device *dev);
- void devm_hwmon_device_unregister(struct device *dev);
-+char *hwmon_sanitize_name(const char *name);
-+char *devm_hwmon_sanitize_name(struct device *dev, const char *name);
- 
- /**
-  * hwmon_is_bad_char - Is the char invalid in a hwmon name
 diff --git a/drivers/net/phy/mxl-gpy.c b/drivers/net/phy/mxl-gpy.c
 new file mode 100644
 index 0000000..7304278
 --- /dev/null
 +++ b/drivers/net/phy/mxl-gpy.c
-@@ -0,0 +1,1059 @@
+@@ -0,0 +1,1039 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/* Copyright (C) 2021 Maxlinear Corporation
 + * Copyright (C) 2020 Intel Corporation
@@ -176,7 +165,6 @@ index 0000000..7304278
 +	{9, 0x73},
 +};
 +
-+#if IS_ENABLED(CONFIG_HWMON)
 +/* The original translation formulae of the temperature (in degrees of Celsius)
 + * are as follows:
 + *
@@ -220,7 +208,7 @@ index 0000000..7304278
 +	return 0444;
 +}
 +
-+static const struct hwmon_channel_info gpy_hwmon_info[] = {
++static const struct hwmon_channel_info * gpy_hwmon_info[] = {
 +	HWMON_CHANNEL_INFO(temp, HWMON_T_INPUT),
 +	NULL
 +};
@@ -237,27 +225,8 @@ index 0000000..7304278
 +
 +static int gpy_hwmon_register(struct phy_device *phydev)
 +{
-+	struct device *dev = &phydev->mdio.dev;
-+	struct device *hwmon_dev;
-+	char *hwmon_name;
-+
-+	hwmon_name = devm_hwmon_sanitize_name(dev, dev_name(dev));
-+	if (IS_ERR(hwmon_name))
-+		return PTR_ERR(hwmon_name);
-+
-+	hwmon_dev = devm_hwmon_device_register_with_info(dev, hwmon_name,
-+							 phydev,
-+							 &gpy_hwmon_chip_info,
-+							 NULL);
-+
-+	return PTR_ERR_OR_ZERO(hwmon_dev);
-+}
-+#else
-+static int gpy_hwmon_register(struct phy_device *phydev)
-+{
 +	return 0;
 +}
-+#endif
 +
 +static int gpy_ack_interrupt(struct phy_device *phydev)
 +{
