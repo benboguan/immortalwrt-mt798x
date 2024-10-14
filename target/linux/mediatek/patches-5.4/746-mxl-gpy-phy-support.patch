@@ -32,7 +32,7 @@ new file mode 100644
 index 0000000..7304278
 --- /dev/null
 +++ b/drivers/net/phy/mxl-gpy.c
-@@ -0,0 +1,1288 @@
+@@ -0,0 +1,1311 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/* Copyright (C) 2021 Maxlinear Corporation
 + * Copyright (C) 2020 Intel Corporation
@@ -46,7 +46,7 @@ index 0000000..7304278
 +#include <linux/hwmon.h>
 +#include <linux/mutex.h>
 +#include <linux/phy.h>
-+#include <linux/polynomial.h>
++//#include <linux/polynomial.h>
 +#include <linux/property.h>
 +#include <linux/netdevice.h>
 +
@@ -58,6 +58,7 @@ index 0000000..7304278
 +#define PHY_ID_GPY115C		0x67C9DF10
 +#define PHY_ID_GPY211B		0x67C9DE08
 +#define PHY_ID_GPY211C		0x67C9DE10
++#define PHY_ID_GPY211S		0x67C9DE0A
 +#define PHY_ID_GPY212B		0x67C9DE09
 +#define PHY_ID_GPY212C		0x67C9DE20
 +#define PHY_ID_GPY215B		0x67C9DF04
@@ -1138,6 +1139,28 @@ index 0000000..7304278
 +	{
 +		PHY_ID_MATCH_MODEL(PHY_ID_GPY211C),
 +		.name		= "Maxlinear Ethernet GPY211C",
++		.get_features	= genphy_c45_pma_read_abilities,
++		.config_init	= gpy21x_config_init,
++		.probe		= gpy_probe,
++		.suspend	= genphy_suspend,
++		.resume		= genphy_resume,
++		.config_aneg	= gpy_config_aneg,
++		.aneg_done	= genphy_c45_aneg_done,
++		.read_status	= gpy_read_status,
++		.config_intr	= gpy_config_intr,
++		.handle_interrupt = gpy_handle_interrupt,
++		.set_wol	= gpy_set_wol,
++		.get_wol	= gpy_get_wol,
++		.set_loopback	= gpy_loopback,
++		.led_brightness_set = gpy_led_brightness_set,
++		.led_hw_is_supported = gpy_led_hw_is_supported,
++		.led_hw_control_get = gpy_led_hw_control_get,
++		.led_hw_control_set = gpy_led_hw_control_set,
++		.led_polarity_set = gpy_led_polarity_set,
++	},
++	{
++		PHY_ID_MATCH_MODEL(PHY_ID_GPY211S),
++		.name		= "Maxlinear Ethernet GPY211S",
 +		.get_features	= genphy_c45_pma_read_abilities,
 +		.config_init	= gpy21x_config_init,
 +		.probe		= gpy_probe,
