@@ -84,7 +84,7 @@ index 00000000..f58e8a62
 +}
 +
 +static struct mt753x_extphy_id extphy_tbl[] = {
-+        {0x67c9de00, 0x0fffffff0, gpy211_init},
++        {0x67c9de00, 0x0ffffff0, gpy211_init},
 +};
 +
 +static u32 get_cl22_phy_id(struct gsw_mt753x *gsw, int addr)
