@@ -8,7 +8,7 @@
  #include <linux/phy.h>
  #include <linux/polynomial.h>
  #include <linux/property.h>
-@@ -293,10 +294,39 @@ out:
+@@ -261,10 +261,39 @@ out:
  	return ret;
  }
  

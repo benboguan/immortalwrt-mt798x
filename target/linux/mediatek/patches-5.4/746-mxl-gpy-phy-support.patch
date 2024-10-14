@@ -32,7 +32,7 @@ new file mode 100644
 index 0000000..7304278
 --- /dev/null
 +++ b/drivers/net/phy/mxl-gpy.c
-@@ -0,0 +1,1311 @@
+@@ -0,0 +1,1059 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/* Copyright (C) 2021 Maxlinear Corporation
 + * Copyright (C) 2020 Intel Corporation
@@ -46,7 +46,6 @@ index 0000000..7304278
 +#include <linux/hwmon.h>
 +#include <linux/mutex.h>
 +#include <linux/phy.h>
-+//#include <linux/polynomial.h>
 +#include <linux/property.h>
 +#include <linux/netdevice.h>
 +
@@ -98,10 +97,8 @@ index 0000000..7304278
 +				 PHY_IMASK_ADSC | \
 +				 PHY_IMASK_ANC)
 +
++#define PHY_F_NO_IRQ		0x80000000
 +#define GPY_MAX_LEDS		4
-+#define PHY_LED_POLARITY(idx)	BIT(12 + (idx))
-+#define PHY_LED_HWCONTROL(idx)	BIT(8 + (idx))
-+#define PHY_LED_ON(idx)		BIT(idx)
 +
 +#define PHY_FWV_REL_MASK	BIT(15)
 +#define PHY_FWV_MAJOR_MASK	GENMASK(11, 8)
@@ -110,26 +107,9 @@ index 0000000..7304278
 +#define PHY_PMA_MGBT_POLARITY	0x82
 +#define PHY_MDI_MDI_X_MASK	GENMASK(1, 0)
 +#define PHY_MDI_MDI_X_NORMAL	0x3
-+#define PHY_MDI_MDI_X_AB	0x2
-+#define PHY_MDI_MDI_X_CD	0x1
-+#define PHY_MDI_MDI_X_CROSS	0x0
 +
 +/* LED */
 +#define VSPEC1_LED(idx)		(1 + (idx))
-+#define VSPEC1_LED_BLINKS	GENMASK(15, 12)
-+#define VSPEC1_LED_PULSE	GENMASK(11, 8)
-+#define VSPEC1_LED_CON		GENMASK(7, 4)
-+#define VSPEC1_LED_BLINKF	GENMASK(3, 0)
-+
-+#define VSPEC1_LED_LINK10	BIT(0)
-+#define VSPEC1_LED_LINK100	BIT(1)
-+#define VSPEC1_LED_LINK1000	BIT(2)
-+#define VSPEC1_LED_LINK2500	BIT(3)
-+
-+#define VSPEC1_LED_TXACT	BIT(0)
-+#define VSPEC1_LED_RXACT	BIT(1)
-+#define VSPEC1_LED_COL		BIT(2)
-+#define VSPEC1_LED_NO_CON	BIT(3)
 +
 +/* SGMII */
 +#define VSPEC1_SGMII_CTRL	0x08
@@ -140,7 +120,7 @@ index 0000000..7304278
 +
 +/* Temperature sensor */
 +#define VSPEC1_TEMP_STA	0x0E
-+#define VSPEC1_TEMP_STA_DATA	GENMASK(9, 0)
++//#define VSPEC1_TEMP_STA_DATA	GENMASK(9, 0)
 +
 +/* Mailbox */
 +#define VSPEC1_MBOX_DATA	0x5
@@ -206,16 +186,6 @@ index 0000000..7304278
 + *
 + * where T = [-52156, 137961]mC and N = [0, 1023].
 + */
-+static const struct polynomial poly_N_to_temp = {
-+	.terms = {
-+		{4,  -25761, 1000, 1},
-+		{3,   97332, 1000, 1},
-+		{2, -191650, 1000, 1},
-+		{1,  307620, 1000, 1},
-+		{0,  -52156,    1, 1}
-+	}
-+};
-+
 +static int gpy_hwmon_read(struct device *dev,
 +			  enum hwmon_sensor_types type,
 +			  u32 attr, int channel, long *value)
@@ -228,9 +198,6 @@ index 0000000..7304278
 +		return ret;
 +	if (!ret)
 +		return -ENODATA;
-+
-+	*value = polynomial_calc(&poly_N_to_temp,
-+				 FIELD_GET(VSPEC1_TEMP_STA_DATA, ret));
 +
 +	return 0;
 +}
@@ -263,7 +230,7 @@ index 0000000..7304278
 +	struct device *hwmon_dev;
 +	char *hwmon_name;
 +
-+	hwmon_name = devm_hwmon_sanitize_name(dev, dev_name(dev));
++	hwmon_name = dev_get_valid_name(dev, dev_name(dev));
 +	if (IS_ERR(hwmon_name))
 +		return PTR_ERR(hwmon_name);
 +
@@ -335,26 +302,12 @@ index 0000000..7304278
 +	return 0;
 +}
 +
-+static int gpy21x_config_init(struct phy_device *phydev)
-+{
-+	__set_bit(PHY_INTERFACE_MODE_2500BASEX, phydev->possible_interfaces);
-+	__set_bit(PHY_INTERFACE_MODE_SGMII, phydev->possible_interfaces);
-+
-+	return gpy_config_init(phydev);
-+}
-+
 +static int gpy_probe(struct phy_device *phydev)
 +{
 +	struct device *dev = &phydev->mdio.dev;
 +	struct gpy_priv *priv;
 +	int fw_version;
 +	int ret;
-+
-+	if (!phydev->is_c45) {
-+		ret = phy_get_c45_ids(phydev);
-+		if (ret < 0)
-+			return ret;
-+	}
 +
 +	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
 +	if (!priv)
@@ -621,7 +574,7 @@ index 0000000..7304278
 +	}
 +
 +	if (phydev->speed == SPEED_2500 || phydev->speed == SPEED_1000) {
-+		ret = genphy_read_master_slave(phydev);
++		ret = genphy_read_status(phydev);
 +		if (ret < 0)
 +			return ret;
 +	}
@@ -708,15 +661,13 @@ index 0000000..7304278
 +	return phy_write(phydev, PHY_IMASK, mask);
 +}
 +
-+static irqreturn_t gpy_handle_interrupt(struct phy_device *phydev)
++static int gpy_handle_interrupt(struct phy_device *phydev)
 +{
 +	int reg;
 +
 +	reg = phy_read(phydev, PHY_ISTAT);
-+	if (reg < 0) {
-+		phy_error(phydev);
++	if (reg < 0)
 +		return IRQ_NONE;
-+	}
 +
 +	if (!(reg & PHY_IMASK_MASK))
 +		return IRQ_NONE;
@@ -736,13 +687,11 @@ index 0000000..7304278
 +	 */
 +	if (reg & (PHY_IMASK_LSTC | PHY_IMASK_LSPC)) {
 +		reg = gpy_mbox_read(phydev, REG_GPIO0_OUT);
-+		if (reg < 0) {
-+			phy_error(phydev);
++		if (reg < 0)
 +			return IRQ_NONE;
-+		}
 +	}
 +
-+	phy_trigger_machine(phydev);
++	phy_state_machine(phydev);
 +
 +	return IRQ_HANDLED;
 +}
@@ -829,7 +778,7 @@ index 0000000..7304278
 +			return ret;
 +
 +		if (ret & (PHY_IMASK_MASK & ~PHY_IMASK_LSTC))
-+			phy_trigger_machine(phydev);
++			phy_queue_state_machine(phydev, 0);
 +
 +		priv->wolopts |= WAKE_PHY;
 +		return 0;
@@ -894,157 +843,6 @@ index 0000000..7304278
 +	return genphy_soft_reset(phydev);
 +}
 +
-+static int gpy_led_brightness_set(struct phy_device *phydev,
-+				  u8 index, enum led_brightness value)
-+{
-+	int ret;
-+
-+	if (index >= GPY_MAX_LEDS)
-+		return -EINVAL;
-+
-+	/* clear HWCONTROL and set manual LED state */
-+	ret = phy_modify(phydev, PHY_LED,
-+			 ((value == LED_OFF) ? PHY_LED_HWCONTROL(index) : 0) |
-+			 PHY_LED_ON(index),
-+			 (value == LED_OFF) ? 0 : PHY_LED_ON(index));
-+	if (ret)
-+		return ret;
-+
-+	/* ToDo: set PWM brightness */
-+
-+	/* clear HW LED setup */
-+	if (value == LED_OFF)
-+		return phy_write_mmd(phydev, MDIO_MMD_VEND1, VSPEC1_LED(index), 0);
-+	else
-+		return 0;
-+}
-+
-+static const unsigned long supported_triggers = (BIT(TRIGGER_NETDEV_LINK) |
-+						 BIT(TRIGGER_NETDEV_LINK_10) |
-+						 BIT(TRIGGER_NETDEV_LINK_100) |
-+						 BIT(TRIGGER_NETDEV_LINK_1000) |
-+						 BIT(TRIGGER_NETDEV_LINK_2500) |
-+						 BIT(TRIGGER_NETDEV_RX) |
-+						 BIT(TRIGGER_NETDEV_TX));
-+
-+static int gpy_led_hw_is_supported(struct phy_device *phydev, u8 index,
-+				   unsigned long rules)
-+{
-+	if (index >= GPY_MAX_LEDS)
-+		return -EINVAL;
-+
-+	/* All combinations of the supported triggers are allowed */
-+	if (rules & ~supported_triggers)
-+		return -EOPNOTSUPP;
-+
-+	return 0;
-+}
-+
-+static int gpy_led_hw_control_get(struct phy_device *phydev, u8 index,
-+				  unsigned long *rules)
-+{
-+	int val;
-+
-+	if (index >= GPY_MAX_LEDS)
-+		return -EINVAL;
-+
-+	val = phy_read_mmd(phydev, MDIO_MMD_VEND1, VSPEC1_LED(index));
-+	if (val < 0)
-+		return val;
-+
-+	if (FIELD_GET(VSPEC1_LED_CON, val) & VSPEC1_LED_LINK10)
-+		*rules |= BIT(TRIGGER_NETDEV_LINK_10);
-+
-+	if (FIELD_GET(VSPEC1_LED_CON, val) & VSPEC1_LED_LINK100)
-+		*rules |= BIT(TRIGGER_NETDEV_LINK_100);
-+
-+	if (FIELD_GET(VSPEC1_LED_CON, val) & VSPEC1_LED_LINK1000)
-+		*rules |= BIT(TRIGGER_NETDEV_LINK_1000);
-+
-+	if (FIELD_GET(VSPEC1_LED_CON, val) & VSPEC1_LED_LINK2500)
-+		*rules |= BIT(TRIGGER_NETDEV_LINK_2500);
-+
-+	if (FIELD_GET(VSPEC1_LED_CON, val) == (VSPEC1_LED_LINK10 |
-+					       VSPEC1_LED_LINK100 |
-+					       VSPEC1_LED_LINK1000 |
-+					       VSPEC1_LED_LINK2500))
-+		*rules |= BIT(TRIGGER_NETDEV_LINK);
-+
-+	if (FIELD_GET(VSPEC1_LED_PULSE, val) & VSPEC1_LED_TXACT)
-+		*rules |= BIT(TRIGGER_NETDEV_TX);
-+
-+	if (FIELD_GET(VSPEC1_LED_PULSE, val) & VSPEC1_LED_RXACT)
-+		*rules |= BIT(TRIGGER_NETDEV_RX);
-+
-+	return 0;
-+}
-+
-+static int gpy_led_hw_control_set(struct phy_device *phydev, u8 index,
-+				  unsigned long rules)
-+{
-+	u16 val = 0;
-+	int ret;
-+
-+	if (index >= GPY_MAX_LEDS)
-+		return -EINVAL;
-+
-+	if (rules & BIT(TRIGGER_NETDEV_LINK) ||
-+	    rules & BIT(TRIGGER_NETDEV_LINK_10))
-+		val |= FIELD_PREP(VSPEC1_LED_CON, VSPEC1_LED_LINK10);
-+
-+	if (rules & BIT(TRIGGER_NETDEV_LINK) ||
-+	    rules & BIT(TRIGGER_NETDEV_LINK_100))
-+		val |= FIELD_PREP(VSPEC1_LED_CON, VSPEC1_LED_LINK100);
-+
-+	if (rules & BIT(TRIGGER_NETDEV_LINK) ||
-+	    rules & BIT(TRIGGER_NETDEV_LINK_1000))
-+		val |= FIELD_PREP(VSPEC1_LED_CON, VSPEC1_LED_LINK1000);
-+
-+	if (rules & BIT(TRIGGER_NETDEV_LINK) ||
-+	    rules & BIT(TRIGGER_NETDEV_LINK_2500))
-+		val |= FIELD_PREP(VSPEC1_LED_CON, VSPEC1_LED_LINK2500);
-+
-+	if (rules & BIT(TRIGGER_NETDEV_TX))
-+		val |= FIELD_PREP(VSPEC1_LED_PULSE, VSPEC1_LED_TXACT);
-+
-+	if (rules & BIT(TRIGGER_NETDEV_RX))
-+		val |= FIELD_PREP(VSPEC1_LED_PULSE, VSPEC1_LED_RXACT);
-+
-+	/* allow RX/TX pulse without link indication */
-+	if ((rules & BIT(TRIGGER_NETDEV_TX) || rules & BIT(TRIGGER_NETDEV_RX)) &&
-+	    !(val & VSPEC1_LED_CON))
-+		val |= FIELD_PREP(VSPEC1_LED_PULSE, VSPEC1_LED_NO_CON) | VSPEC1_LED_CON;
-+
-+	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, VSPEC1_LED(index), val);
-+	if (ret)
-+		return ret;
-+
-+	return phy_set_bits(phydev, PHY_LED, PHY_LED_HWCONTROL(index));
-+}
-+
-+static int gpy_led_polarity_set(struct phy_device *phydev, int index,
-+				unsigned long modes)
-+{
-+	bool active_low = false;
-+	u32 mode;
-+
-+	if (index >= GPY_MAX_LEDS)
-+		return -EINVAL;
-+
-+	for_each_set_bit(mode, &modes, __PHY_LED_MODES_NUM) {
-+		switch (mode) {
-+		case PHY_LED_ACTIVE_LOW:
-+			active_low = true;
-+			break;
-+		default:
-+			return -EINVAL;
-+		}
-+	}
-+
-+	return phy_modify(phydev, PHY_LED, PHY_LED_POLARITY(index),
-+			  active_low ? 0 : PHY_LED_POLARITY(index));
-+}
-+
 +static struct phy_driver gpy_drivers[] = {
 +	{
 +		PHY_ID_MATCH_MODEL(PHY_ID_GPY2xx),
@@ -1062,11 +860,6 @@ index 0000000..7304278
 +		.set_wol	= gpy_set_wol,
 +		.get_wol	= gpy_get_wol,
 +		.set_loopback	= gpy_loopback,
-+		.led_brightness_set = gpy_led_brightness_set,
-+		.led_hw_is_supported = gpy_led_hw_is_supported,
-+		.led_hw_control_get = gpy_led_hw_control_get,
-+		.led_hw_control_set = gpy_led_hw_control_set,
-+		.led_polarity_set = gpy_led_polarity_set,
 +	},
 +	{
 +		.phy_id		= PHY_ID_GPY115B,
@@ -1085,11 +878,6 @@ index 0000000..7304278
 +		.set_wol	= gpy_set_wol,
 +		.get_wol	= gpy_get_wol,
 +		.set_loopback	= gpy115_loopback,
-+		.led_brightness_set = gpy_led_brightness_set,
-+		.led_hw_is_supported = gpy_led_hw_is_supported,
-+		.led_hw_control_get = gpy_led_hw_control_get,
-+		.led_hw_control_set = gpy_led_hw_control_set,
-+		.led_polarity_set = gpy_led_polarity_set,
 +	},
 +	{
 +		PHY_ID_MATCH_MODEL(PHY_ID_GPY115C),
@@ -1107,18 +895,13 @@ index 0000000..7304278
 +		.set_wol	= gpy_set_wol,
 +		.get_wol	= gpy_get_wol,
 +		.set_loopback	= gpy115_loopback,
-+		.led_brightness_set = gpy_led_brightness_set,
-+		.led_hw_is_supported = gpy_led_hw_is_supported,
-+		.led_hw_control_get = gpy_led_hw_control_get,
-+		.led_hw_control_set = gpy_led_hw_control_set,
-+		.led_polarity_set = gpy_led_polarity_set,
 +	},
 +	{
 +		.phy_id		= PHY_ID_GPY211B,
 +		.phy_id_mask	= PHY_ID_GPY21xB_MASK,
 +		.name		= "Maxlinear Ethernet GPY211B",
 +		.get_features	= genphy_c45_pma_read_abilities,
-+		.config_init	= gpy21x_config_init,
++		.config_init	= gpy_config_init,
 +		.probe		= gpy_probe,
 +		.suspend	= genphy_suspend,
 +		.resume		= genphy_resume,
@@ -1130,17 +913,12 @@ index 0000000..7304278
 +		.set_wol	= gpy_set_wol,
 +		.get_wol	= gpy_get_wol,
 +		.set_loopback	= gpy_loopback,
-+		.led_brightness_set = gpy_led_brightness_set,
-+		.led_hw_is_supported = gpy_led_hw_is_supported,
-+		.led_hw_control_get = gpy_led_hw_control_get,
-+		.led_hw_control_set = gpy_led_hw_control_set,
-+		.led_polarity_set = gpy_led_polarity_set,
 +	},
 +	{
 +		PHY_ID_MATCH_MODEL(PHY_ID_GPY211C),
 +		.name		= "Maxlinear Ethernet GPY211C",
 +		.get_features	= genphy_c45_pma_read_abilities,
-+		.config_init	= gpy21x_config_init,
++		.config_init	= gpy_config_init,
 +		.probe		= gpy_probe,
 +		.suspend	= genphy_suspend,
 +		.resume		= genphy_resume,
@@ -1152,17 +930,12 @@ index 0000000..7304278
 +		.set_wol	= gpy_set_wol,
 +		.get_wol	= gpy_get_wol,
 +		.set_loopback	= gpy_loopback,
-+		.led_brightness_set = gpy_led_brightness_set,
-+		.led_hw_is_supported = gpy_led_hw_is_supported,
-+		.led_hw_control_get = gpy_led_hw_control_get,
-+		.led_hw_control_set = gpy_led_hw_control_set,
-+		.led_polarity_set = gpy_led_polarity_set,
 +	},
 +	{
 +		PHY_ID_MATCH_MODEL(PHY_ID_GPY211S),
 +		.name		= "Maxlinear Ethernet GPY211S",
 +		.get_features	= genphy_c45_pma_read_abilities,
-+		.config_init	= gpy21x_config_init,
++		.config_init	= gpy_config_init,
 +		.probe		= gpy_probe,
 +		.suspend	= genphy_suspend,
 +		.resume		= genphy_resume,
@@ -1174,18 +947,13 @@ index 0000000..7304278
 +		.set_wol	= gpy_set_wol,
 +		.get_wol	= gpy_get_wol,
 +		.set_loopback	= gpy_loopback,
-+		.led_brightness_set = gpy_led_brightness_set,
-+		.led_hw_is_supported = gpy_led_hw_is_supported,
-+		.led_hw_control_get = gpy_led_hw_control_get,
-+		.led_hw_control_set = gpy_led_hw_control_set,
-+		.led_polarity_set = gpy_led_polarity_set,
 +	},
 +	{
 +		.phy_id		= PHY_ID_GPY212B,
 +		.phy_id_mask	= PHY_ID_GPY21xB_MASK,
 +		.name		= "Maxlinear Ethernet GPY212B",
 +		.get_features	= genphy_c45_pma_read_abilities,
-+		.config_init	= gpy21x_config_init,
++		.config_init	= gpy_config_init,
 +		.probe		= gpy_probe,
 +		.suspend	= genphy_suspend,
 +		.resume		= genphy_resume,
@@ -1197,17 +965,12 @@ index 0000000..7304278
 +		.set_wol	= gpy_set_wol,
 +		.get_wol	= gpy_get_wol,
 +		.set_loopback	= gpy_loopback,
-+		.led_brightness_set = gpy_led_brightness_set,
-+		.led_hw_is_supported = gpy_led_hw_is_supported,
-+		.led_hw_control_get = gpy_led_hw_control_get,
-+		.led_hw_control_set = gpy_led_hw_control_set,
-+		.led_polarity_set = gpy_led_polarity_set,
 +	},
 +	{
 +		PHY_ID_MATCH_MODEL(PHY_ID_GPY212C),
 +		.name		= "Maxlinear Ethernet GPY212C",
 +		.get_features	= genphy_c45_pma_read_abilities,
-+		.config_init	= gpy21x_config_init,
++		.config_init	= gpy_config_init,
 +		.probe		= gpy_probe,
 +		.suspend	= genphy_suspend,
 +		.resume		= genphy_resume,
@@ -1219,18 +982,13 @@ index 0000000..7304278
 +		.set_wol	= gpy_set_wol,
 +		.get_wol	= gpy_get_wol,
 +		.set_loopback	= gpy_loopback,
-+		.led_brightness_set = gpy_led_brightness_set,
-+		.led_hw_is_supported = gpy_led_hw_is_supported,
-+		.led_hw_control_get = gpy_led_hw_control_get,
-+		.led_hw_control_set = gpy_led_hw_control_set,
-+		.led_polarity_set = gpy_led_polarity_set,
 +	},
 +	{
 +		.phy_id		= PHY_ID_GPY215B,
 +		.phy_id_mask	= PHY_ID_GPYx15B_MASK,
 +		.name		= "Maxlinear Ethernet GPY215B",
 +		.get_features	= genphy_c45_pma_read_abilities,
-+		.config_init	= gpy21x_config_init,
++		.config_init	= gpy_config_init,
 +		.probe		= gpy_probe,
 +		.suspend	= genphy_suspend,
 +		.resume		= genphy_resume,
@@ -1242,17 +1000,12 @@ index 0000000..7304278
 +		.set_wol	= gpy_set_wol,
 +		.get_wol	= gpy_get_wol,
 +		.set_loopback	= gpy_loopback,
-+		.led_brightness_set = gpy_led_brightness_set,
-+		.led_hw_is_supported = gpy_led_hw_is_supported,
-+		.led_hw_control_get = gpy_led_hw_control_get,
-+		.led_hw_control_set = gpy_led_hw_control_set,
-+		.led_polarity_set = gpy_led_polarity_set,
 +	},
 +	{
 +		PHY_ID_MATCH_MODEL(PHY_ID_GPY215C),
 +		.name		= "Maxlinear Ethernet GPY215C",
 +		.get_features	= genphy_c45_pma_read_abilities,
-+		.config_init	= gpy21x_config_init,
++		.config_init	= gpy_config_init,
 +		.probe		= gpy_probe,
 +		.suspend	= genphy_suspend,
 +		.resume		= genphy_resume,
@@ -1264,11 +1017,6 @@ index 0000000..7304278
 +		.set_wol	= gpy_set_wol,
 +		.get_wol	= gpy_get_wol,
 +		.set_loopback	= gpy_loopback,
-+		.led_brightness_set = gpy_led_brightness_set,
-+		.led_hw_is_supported = gpy_led_hw_is_supported,
-+		.led_hw_control_get = gpy_led_hw_control_get,
-+		.led_hw_control_set = gpy_led_hw_control_set,
-+		.led_polarity_set = gpy_led_polarity_set,
 +	},
 +	{
 +		PHY_ID_MATCH_MODEL(PHY_ID_GPY241B),
