@@ -1,16 +1,16 @@
 --- a/drivers/net/phy/mxl-gpy.c
 +++ b/drivers/net/phy/mxl-gpy.c
-@@ -10,6 +10,7 @@
+@@ -8,6 +8,7 @@
+ 
+ #include <linux/module.h>
  #include <linux/bitfield.h>
- #include <linux/hwmon.h>
- #include <linux/mutex.h>
 +#include <linux/of.h>
  #include <linux/phy.h>
- #include <linux/polynomial.h>
- #include <linux/property.h>
-@@ -261,10 +261,39 @@ out:
- 	return ret;
- }
+ #include <linux/netdevice.h>
+ 
+@@ -81,9 +82,42 @@ out:
+ 	{9, 0x73},
+ };
  
 +static int gpy_led_write(struct phy_device *phydev)
 +{
@@ -43,9 +43,11 @@
 +
  static int gpy_config_init(struct phy_device *phydev)
  {
- 	/* Nothing to configure. Configuration Requirement Placeholder */
--	return 0;
-+	return gpy_led_write(phydev);
- }
+ 	int ret;
++
++	ret = gpy_led_write(phydev);
++	if (ret)
++		return ret;
  
- static int gpy_probe(struct phy_device *phydev)
+ 	/* Mask all interrupts */
+ 	ret = phy_write(phydev, PHY_IMASK, 0);

@@ -1,4 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0+
+/*
+ * Drivers for Intel Ethernet GPY211-SLNW8
+ */
+
 #include <linux/bitfield.h>
 #include <linux/module.h>
 #include <linux/of.h>
@@ -28,7 +32,7 @@ struct t_phydev {
 
 void gpy211_status_timer(struct work_struct *t);
 
-// Starder Magament Registers
+/* Starder Magament Registers */
 #define MDIO_MMD_STD              0x0
 #define VSPEC1_NBT_DS_CTRL        0xA
 #define DOWNSHIFT_THR_MASK    GENMASK(6, 2)
@@ -44,14 +48,14 @@ static int gpy211_phy_config_init(struct phy_device *phydev)
 }
 
 #define MAX_RETRY_TIMES	80
-#define RETRY_INTERVAL	10 // unit is ms
+#define RETRY_INTERVAL	10	/* unit is ms */
 int gpy211_phy_probe(struct phy_device *phydev)
 {
 	int sgmii_reg = phy_read_mmd(phydev, MDIO_MMD_VEND1, 8);
 	struct device_node *of_node = phydev->mdio.dev.of_node;
 	u32 reg_value[MAXLINEAR_MAX_LED_INDEX] = {0};
 	int ret;
-	int i=0;
+	int i = 0;
 	u32 phyid1;
 	int buf = 0;
 
@@ -63,7 +67,7 @@ int gpy211_phy_probe(struct phy_device *phydev)
 	i = MAX_RETRY_TIMES;
 	while (i) {
 		phyid1 = phy_read_mmd(phydev, MDIO_MMD_STD, MDIO_DEVID1);
-		if ( phyid1 == DEFAULT_INTEL_GPY211_PHYID1_VALUE )
+		if (phyid1 == DEFAULT_INTEL_GPY211_PHYID1_VALUE)
 			break;
 
 		msleep(RETRY_INTERVAL);
@@ -71,7 +75,7 @@ int gpy211_phy_probe(struct phy_device *phydev)
 	}
 	if (!i) {
 		phydev_err(phydev, "phy is not ready over %d ms!\n", (MAX_RETRY_TIMES-i)*10);
-	}else {
+	} else {
 		phydev_info(phydev, "driver wait %d ms for phy ready!\n", (MAX_RETRY_TIMES-i)*10);
 	}
 
@@ -80,17 +84,27 @@ int gpy211_phy_probe(struct phy_device *phydev)
 	if (ret < 0) {
 		phydev_info(phydev, "not config \"maxlinear,led-reg\" parameter\n");
 	} else {
-		for(i=0;i<MAXLINEAR_MAX_LED_INDEX;i++) {
+		/* Write LED register values */
+		for (i = 0; i < MAXLINEAR_MAX_LED_INDEX; i++) {
 			phydev_dbg(phydev, "led-reg %d is %x.\n", i, reg_value[i]);
 			phy_write_mmd(phydev, MDIO_MMD_VEND1, i+1, reg_value[i]);
 		}
 	}
 
+	/* GPY211 with external flash requires at least 750ms to wait for mdio ready, here 1000ms */
+	for (i = 0; i < 1000; i++){
+		if (sgmii_reg > 0)
+			break;
+		usleep_range(1000, 10001);
+		sgmii_reg = phy_read_mmd(phydev, MDIO_MMD_VEND1, 8);
+	}
+
 	/* enable 2.5G SGMII rate adaption */
+	//phy_write_mmd(phydev, MDIO_MMD_VEND1, 8, 0xa4fa);
 	phy_write_mmd(phydev, MDIO_MMD_VEND1, 8, 0x24e2);
 
 	buf = phy_read_mmd(phydev, MDIO_MMD_VEND1, VSPEC1_NBT_DS_CTRL);
-	//enable downshift and set training counter threshold to 3
+	/* enable downshift and set training counter threshold to 3 */
 	phy_write_mmd(phydev, MDIO_MMD_VEND1, VSPEC1_NBT_DS_CTRL, buf | FIELD_PREP(DOWNSHIFT_THR_MASK, 0x3) | DOWNSHIFT_EN);
 
 	return 0;
@@ -109,7 +123,6 @@ static int gpy211_get_features(struct phy_device *phydev)
 		return ret;
 
 	/* GPY211 with rate adaption supports 100M/1G/2.5G speed. */
-
 	linkmode_clear_bit(ETHTOOL_LINK_MODE_10baseT_Half_BIT,
 			   phydev->supported);
 	linkmode_clear_bit(ETHTOOL_LINK_MODE_10baseT_Full_BIT,
@@ -117,7 +130,7 @@ static int gpy211_get_features(struct phy_device *phydev)
 	linkmode_set_bit(ETHTOOL_LINK_MODE_2500baseX_Full_BIT,
 			 phydev->supported);
 
-	//set timer to query status
+	/* set timer to query status */
 	// timer_setup(&t_phy->timer, gpy211_status_timer, 0);
 	// mod_timer(&t_phy->timer, jiffies + 20*HZ);
 	INIT_DELAYED_WORK(&t_phy->dw, gpy211_status_timer);
@@ -141,6 +154,21 @@ static int gpy_read_status(struct phy_device *phydev)
 	if(ret)
 	{
 		phydev_dbg(phydev, "### line[%d] addr[%d] val=[0x%x] link[%d] phyid[0x%x]\n", __LINE__, phydev->mdio.addr, ret, phydev->link, phydev->phy_id);
+
+		if (phydev->autoneg == AUTONEG_ENABLE && phydev->autoneg_complete) {
+			ret = genphy_c45_read_lpa(phydev);
+			if (ret < 0)
+				return ret;
+
+			/* Read the link partner's 1G advertisement */
+			ret = phy_read(phydev, MII_STAT1000);
+			if (ret < 0)
+				return ret;
+			mii_stat1000_mod_linkmode_lpa_t(phydev->lp_advertising, ret);
+		} else if (phydev->autoneg == AUTONEG_DISABLE) {
+			linkmode_zero(phydev->lp_advertising);
+		}
+
 		phydev->link = (ret & PHY_MIISTAT_LS) ? 1 : 0;
 		phydev->duplex = (ret & PHY_MIISTAT_DPX) ? DUPLEX_FULL : DUPLEX_HALF;
 		duplex = (phydev->duplex == DUPLEX_FULL) ? "F" : "H";
@@ -182,7 +210,7 @@ void gpy211_status_timer(struct work_struct *t)
 	struct t_phydev *t_phy = container_of(t, struct t_phydev, dw.work);
 	gpy_read_status(t_phy->phydev);
 
-	//trigger timer again
+	/* trigger timer again */
 	// mod_timer(&t_phy->timer, jiffies + HZ);
 	schedule_delayed_work(&t_phy->dw, msecs_to_jiffies(2000));
 }
