@@ -208,7 +208,6 @@
 		#size-cells = <0>;
 
 		swphy1: phy@1 {
-			compatible = "ethernet-phy-id03a2.9441";
 			reg = <1>;
 			mediatek,led-reg = <
 				0x21 0x8009 /* BASIC_CTRL-Enable self-control LED */
@@ -233,6 +232,7 @@
 			phy-mode = "2500base-x";
 			maxlinear,led-drive-vdd;
 			maxlinear,led-reg = <0x3c0 0x330 0x0 0x0>;
+			label = "eth0";
 		};
 	};
 };

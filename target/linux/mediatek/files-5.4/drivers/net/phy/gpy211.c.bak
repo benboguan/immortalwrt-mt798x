@@ -35,8 +35,8 @@ void gpy211_status_timer(struct work_struct *t);
 /* Starder Magament Registers */
 #define MDIO_MMD_STD              0x0
 #define VSPEC1_NBT_DS_CTRL        0xA
-#define DOWNSHIFT_THR_MASK		  GENMASK(6, 2)
-#define DOWNSHIFT_EN			  BIT(1)
+#define DOWNSHIFT_THR_MASK    GENMASK(6, 2)
+#define DOWNSHIFT_EN          BIT(1)
 
 #define DEFAULT_INTEL_GPY211_PHYID1_VALUE	0x67c9
 
@@ -51,7 +51,7 @@ static int gpy211_phy_config_init(struct phy_device *phydev)
 #define RETRY_INTERVAL	10	/* unit is ms */
 int gpy211_phy_probe(struct phy_device *phydev)
 {
-	int sgmii_reg __attribute__((unused)) = phy_read_mmd(phydev, MDIO_MMD_VEND1, 8);
+	int sgmii_reg = phy_read_mmd(phydev, MDIO_MMD_VEND1, 8);
 	struct device_node *of_node = phydev->mdio.dev.of_node;
 	u32 reg_value[MAXLINEAR_MAX_LED_INDEX] = {0};
 	int ret;
@@ -102,15 +102,6 @@ int gpy211_phy_probe(struct phy_device *phydev)
 	/* enable 2.5G SGMII rate adaption */
 	//phy_write_mmd(phydev, MDIO_MMD_VEND1, 8, 0xa4fa);
 	phy_write_mmd(phydev, MDIO_MMD_VEND1, 8, 0x24e2);
-	if (phydev->mdio.addr == 5) {
-		/* 2.5G LAN */
-		phy_write_mmd(phydev, 0, 0x1B, 0x0000);	/* disable LED function and turn off LED */
-		phy_write_mmd(phydev, 0x7, 0x3c, 0x0);	/* disable 100M/1000M EEE advertisement  */
-	} else if (phydev->mdio.addr == 6) {
-		/* 2.5G WAN, active low */
-		phy_write_mmd(phydev, 0, 0x1B, 0x1000);	/* disable LED function and turn off LED */
-		phy_write_mmd(phydev, 0x7, 0x3c, 0x0);	/* disable 100M/1000M EEE advertisement  */
-	}
 
 	buf = phy_read_mmd(phydev, MDIO_MMD_VEND1, VSPEC1_NBT_DS_CTRL);
 	/* enable downshift and set training counter threshold to 3 */
@@ -153,7 +144,7 @@ static int gpy_read_status(struct phy_device *phydev)
 	int old_link = phydev->link;
 	const char *speed;
 	const char *duplex;
-	const char *interface;
+
 	phydev_dbg(phydev, "### line[%d] addr[%d] link[%d] phyid[0x%x]\n", __LINE__, phydev->mdio.addr, phydev->link, phydev->phy_id);
 	struct device_node *of_node = phydev->mdio.dev.of_node;
 
@@ -200,16 +191,14 @@ static int gpy_read_status(struct phy_device *phydev)
 				break;
 		}
 
-		of_property_read_string(of_node, "label", &interface);
-
 		phydev_dbg(phydev, "### line[%d] addr[%d] old[%d] newlink[%d] \n", __LINE__, phydev->mdio.addr, old_link, phydev->link);
 
 		if(old_link != phydev->link)
 		{
 			if(phydev->link)
-				phydev_info(phydev, "###phy_addr[%d] [%s] link up speed[%s]\n", phydev->mdio.addr, interface, speed);
+				phydev_info(phydev, "###phy_addr[%d] link up speed[%s]\n", phydev->mdio.addr, speed);
 			else
-				phydev_info(phydev, "###phy_addr[%d] [%s] link down \n", phydev->mdio.addr, interface);
+				phydev_info(phydev, "###phy_addr[%d] link down \n", phydev->mdio.addr);
 		}
 	}
 
