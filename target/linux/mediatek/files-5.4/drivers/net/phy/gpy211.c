@@ -1,121 +1,462 @@
 // SPDX-License-Identifier: GPL-2.0+
-/*
- * Drivers for Intel Ethernet GPY211-SLNW8
- */
-
 #include <linux/bitfield.h>
 #include <linux/module.h>
-#include <linux/of.h>
 #include <linux/phy.h>
-#include <linux/delay.h>
-#include <linux/workqueue.h>
-#include <linux/interrupt.h>
-#include <linux/sched.h>
-#include <linux/init.h>
 
-struct t_phydev {
-	// struct timer_list timer;
-	struct phy_device *phydev;
-	struct delayed_work dw;
+#include <linux/of.h>
+
+#include <linux/proc_fs.h>
+#include <linux/seq_file.h>
+
+#define MDIO_MMD_STD_REG_DEV      (0)
+
+// for MMD_DEV_0 (MDIO_MMD_STD_REG_DEV)
+#define STD_CTRL_REG_NUM          (0)
+#define STD_STAT_REG_NUM          (1)
+#define STD_PHY_MII_STAT_REG_NUM  (24)
+
+// for MMD_DEV_7 (MDIO_MMD_AN)
+#define ANEG_RESTART_REG_NUM      (0)
+#define ANEG_MGBT_REG_NUM         (32)
+
+void phydev_bind_to_master_dev(void *priv, int unit, struct phy_device *phy);
+//extern void phydev_bind_to_master_dev(void *priv, int unit, struct phy_device *phy);
+
+static struct phy_device * gpy_phydev_wan = NULL;
+static struct phy_device * gpy_phydev_lan5 = NULL;
+
+static int phydev_wan_proc_show(struct seq_file *m, void *v)
+{
+	int mode = phy_read_mmd(gpy_phydev_wan, MDIO_MMD_STD_REG_DEV, STD_PHY_MII_STAT_REG_NUM);
+	int speed = 0;
+
+	switch (mode & 0x7) {
+	case 0:
+		speed = 10;
+		break;
+	case 1:
+		speed = 100;
+		break;
+	case 2:
+		speed = 1000;
+		break;
+	case 4:
+		speed = 2500;
+		break;
+	default:
+		break;
+	}
+
+	seq_printf(m, "link:%s speed:%d duplex:%s\n",
+			   ((mode & 0x400) != 0) ? "up":"down",
+			   speed,
+			   ((mode & 0x8) != 0) ? "full":"half");
+
+	return 0;
+}
+
+static int phydev_lan5_proc_show(struct seq_file *m, void *v)
+{
+	int mode = phy_read_mmd(gpy_phydev_lan5, MDIO_MMD_STD_REG_DEV, STD_PHY_MII_STAT_REG_NUM);
+	int speed = 0;
+
+	switch (mode & 0x7) {
+	case 0:
+		speed = 10;
+		break;
+	case 1:
+		speed = 100;
+		break;
+	case 2:
+		speed = 1000;
+		break;
+	case 4:
+		speed = 2500;
+		break;
+	default:
+		break;
+	}
+
+	seq_printf(m, "link:%s speed:%d duplex:%s\n",
+			   ((mode & 0x400) != 0) ? "up":"down",
+			   speed,
+			   ((mode & 0x8) != 0) ? "full":"half");
+
+	return 0;
+}
+
+static int phydev_wan_proc_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, phydev_wan_proc_show, inode->i_private);
+}
+
+static int phydev_lan5_proc_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, phydev_lan5_proc_show, inode->i_private);
+}
+
+static void phy_wan_linkrate_ability(bool abi_2500, bool abi_1000, bool abi_100, bool abi_10)
+{
+	int data = 0;
+
+	// 2.5G negotiation cap;
+	data = phy_read_mmd(gpy_phydev_wan, MDIO_MMD_AN, ANEG_MGBT_REG_NUM);
+	if (abi_2500)
+	{
+		// bit[5] = 1; bit[7] = 1
+		data = (data | 0xa0);
+	}
+	else
+	{
+		// bit[5] = 0; bit[7] = 0; register_data_length = 16
+		data = (data & 0xff5f);
+	}
+	phy_write_mmd(gpy_phydev_wan, MDIO_MMD_AN, ANEG_MGBT_REG_NUM, data);
+
+	// 1000M cap
+	data = phy_read(gpy_phydev_wan, 9);
+	if (abi_1000)
+	{
+		// bit[8] = 1; bit[9] = 1
+		data = (data | 0x300);
+	}
+	else
+	{
+		// bit[8] = 0; bit[9] = 0
+		data = (data & 0xfffffcff);
+	}
+	phy_write(gpy_phydev_wan, 9, data);
+
+	data = phy_read(gpy_phydev_wan, 4);
+	// 100M cap
+	if (abi_100)
+	{
+		// bit[7] = 1; bit[8] = 1
+		data = (data | 0x180);
+	}
+	else
+	{
+		// bit[7] = 0; bit[8] = 0
+		data = (data & 0xfffffe7f);
+	}
+	// 10M cap
+	if (abi_10)
+	{
+		// bit[5] = 1; bit[6] = 1
+		data = (data | 0x60);
+	}
+	else
+	{
+		// bit[5] = 0; bit[6] = 0
+		data = (data & 0xffffff9f);
+	}
+	phy_write(gpy_phydev_wan, 4, data);
+}
+
+static void phy_lan5_linkrate_ability(bool abi_2500, bool abi_1000, bool abi_100, bool abi_10)
+{
+	int data = 0;
+
+	// 2.5G negotiation cap;
+	data = phy_read_mmd(gpy_phydev_lan5, MDIO_MMD_AN, ANEG_MGBT_REG_NUM);
+	if (abi_2500)
+	{
+		// bit[5] = 1; bit[7] = 1
+		data = (data | 0xa0);
+	}
+	else
+	{
+		// bit[5] = 0; bit[7] = 0; register_data_length = 16
+		data = (data & 0xff5f);
+	}
+	phy_write_mmd(gpy_phydev_lan5, MDIO_MMD_AN, ANEG_MGBT_REG_NUM, data);
+
+	// 1000M cap
+	data = phy_read(gpy_phydev_lan5, 9);
+	if (abi_1000)
+	{
+		// bit[8] = 1; bit[9] = 1
+		data = (data | 0x300);
+	}
+	else
+	{
+		// bit[8] = 0; bit[9] = 0
+		data = (data & 0xfffffcff);
+	}
+	phy_write(gpy_phydev_lan5, 9, data);
+
+	data = phy_read(gpy_phydev_lan5, 4);
+	// 100M cap
+	if (abi_100)
+	{
+		// bit[7] = 1; bit[8] = 1
+		data = (data | 0x180);
+	}
+	else
+	{
+		// bit[7] = 0; bit[8] = 0
+		data = (data & 0xfffffe7f);
+	}
+	// 10M cap
+	if (abi_10)
+	{
+		// bit[5] = 1; bit[6] = 1
+		data = (data | 0x60);
+	}
+	else
+	{
+		// bit[5] = 0; bit[6] = 0
+		data = (data & 0xffffff9f);
+	}
+	phy_write(gpy_phydev_lan5, 4, data);
+}
+
+
+static ssize_t phydev_wan_proc_write(struct file *file, const char __user *buffer,
+			size_t count, loff_t *pos)
+{
+	char kbuf[32] = {0};
+	int link = 0, mode = 0, data = 0, ret = 0;
+
+	if (count > 0) {
+		if (copy_from_user(kbuf, buffer, count > 32 ? 32 : count))
+			return -EFAULT;
+
+		ret = sscanf(kbuf, "link:%d mode:%d\n", &link, &mode);
+		if (ret < 1)
+		{
+			return -EFAULT;
+		}
+
+		data = phy_read_mmd(gpy_phydev_wan, MDIO_MMD_STD_REG_DEV, STD_CTRL_REG_NUM);
+
+		if (1 == link)
+		{
+			// just force power on; no mode input
+			if (1 == ret)
+			{
+				// force power on; bit[11] = 0;
+				data = data & 0xf7ff;
+				phy_write_mmd(gpy_phydev_wan, MDIO_MMD_STD_REG_DEV, STD_CTRL_REG_NUM, data);
+				return count;
+			}
+			// set auto mode or force mode
+			else
+			{
+				// linkUp; enable auto negotiation;
+				data = (data | 0x1000) & 0xf7ff;
+				phy_write_mmd(gpy_phydev_wan, MDIO_MMD_STD_REG_DEV, STD_CTRL_REG_NUM, data);
+
+				switch (mode) {
+				case 0:
+					// enable all ability
+					phy_wan_linkrate_ability(1, 1, 1, 1);
+					break;
+				case 2500:
+					// disable 1000M/100M/10M negotiation cap
+					phy_wan_linkrate_ability(1, 0, 0, 0);
+					break;
+				case 1000:
+					// disable 2.5G/100M/10M negotiation cap
+					phy_wan_linkrate_ability(0, 1, 0, 0);
+					break;
+				case 100:
+					// disable 2.5G/1000M/10M negotiation cap
+					phy_wan_linkrate_ability(0, 0, 1, 0);
+					break;
+				case 10:
+					// disable 2.5G/1000M/100M negotiation cap
+					phy_wan_linkrate_ability(0, 0, 0, 1);
+					break;
+				default:
+					return count;
+				}
+			}
+
+			// restart auto negotiation; (register 7.0)
+			data = phy_read_mmd(gpy_phydev_wan, MDIO_MMD_AN, ANEG_RESTART_REG_NUM);
+			data = (data | 0x200);
+			phy_write_mmd(gpy_phydev_wan, MDIO_MMD_AN, ANEG_RESTART_REG_NUM, data);
+
+		}
+		else if (0 == link)
+		{
+			// force power off; bit[11] = 1;
+			data = data | 0x800;
+			phy_write_mmd(gpy_phydev_wan, MDIO_MMD_STD_REG_DEV, STD_CTRL_REG_NUM, data);
+		}
+	}
+
+	return count;
+}
+
+static ssize_t phydev_lan5_proc_write(struct file *file, const char __user *buffer,
+			size_t count, loff_t *pos)
+{
+	char kbuf[32] = {0};
+	int link = 0, mode = 0, data = 0, ret = 0;
+
+	if (count > 0) {
+		if (copy_from_user(kbuf, buffer, count > 32 ? 32 : count))
+			return -EFAULT;
+
+		ret = sscanf(kbuf, "link:%d mode:%d\n", &link, &mode);
+		if (ret < 1)
+		{
+			return -EFAULT;
+		}
+
+		data = phy_read_mmd(gpy_phydev_lan5, MDIO_MMD_STD_REG_DEV, STD_CTRL_REG_NUM);
+
+		if (1 == link)
+		{
+			// just force power on; no mode input
+			if (1 == ret)
+			{
+				// force power on; bit[11] = 0;
+				data = data & 0xf7ff;
+				phy_write_mmd(gpy_phydev_lan5, MDIO_MMD_STD_REG_DEV, STD_CTRL_REG_NUM, data);
+				return count;
+			}
+			// set auto mode or force mode
+			else
+			{
+				// linkUp; enable auto negotiation;
+				data = (data | 0x1000) & 0xf7ff;
+				phy_write_mmd(gpy_phydev_lan5, MDIO_MMD_STD_REG_DEV, STD_CTRL_REG_NUM, data);
+
+				switch (mode) {
+				case 0:
+					// enable all ability
+					phy_lan5_linkrate_ability(1, 1, 1, 1);
+					break;
+				case 2500:
+					// disable 1000M/100M/10M negotiation cap
+					phy_lan5_linkrate_ability(1, 0, 0, 0);
+					break;
+				case 1000:
+					// disable 2.5G/100M/10M negotiation cap
+					phy_lan5_linkrate_ability(0, 1, 0, 0);
+					break;
+				case 100:
+					// disable 2.5G/1000M/10M negotiation cap
+					phy_lan5_linkrate_ability(0, 0, 1, 0);
+					break;
+				case 10:
+					// disable 2.5G/1000M/100M negotiation cap
+					phy_lan5_linkrate_ability(0, 0, 0, 1);
+					break;
+				default:
+					return count;
+				}
+			}
+
+			// restart auto negotiation; (register 7.0)
+			data = phy_read_mmd(gpy_phydev_lan5, MDIO_MMD_AN, ANEG_RESTART_REG_NUM);
+			data = (data | 0x200);
+			phy_write_mmd(gpy_phydev_lan5, MDIO_MMD_AN, ANEG_RESTART_REG_NUM, data);
+
+		}
+		else if (0 == link)
+		{
+			// force power off; bit[11] = 1;
+			data = data | 0x800;
+			phy_write_mmd(gpy_phydev_lan5, MDIO_MMD_STD_REG_DEV, STD_CTRL_REG_NUM, data);
+		}
+	}
+
+	return count;
+}
+
+static const struct file_operations wan_proc_fops = {
+	.open  = phydev_wan_proc_open,
+	.read  = seq_read,
+	.write  = phydev_wan_proc_write,
+	.llseek  = seq_lseek,
+	.release = single_release,
 };
 
-#define PHY_MIISTAT 0x18
+static const struct file_operations lan5_proc_fops = {
+	.open  = phydev_lan5_proc_open,
+	.read  = seq_read,
+	.write  = phydev_lan5_proc_write,
+	.llseek  = seq_lseek,
+	.release = single_release,
+};
 
-#define PHY_MIISTAT_SPD_MASK	GENMASK(2, 0)
-#define PHY_MIISTAT_DPX		BIT(3)
-#define PHY_MIISTAT_LS		BIT(10)
+static void create_wan_procfs(void)
+{
+	proc_create("wan_phy", 0x0644, NULL, &wan_proc_fops);
+}
 
-#define PHY_MIISTAT_SPD_10	0
-#define PHY_MIISTAT_SPD_100	1
-#define PHY_MIISTAT_SPD_1000	2
-#define PHY_MIISTAT_SPD_2500	4
 
-void gpy211_status_timer(struct work_struct *t);
+static void create_lan5_procfs(void)
+{
+	proc_create("lan5_phy", 0x0644, NULL, &lan5_proc_fops);
+}
 
-/* Starder Magament Registers */
-#define MDIO_MMD_STD              0x0
-#define VSPEC1_NBT_DS_CTRL        0xA
-#define DOWNSHIFT_THR_MASK    GENMASK(6, 2)
-#define DOWNSHIFT_EN          BIT(1)
+static void gpy211_phy_wan_start_work(u32 mac_unit)
+{
+	create_wan_procfs();
+	phydev_bind_to_master_dev(gpy_phydev_wan->mdio.bus->priv, mac_unit, gpy_phydev_wan);
+}
 
-#define DEFAULT_INTEL_GPY211_PHYID1_VALUE	0x67c9
-
-#define MAXLINEAR_MAX_LED_INDEX 4
+static void gpy211_phy_lan5_start_work(void)
+{
+	create_lan5_procfs();
+}
 
 static int gpy211_phy_config_init(struct phy_device *phydev)
 {
 	return 0;
 }
 
-#define MAX_RETRY_TIMES	80
-#define RETRY_INTERVAL	10	/* unit is ms */
 int gpy211_phy_probe(struct phy_device *phydev)
 {
-	int sgmii_reg = phy_read_mmd(phydev, MDIO_MMD_VEND1, 8);
-	struct device_node *of_node = phydev->mdio.dev.of_node;
-	u32 reg_value[MAXLINEAR_MAX_LED_INDEX] = {0};
-	int ret;
-	int i = 0;
-	u32 phyid1;
-	int buf = 0;
+	int sgmii_reg;
+	u32 partner_mac;
+	u32 partner_switch_port;
 
-	/*
-	 * After reset signal to GPY211B1VC(SSTEP SLN8A), the chip may take 600 ms to bootup complete.
-	 * driver can successfully read/write the register after bootup complete.
-	 * If phy is ready, the STD_PHYID1(Register 0.2) should be 0x67c9.
-	 */
-	i = MAX_RETRY_TIMES;
-	while (i) {
-		phyid1 = phy_read_mmd(phydev, MDIO_MMD_STD, MDIO_DEVID1);
-		if (phyid1 == DEFAULT_INTEL_GPY211_PHYID1_VALUE)
-			break;
+	struct device_node * node = phydev->mdio.dev.of_node;
 
-		msleep(RETRY_INTERVAL);
-		i--;
+	if (0 == of_property_read_u32(node, "partner_gmac", &partner_mac))
+	{
+		sgmii_reg = phy_read_mmd(phydev, MDIO_MMD_VEND1, 8);
+
+		/* set force 2.5G sgmii and disable auto-negotiation;  */
+		phy_write_mmd(phydev, MDIO_MMD_VEND1, 8, 0x24e2);
+
+		gpy_phydev_wan = phydev;
+
+		gpy211_phy_wan_start_work(partner_mac);
 	}
-	if (!i) {
-		phydev_err(phydev, "phy is not ready over %d ms!\n", (MAX_RETRY_TIMES-i)*10);
-	} else {
-		phydev_info(phydev, "driver wait %d ms for phy ready!\n", (MAX_RETRY_TIMES-i)*10);
-	}
+	else if (0 == of_property_read_u32(node, "partner_switch_port", &partner_switch_port))
+	{
+		sgmii_reg = phy_read_mmd(phydev, MDIO_MMD_VEND1, 8);
 
-	ret = of_property_read_u32_array(of_node, "maxlinear,led-reg", reg_value, MAXLINEAR_MAX_LED_INDEX);
+		/* set force 2.5G sgmii and disable auto-negotiation;  */
+		phy_write_mmd(phydev, MDIO_MMD_VEND1, 8, 0x24e2);
 
-	if (ret < 0) {
-		phydev_info(phydev, "not config \"maxlinear,led-reg\" parameter\n");
-	} else {
-		/* Write LED register values */
-		for (i = 0; i < MAXLINEAR_MAX_LED_INDEX; i++) {
-			phydev_dbg(phydev, "led-reg %d is %x.\n", i, reg_value[i]);
-			phy_write_mmd(phydev, MDIO_MMD_VEND1, i+1, reg_value[i]);
+		if (5 == partner_switch_port)
+		{
+			gpy_phydev_lan5 = phydev;
+			gpy211_phy_lan5_start_work();
 		}
 	}
-
-	/* GPY211 with external flash requires at least 750ms to wait for mdio ready, here 1000ms */
-	for (i = 0; i < 1000; i++){
-		if (sgmii_reg > 0)
-			break;
-		usleep_range(1000, 10001);
+	else
+	{
 		sgmii_reg = phy_read_mmd(phydev, MDIO_MMD_VEND1, 8);
+
+		/* set force 2.5G sgmii and disable auto-negotiation;  */
+		phy_write_mmd(phydev, MDIO_MMD_VEND1, 8, 0x24e2);
+
 	}
-
-	/* enable 2.5G SGMII rate adaption */
-	//phy_write_mmd(phydev, MDIO_MMD_VEND1, 8, 0xa4fa);
-	phy_write_mmd(phydev, MDIO_MMD_VEND1, 8, 0x24e2);
-
-	buf = phy_read_mmd(phydev, MDIO_MMD_VEND1, VSPEC1_NBT_DS_CTRL);
-	/* enable downshift and set training counter threshold to 3 */
-	phy_write_mmd(phydev, MDIO_MMD_VEND1, VSPEC1_NBT_DS_CTRL, buf | FIELD_PREP(DOWNSHIFT_THR_MASK, 0x3) | DOWNSHIFT_EN);
 
 	return 0;
 }
 
 static int gpy211_get_features(struct phy_device *phydev)
 {
-	struct t_phydev *t_phy;
-	t_phy = kzalloc(sizeof(*t_phy), GFP_KERNEL);
-	t_phy->phydev = phydev;
-
 	int ret;
 
 	ret = genphy_read_abilities(phydev);
@@ -130,89 +471,35 @@ static int gpy211_get_features(struct phy_device *phydev)
 	linkmode_set_bit(ETHTOOL_LINK_MODE_2500baseX_Full_BIT,
 			 phydev->supported);
 
-	/* set timer to query status */
-	// timer_setup(&t_phy->timer, gpy211_status_timer, 0);
-	// mod_timer(&t_phy->timer, jiffies + 20*HZ);
-	INIT_DELAYED_WORK(&t_phy->dw, gpy211_status_timer);
-	schedule_delayed_work(&t_phy->dw, msecs_to_jiffies(2000));
-
 	return 0;
 }
 
-static int gpy_read_status(struct phy_device *phydev)
+static int gpy211_get_link(struct phy_device *phy)
 {
-	int old_link = phydev->link;
-	const char *speed;
-	const char *duplex;
+	int mode = phy_read_mmd(phy, MDIO_MMD_STD_REG_DEV, STD_PHY_MII_STAT_REG_NUM);
 
-	phydev_dbg(phydev, "### line[%d] addr[%d] link[%d] phyid[0x%x]\n", __LINE__, phydev->mdio.addr, phydev->link, phydev->phy_id);
-	struct device_node *of_node = phydev->mdio.dev.of_node;
+	phy->link = (mode & 0x400) ? 1 : 0;
 
-	// int ret = phydev->mdio.bus->read(phydev->mdio.bus, phydev->mdio.addr, PHY_MIISTAT);
-	int ret = phy_read_mmd(phydev, MDIO_MMD_STD, PHY_MIISTAT);
-
-	if(ret)
-	{
-		phydev_dbg(phydev, "### line[%d] addr[%d] val=[0x%x] link[%d] phyid[0x%x]\n", __LINE__, phydev->mdio.addr, ret, phydev->link, phydev->phy_id);
-
-		if (phydev->autoneg == AUTONEG_ENABLE && phydev->autoneg_complete) {
-			ret = genphy_c45_read_lpa(phydev);
-			if (ret < 0)
-				return ret;
-
-			/* Read the link partner's 1G advertisement */
-			ret = phy_read(phydev, MII_STAT1000);
-			if (ret < 0)
-				return ret;
-			mii_stat1000_mod_linkmode_lpa_t(phydev->lp_advertising, ret);
-		} else if (phydev->autoneg == AUTONEG_DISABLE) {
-			linkmode_zero(phydev->lp_advertising);
-		}
-
-		phydev->link = (ret & PHY_MIISTAT_LS) ? 1 : 0;
-		phydev->duplex = (ret & PHY_MIISTAT_DPX) ? DUPLEX_FULL : DUPLEX_HALF;
-		duplex = (phydev->duplex == DUPLEX_FULL) ? "F" : "H";
-		switch (FIELD_GET(PHY_MIISTAT_SPD_MASK, ret)) {
-			case PHY_MIISTAT_SPD_10:
-				phydev->speed = SPEED_10;
-				speed = "10";
-				break;
-			case PHY_MIISTAT_SPD_100:
-				phydev->speed = SPEED_100;
-				speed = "100";
-				break;
-			case PHY_MIISTAT_SPD_1000:
-				phydev->speed = SPEED_1000;
-				speed = "1000";
-				break;
-			case PHY_MIISTAT_SPD_2500:
-				phydev->speed = SPEED_2500;
-				speed = "2500";
-				break;
-		}
-
-		phydev_dbg(phydev, "### line[%d] addr[%d] old[%d] newlink[%d] \n", __LINE__, phydev->mdio.addr, old_link, phydev->link);
-
-		if(old_link != phydev->link)
-		{
-			if(phydev->link)
-				phydev_info(phydev, "###phy_addr[%d] link up speed[%s]\n", phydev->mdio.addr, speed);
-			else
-				phydev_info(phydev, "###phy_addr[%d] link down \n", phydev->mdio.addr);
-		}
+	switch (mode & 0x7) {
+	case 0:
+		phy->speed = SPEED_10;
+		break;
+	case 1:
+		phy->speed= SPEED_100;
+		break;
+	case 2:
+		phy->speed = SPEED_1000;
+		break;
+	case 4:
+		phy->speed = SPEED_2500;
+		break;
+	default:
+		break;
 	}
 
+	phy->duplex = ((mode & 0x8) != 0) ? DUPLEX_FULL : DUPLEX_HALF;
+
 	return 0;
-}
-
-void gpy211_status_timer(struct work_struct *t)
-{
-	struct t_phydev *t_phy = container_of(t, struct t_phydev, dw.work);
-	gpy_read_status(t_phy->phydev);
-
-	/* trigger timer again */
-	// mod_timer(&t_phy->timer, jiffies + HZ);
-	schedule_delayed_work(&t_phy->dw, msecs_to_jiffies(2000));
 }
 
 static struct phy_driver gpy211_phy_driver[] = {
@@ -222,7 +509,7 @@ static struct phy_driver gpy211_phy_driver[] = {
 		.config_init	= gpy211_phy_config_init,
 		.probe		= gpy211_phy_probe,
 		.get_features	= gpy211_get_features,
-		.read_status	= gpy_read_status,
+		.read_status	= gpy211_get_link,
 	}
 };
 
