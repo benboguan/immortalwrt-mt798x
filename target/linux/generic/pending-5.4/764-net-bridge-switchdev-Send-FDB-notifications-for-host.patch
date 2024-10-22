@@ -71,7 +71,7 @@ Signed-off-by: Tobias Waldekranz <tobias@waldekranz.com>
  	struct switchdev_notifier_fdb_info info = {
  		.addr = fdb->key.addr.addr,
 @@ -112,18 +113,16 @@ br_switchdev_fdb_notify(const struct net
- 		.local = fdb->is_local,
+ 		.local = test_bit(BR_FDB_LOCAL, &fdb->flags),
  		.offloaded = fdb->offloaded,
  	};
 -

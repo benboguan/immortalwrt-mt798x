@@ -40,11 +40,11 @@ git-src
 !/dl/libmapd*
 !/dl/mapd*
 !/dl/mapfilter*
-!/dl/mt798*
 !/dl/mtfwd*
 !/dl/mtqos*
 !/dl/sigma_daemon*
 !/dl/sigma_dut*
 !/dl/wapp*
+!/dl/mt79*
 !/dl/warp*
 !/dl/wpa-supplicant*

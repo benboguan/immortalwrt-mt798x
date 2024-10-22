@@ -41,7 +41,7 @@ Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
 +	struct switchdev_notifier_fdb_info info = {
 +		.addr = fdb->key.addr.addr,
 +		.vid = fdb->key.vlan_id,
-+		.added_by_user = fdb->added_by_user,
++		.added_by_user = test_bit(BR_FDB_ADDED_BY_USER, &fdb->flags),
 +		.offloaded = fdb->offloaded,
 +	};
 +

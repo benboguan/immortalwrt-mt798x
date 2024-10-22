@@ -31,14 +31,16 @@ Commit-Queue: Yu Zhao <yuzhao@chromium.org>
 
 --- a/arch/arm64/include/asm/cpucaps.h
 +++ b/arch/arm64/include/asm/cpucaps.h
-@@ -58,6 +58,7 @@
+@@ -58,7 +58,8 @@
  #define ARM64_SPECTRE_BHB			48
  #define ARM64_WORKAROUND_1742098		49
  #define ARM64_WORKAROUND_SPECULATIVE_SSBS	50
-+#define ARM64_HW_AF				50
++#define ARM64_HW_AF				51
  
- #define ARM64_NCAPS				51
+-#define ARM64_NCAPS				51
++#define ARM64_NCAPS				52
  
+ #endif /* __ASM_CPUCAPS_H */
 --- a/arch/arm64/include/asm/cpufeature.h
 +++ b/arch/arm64/include/asm/cpufeature.h
 @@ -666,6 +666,12 @@ static inline bool system_has_prio_mask_
