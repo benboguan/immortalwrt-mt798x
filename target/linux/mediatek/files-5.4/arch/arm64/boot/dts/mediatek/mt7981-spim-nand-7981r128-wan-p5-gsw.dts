@@ -1,0 +1,101 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
+/*
+ * Copyright Zhaolaibin's SX-7981R128 Update By nanchuci
+ */
+
+/dts-v1/;
+#include "mt7981-spim-snand-7981rxxx.dtsi"
+
+/ {
+	model = "7981R128";
+	compatible = "mediatek,mt7981-spim-snand-7981r128";
+
+	&leds {
+		WAN: wan {
+			label = "WAN";
+			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+	};
+
+	sfp1: sfp-lan {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp1>;
+		los-gpios = <&pio 3 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpios = <&pio 35 GPIO_ACTIVE_LOW>;
+		tx-disable-gpios = <&pio 12 GPIO_ACTIVE_HIGH>;
+		tx-fault-gpios = <&pio 34 GPIO_ACTIVE_HIGH>;
+		maximum-power-milliwatt = <3000>;
+	};
+
+	gsw: gsw@0 {
+		compatible = "mediatek,mt753x";
+		mediatek,ethsys = <&ethsys>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};
+
+
+&eth {
+	mdio: mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		phy5: phy@5 {
+			/* Intel GPY211 (SLNW8) */
+			compatible = "ethernet-phy-id67c9.de0a";
+			/* GPY211 Address */
+			reg = <5>;
+			reset-gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+			reset-assert-us = <600>;
+			reset-deassert-us = <20000>;
+			phy-mode = "2500base-x";
+			maxlinear,led-drive-vdd;
+			maxlinear,led-reg = <0x3c0 0x330 0x3f 0x0>;
+			label = "eth1";
+		};
+	};
+};
+
+&gsw {
+	mediatek,mdio = <&mdio>;
+	mediatek,portmap = "wl";
+	mediatek,mdio_master_pinmux = <1>;
+	reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
+	interrupt-parent = <&pio>;
+	interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
+	status = "okay";
+
+	port5: port@5 {
+		compatible = "mediatek,mt753x-port";
+		reg = <5>;
+		phy-mode = "sgmii";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
+
+	port6: port@6 {
+		compatible = "mediatek,mt753x-port";
+		/* mediatek,ssc-on; */
+		reg = <6>;
+		phy-mode = "sgmii";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+		};
+	};
+};
+
+&hnat {
+	mtketh-wan = "eth1";
+	mtketh-lan = "eth0";
+	mtketh-max-gmac = <2>;
+	ext-devices-prefix = "usb", "wwan", "rmnet";
+	status = "okay";
+};

@@ -49,6 +49,12 @@ mediatek,mt7981-spim-snand-7981r128-gsw)
 	ucidef_set_led_netdev "wifi5g" "WIFI5G" "WIFI5G" "rax0"
 	ucidef_set_led_netdev "wifi2g" "WIFI2G" "WIFI2G" "ra0"
 	;;
+mediatek,mt7981-spim-snand-7981r128-wan-p5-gsw)
+	ucidef_set_led_netdev "wan" "WAN" "WAN" "eth1" "tx rx"
+	ucidef_set_led_netdev "sfp" "SFP" "SFP" "eth0"
+	ucidef_set_led_netdev "wifi5g" "WIFI5G" "WIFI5G" "rax0"
+	ucidef_set_led_netdev "wifi2g" "WIFI2G" "WIFI2G" "ra0"
+	;;
 xiaomi,mi-router-wr30u*)
 	ucidef_set_led_netdev "network" "NETWORK" "blue:network" "eth1"
 	;;
