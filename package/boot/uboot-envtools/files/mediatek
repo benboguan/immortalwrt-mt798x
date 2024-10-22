@@ -44,7 +44,7 @@ xiaomi,redmi-router-ax6000*)
 	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x10000" "0x20000" "1"
 	;;
 mediatek,mt7981-spim-snand-7981r125 |\
-mediatek,mt7981-spim-snand-7981r128 |\
+mediatek,mt7981-spim-snand-7981r128* |\
 nradio,wt9103 |\
 *konka,komi-a31*)
 	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x20000" "0x80000" "1"
