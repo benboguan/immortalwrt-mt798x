@@ -1260,6 +1260,7 @@ MaxStaNum=${maxassoc:-64}
 MboSupport=1
 MbssMaxStaNum=${maxassoc:-64}
 MlmeMultiQEnable=1
+MLREnable=0
 MultiIntr=1
 MUTxRxEnable=${mu_beamformer:-0}
 NoForwardingBTNBSSID=0

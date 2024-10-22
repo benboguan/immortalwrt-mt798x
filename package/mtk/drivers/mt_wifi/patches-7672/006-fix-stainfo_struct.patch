@@ -107,8 +107,8 @@
 +	os_zero_mem(&lastRxRate, sizeof(HTTRANSMIT_SETTING_FIX));
  
  #ifdef RACTRL_FW_OFFLOAD_SUPPORT
- 	MtCmdPhyGetRxRate(pAd, CMD_PHY_STATE_CONTENTION_RX_PHYRATE, ucBand, pEntry->wcid, &rRxStatResult);
-@@ -7199,11 +7282,11 @@ VOID RTMPIoctlGetMacTableStaInfo(
+ 	os_zero_mem(&rRxStatResult, sizeof(EXT_EVENT_PHY_STATE_RX_RATE));
+@@ -7199,12 +7282,12 @@ VOID RTMPIoctlGetMacTableStaInfo(
  {
  	INT i;
  	BOOLEAN need_send = FALSE;
@@ -117,12 +117,13 @@
 +	RT_802_11_MAC_TABLE_FIX *pMacTab = NULL;
 +	PRT_802_11_MAC_ENTRY_FIX pDst;
  	MAC_TABLE_ENTRY *pEntry;
+ 	CHAR rssi[4] = {-127, -127, -127, -127};
  	/* allocate memory */
 -	os_alloc_mem(NULL, (UCHAR **)&pMacTab, sizeof(RT_802_11_MAC_TABLE));
 +	os_alloc_mem(NULL, (UCHAR **)&pMacTab, sizeof(RT_802_11_MAC_TABLE_FIX));
- 	CHAR rssi[4] = {-127, -127, -127, -127};
  
  	if (pMacTab == NULL) {
+ 		MTWF_DBG(pAd, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Allocate memory fail!!!\n");
 @@ -7211,7 +7294,7 @@ VOID RTMPIoctlGetMacTableStaInfo(
  		return;
  	}

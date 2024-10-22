@@ -2,7 +2,7 @@ Index: mt_wifi/mt_wifi/embedded/common/cmm_info.c
 ===================================================================
 --- mt_wifi.orig/mt_wifi/embedded/common/cmm_info.c
 +++ mt_wifi/mt_wifi/embedded/common/cmm_info.c
-@@ -7164,6 +7164,35 @@ USHORT RTMPGetLastTxRate(PRTMP_ADAPTER p
+@@ -7164,6 +7164,36 @@ USHORT RTMPGetLastTxRate(PRTMP_ADAPTER p
  	return lastTxRate.word;
  }
  
@@ -16,6 +16,7 @@ Index: mt_wifi/mt_wifi/embedded/common/cmm_info.c
 +	os_zero_mem(&lastRxRate, sizeof(HTTRANSMIT_SETTING));
 +
 +#ifdef RACTRL_FW_OFFLOAD_SUPPORT
++	os_zero_mem(&rRxStatResult, sizeof(EXT_EVENT_PHY_STATE_RX_RATE));
 +	MtCmdPhyGetRxRate(pAd, CMD_PHY_STATE_CONTENTION_RX_PHYRATE, ucBand, pEntry->wcid, &rRxStatResult);
 +	lastRxRate.field.MODE = rRxStatResult.u1RxMode;
 +	lastRxRate.field.BW = rRxStatResult.u1BW;
@@ -38,15 +39,15 @@ Index: mt_wifi/mt_wifi/embedded/common/cmm_info.c
  VOID RTMPIoctlGetMacTableStaInfo(
  	IN PRTMP_ADAPTER pAd,
  	IN RTMP_IOCTL_INPUT_STRUCT *wrq)
-@@ -7175,6 +7204,7 @@ VOID RTMPIoctlGetMacTableStaInfo(
+@@ -7173,6 +7203,7 @@ VOID RTMPIoctlGetMacTableStaInfo(
+ 	RT_802_11_MAC_TABLE *pMacTab = NULL;
+ 	PRT_802_11_MAC_ENTRY pDst;
  	MAC_TABLE_ENTRY *pEntry;
++	CHAR rssi[4] = {-127, -127, -127, -127};
  	/* allocate memory */
  	os_alloc_mem(NULL, (UCHAR **)&pMacTab, sizeof(RT_802_11_MAC_TABLE));
-+	CHAR rssi[4] = {-127, -127, -127, -127};
  
- 	if (pMacTab == NULL) {
- 		MTWF_DBG(pAd, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Allocate memory fail!!!\n");
-@@ -7203,14 +7233,15 @@ VOID RTMPIoctlGetMacTableStaInfo(
+@@ -7203,14 +7234,15 @@ VOID RTMPIoctlGetMacTableStaInfo(
  			pDst->MimoPs = pEntry->MmpsMode;
  #endif /* DOT11_N_SUPPORT */
  			/* Fill in RSSI per entry*/
