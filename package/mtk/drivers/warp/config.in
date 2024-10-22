@@ -36,4 +36,44 @@ config WARP_WO_EMBEDDED_LOAD
 	help
 	Once enabled, firmware download flow try embedded version once externel version being invalid.
 
+choice
+	prompt "MT7981 custom WOCPU firmware"
+	depends on WARP_CHIPSET="mt7981"
+#	default WARP_MT7981_20230814
+
+	config WARP_MT7981_DEFAULT_FIRMWARE
+	bool "default warp firmware"
+
+	config WARP_MT7981_20230814
+	bool "mt7981-fw-20230814"
+
+	config WARP_MT7981_20240613
+	bool "mt7981-fw-20240613"
+
+	config WARP_MT7981_20240823
+	bool "mt7981-fw-20240823"
+endchoice
+
+choice
+	prompt "MT7986 custom WOCPU firmware"
+	depends on WARP_CHIPSET="mt7986"
+#	default WARP_MT7986_20230814
+
+	config WARP_MT7986_DEFAULT_FIRMWARE
+	bool "default warp firmware"
+
+	config WARP_MT7986_20230814
+	bool "mt7986-fw-20230814"
+
+	config WARP_MT7986_20240823
+	bool "mt7986-fw-20240823"
+endchoice
+
+config WARP_FIRMWARE_PATH
+	string
+	default "mt7981-fw-20230814" if MTK_WARP_MT7981_20230814
+	default "mt7981-fw-20240613" if MTK_WARP_MT7981_20240613
+	default "mt7981-fw-20240823" if MTK_WARP_MT7981_20240823
+	default "mt7986-fw-20230814" if MTK_WARP_MT7986_20230814
+	default "mt7986-fw-20240823" if MTK_WARP_MT7986_20240823
 endif
