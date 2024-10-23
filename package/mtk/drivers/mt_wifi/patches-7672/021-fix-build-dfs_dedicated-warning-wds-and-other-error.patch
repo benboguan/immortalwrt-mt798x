@@ -27,49 +27,6 @@
  #ifdef ANDLINK_FEATURE_SUPPORT
  	UINT8 andlink_enable[DBDC_BAND_NUM];
  	UINT8 andlink_ip_hostname_en[DBDC_BAND_NUM];
---- a/mt_wifi/embedded/common/cmm_data.c
-+++ b/mt_wifi/embedded/common/cmm_data.c
-@@ -354,6 +354,7 @@ static int ap_fp_tx_pkt_vlan_tag_handle(RTMP_ADAPTER
- 		TypeLen = ETH_TYPE_VLAN;
- 	}
- #else
-+#if defined(MBSS_AS_WDS_AP_SUPPORT) && defined(APCLI_AS_WDS_STA_SUPPORT)
- 	/*insert 802.1Q tag if required*/
- 	if (pAd->CommonCfg.bEnableVlan && wdev->bVLAN_Tag && (TypeLen != ETH_TYPE_VLAN)
- 		&& (wdev->VLAN_Policy[TX_VLAN] != VLAN_TX_ALLOW) && (TypeLen != ETH_TYPE_EAPOL) &&
-@@ -372,6 +373,7 @@ #else
- 		ASSERT(pSrcBuf);
- 		TypeLen = ETH_TYPE_VLAN;
- 	}
-+#endif /* MBSS_AS_WDS_AP_SUPPORT && APCLI_AS_WDS_STA_SUPPORT */
- #endif
- 
- 	/*skip the Ethernet Header*/
-@@ -3852,7 +3854,7 @@ VOID indicate_802_11_pkt(RTMP_ADAPTER *pAd,
- 								pRxBlk, Header802_3, wdev_idx, TPID);
- 	}
- 
--#ifndef APCLI_AS_WDS_STA_SUPPORT
-+#if !defined(APCLI_AS_WDS_STA_SUPPORT)
- 	/* pass this 802.3 packet to upper layer or forward this packet to WM directly*/
- #ifdef CONFIG_AP_SUPPORT
- 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd) {
-@@ -3934,6 +3936,7 @@ VOID indicate_802_11_pkt(RTMP_ADAPTER *pAd,
- 	}
- #endif /* CONFIG_AP_SUPPORT */
- #else
-+#ifndef APCLI_AS_WDS_STA_SUPPORT
- if (pAd->CommonCfg.bApcliASWDSSTADisabled) {
- #ifdef CONFIG_AP_SUPPORT
- 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd) {
-@@ -4018,6 +4021,7 @@ VOID indicate_802_11_pkt(RTMP_ADAPTER *pAd,
- #endif /* CONFIG_AP_SUPPORT */
- 	}
- #endif /* APCLI_AS_WDS_STA_SUPPORT */
-+#endif
- 
- #ifdef P2P_SUPPORT
- 
 --- a/mt_wifi_ap/Makefile
 +++ b/mt_wifi_ap/Makefile
 @@ -778,12 +778,14 @@ ifeq ($(CONFIG_ENTERPRISE_AP_SUPPORT),y)
