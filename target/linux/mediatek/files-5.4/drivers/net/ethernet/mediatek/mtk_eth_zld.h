@@ -1,3 +1,8 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+
+#ifndef _MTK_ETH_ZLD_H_
+#define _MTK_ETH_ZLD_H_
+
 #define MDIO_DEV0	0x0
 #define MDIO_DEV7	0x7
 #define MDIO_DEV30	0x1e
@@ -220,3 +225,5 @@ void zld_mt753x_port_mode_set(int port, uint32_t mode);
 void zld_mt753x_port_attr_set(int port, uint32_t attr, uint32_t port_stag);
 void zld_mt753x_read_vlan_entry(u32 vid, u32 *member, u32 *etags);
 void zld_mt753x_write_vlan_entry(u16 vid, u8 member, u8 etags);
+
+#endif /* _MTK_ETH_ZLD_H_ */

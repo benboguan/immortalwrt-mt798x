@@ -1,32 +1,3 @@
---- a/mt_wifi/embedded/ap/ap.c
-+++ b/mt_wifi/embedded/ap/ap.c
-@@ -416,7 +416,7 @@ UCHAR ApAutoChannelAtBootUp(RTMP_
- 		if (pAd->CommonCfg.DfsParameter.BW160DedicatedSup == TRUE)
- 			DfsZeroWaitBW160StateUpdate(pAd, &vht_bw, NewChannel);
- 
--			wlan_config_set_vht_bw(wdev, vht_bw);
-+		wlan_config_set_vht_bw(wdev, vht_bw);
- #endif
- #ifdef DFS_VENDOR10_CUSTOM_FEATURE
- 		/* Update channel of wdev as new channel */
---- a/mt_wifi/embedded/include/rtmp.h
-+++ b/mt_wifi/embedded/include/rtmp.h
-@@ -3612,6 +3612,7 @@ typedef struct _COMMON_CONFIG {
- #ifdef HOSTAPD_MAP_SUPPORT
- 	BOOLEAN bHostapdMapDisabled;
- #endif
-+#endif
- #ifdef EAP_STATS_SUPPORT
- 	BOOLEAN bEapStatsDisabled;
- #endif
-@@ -3631,7 +3632,6 @@ typedef struct _COMMON_CONFIG {
- #ifdef APCLI_AS_WDS_STA_SUPPORT
- 	BOOLEAN bApcliASWDSSTADisabled;
- #endif
--#endif
- #ifdef ANDLINK_FEATURE_SUPPORT
- 	UINT8 andlink_enable[DBDC_BAND_NUM];
- 	UINT8 andlink_ip_hostname_en[DBDC_BAND_NUM];
 --- a/mt_wifi_ap/Makefile
 +++ b/mt_wifi_ap/Makefile
 @@ -778,12 +778,14 @@ ifeq ($(CONFIG_ENTERPRISE_AP_SUPPORT),y)
@@ -65,26 +36,35 @@
  	endif
  endif
  
---- a/mt_wifi_ap/Kconfig
-+++ b/mt_wifi_ap/Kconfig
-@@ -282,7 +282,6 @@ #WDS STA
- config WDS_STA_SUPPORT
- 	bool "WDS STA Support"
- 	depends on APCLI_SUPPORT
--	depends on CFG80211_SUPPORT
-         depends on ENTERPRISE_AP_SUPPORT
- 	default n
+--- a/mt_wifi/embedded/ap/ap.c
++++ b/mt_wifi/embedded/ap/ap.c
+@@ -416,7 +416,7 @@ UCHAR ApAutoChannelAtBootUp(RTMP_
+ 		if (pAd->CommonCfg.DfsParameter.BW160DedicatedSup == TRUE)
+ 			DfsZeroWaitBW160StateUpdate(pAd, &vht_bw, NewChannel);
  
---- a/mt_wifi/os/linux/Kconfig.mt_wifi_ap
-+++ b/mt_wifi/os/linux/Kconfig.mt_wifi_ap
-@@ -282,7 +282,6 @@ #WDS STA
- config WDS_STA_SUPPORT
- 	bool "WDS STA Support"
- 	depends on APCLI_SUPPORT
--	depends on CFG80211_SUPPORT
-         depends on ENTERPRISE_AP_SUPPORT
- 	default n
- 
+-			wlan_config_set_vht_bw(wdev, vht_bw);
++		wlan_config_set_vht_bw(wdev, vht_bw);
+ #endif
+ #ifdef DFS_VENDOR10_CUSTOM_FEATURE
+ 		/* Update channel of wdev as new channel */
+--- a/mt_wifi/embedded/include/rtmp.h
++++ b/mt_wifi/embedded/include/rtmp.h
+@@ -3612,6 +3612,7 @@ typedef struct _COMMON_CONFIG {
+ #ifdef HOSTAPD_MAP_SUPPORT
+ 	BOOLEAN bHostapdMapDisabled;
+ #endif
++#endif
+ #ifdef EAP_STATS_SUPPORT
+ 	BOOLEAN bEapStatsDisabled;
+ #endif
+@@ -3631,7 +3632,6 @@ typedef struct _COMMON_CONFIG {
+ #ifdef APCLI_AS_WDS_STA_SUPPORT
+ 	BOOLEAN bApcliASWDSSTADisabled;
+ #endif
+-#endif
+ #ifdef ANDLINK_FEATURE_SUPPORT
+ 	UINT8 andlink_enable[DBDC_BAND_NUM];
+ 	UINT8 andlink_ip_hostname_en[DBDC_BAND_NUM];
 --- a/mt_wifi/embedded/mcu/andes_mt.c
 +++ b/mt_wifi/embedded/mcu/andes_mt.c
 @@ -2997,10 +2997,12 @@ static VOID ExtEventGetAllStaStats(RTMP_
