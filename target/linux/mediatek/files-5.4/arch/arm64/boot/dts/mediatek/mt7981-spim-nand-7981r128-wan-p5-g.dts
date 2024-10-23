@@ -4,21 +4,47 @@
  */
 
 /dts-v1/;
-#include "mt7981-spim-snand-7981rxxx.dtsi"
+#include "mt7981-spim-nand-7981rxxx.dtsi"
 
 / {
 	model = "7981R128";
-	compatible = "mediatek,mt7981-spim-snand-7981r128";
+	compatible = "mediatek,mt7981-spim-snand-7981r128-wan-p5-g";
 
-	&leds {
-		LAN: lan {
-			label = "LAN";
+	leds {
+		compatible = "gpio-leds";
+
+		SFP: sfp {
+			label = "SFP";
+			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		WIFI5G: wifi5g {
+			label = "WIFI5G";
+			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		WIFI2G: wifi2g {
+			label = "WIFI2G";
+			gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		WAN: wan {
+			label = "WAN";
 			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
+
+		POWER: power {
+			label = "POWER";
+			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
 	};
 
-	sfp1: sfp-wan {
+	sfp1: sfp-lan {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c_sfp1>;
 		los-gpios = <&pio 3 GPIO_ACTIVE_HIGH>;
@@ -36,8 +62,30 @@
 	};
 };
 
-
 &eth {
+	status = "okay";
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "2500base-x";
+		phy-handle = <&phy5>;
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "2500base-x";
+		managed = "in-band-status";
+		sfp = <&sfp1>;
+	};
+
 	mdio: mdio-bus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -52,17 +100,17 @@
 			reset-deassert-us = <20000>;
 			phy-mode = "2500base-x";
 			maxlinear,led-drive-vdd;
-			maxlinear,led-reg = <0x3c0 0x330 0x3f 0x0>;
-			label = "eth0";
+			maxlinear,led-reg = <0x3c0 0x330 0x0 0x0>;
+			label = "eth0.2";
 		};
 	};
 };
 
 &gsw {
 	mediatek,mdio = <&mdio>;
-	mediatek,portmap = "ll";
-	mediatek,mdio_master_pinmux = <1>;
-	reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
+	mediatek,portmap = "wll";
+	mediatek,mdio_master_pinmux = <0>;
+	reset-gpios = <&pio 39 0>;
 	interrupt-parent = <&pio>;
 	interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
 	status = "okay";
@@ -75,13 +123,12 @@
 		fixed-link {
 			speed = <2500>;
 			full-duplex;
-			pause;
 		};
 	};
 
-	port6: port@6 {
+	/* port6: port@6 {
 		compatible = "mediatek,mt753x-port";
-		mediatek,ssc-on;
+		//mediatek,ssc-on;
 		reg = <6>;
 		phy-mode = "sgmii";
 
@@ -89,11 +136,12 @@
 			speed = <2500>;
 			full-duplex;
 		};
-	};
+	}; */
 };
 
 &hnat {
-	mtketh-wan = "eth1";
+	mtketh-wan = "eth0.2";
+	mtketh-ppd = "eth0.1";
 	mtketh-lan = "eth0";
 	mtketh-max-gmac = <2>;
 	ext-devices-prefix = "usb", "wwan", "rmnet";

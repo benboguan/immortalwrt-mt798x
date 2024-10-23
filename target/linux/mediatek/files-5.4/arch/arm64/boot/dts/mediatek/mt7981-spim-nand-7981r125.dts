@@ -4,11 +4,39 @@
  */
 
 /dts-v1/;
-#include "mt7981-spim-snand-7981rxxx.dtsi"
+#include "mt7981-spim-nand-7981rxxx.dtsi"
 
 / {
 	model = "7981R125";
 	compatible = "mediatek,mt7981-spim-snand-7981r125";
+
+	leds {
+		compatible = "gpio-leds";
+
+		SFP: sfp {
+			label = "SFP";
+			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		WIFI5G: wifi5g {
+			label = "WIFI5G";
+			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		WIFI2G: wifi2g {
+			label = "WIFI2G";
+			gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		POWER: power {
+			label = "POWER";
+			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+	};
 
 	sfp1: sfp-wan {
 		compatible = "sff,sfp";
@@ -22,6 +50,28 @@
 };
 
 &eth {
+	status = "okay";
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "2500base-x";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "2500base-x";
+		managed = "in-band-status";
+		sfp = <&sfp1>;
+	};
+
 	mdio: mdio-bus {
 		#address-cells = <1>;
 		#size-cells = <0>;

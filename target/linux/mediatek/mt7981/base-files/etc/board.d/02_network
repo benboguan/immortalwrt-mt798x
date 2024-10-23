@@ -105,15 +105,15 @@ mediatek_setup_interfaces()
 	mediatek,mt7981-spim-snand-7981r128)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" eth1
 		;;
-	mediatek,mt7981-spim-snand-7981r128-gsw)
+	mediatek,mt7981-spim-snand-7981r128-g)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
 			"1:lan:1" "5:lan:2" "6u@eth0"
 		;;
-	mediatek,mt7981-spim-snand-7981r128-wan-p5-gsw)
-		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+	mediatek,mt7981-spim-snand-7981r128-wan-p5-g)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" \
-			"1:lan:1" "6:lan:2" "5:wan" "6u@eth0" "5u@eth1"
+			"1:lan:1" "6:lan:2" "5:wan" "6t@eth0"
 		;;
 	*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" eth1
