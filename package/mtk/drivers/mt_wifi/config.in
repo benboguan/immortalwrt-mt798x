@@ -1238,7 +1238,7 @@ config MTK_APCLI_STA_SUPPORT
 config MTK_WDS_STA_SUPPORT
 	bool "WDS STA Support"
 	depends on MTK_APCLI_SUPPORT
-	depends on MTK_CFG80211_SUPPORT
+#	depends on MTK_CFG80211_SUPPORT
 	default n
 
 #WDS AP

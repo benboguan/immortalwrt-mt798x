@@ -1,0 +1,178 @@
+--- a/mt_wifi/embedded/ap/ap.c
++++ b/mt_wifi/embedded/ap/ap.c
+@@ -416,7 +416,7 @@ UCHAR ApAutoChannelAtBootUp(RTMP_
+ 		if (pAd->CommonCfg.DfsParameter.BW160DedicatedSup == TRUE)
+ 			DfsZeroWaitBW160StateUpdate(pAd, &vht_bw, NewChannel);
+ 
+-			wlan_config_set_vht_bw(wdev, vht_bw);
++		wlan_config_set_vht_bw(wdev, vht_bw);
+ #endif
+ #ifdef DFS_VENDOR10_CUSTOM_FEATURE
+ 		/* Update channel of wdev as new channel */
+--- a/mt_wifi/embedded/include/rtmp.h
++++ b/mt_wifi/embedded/include/rtmp.h
+@@ -3612,6 +3612,7 @@ typedef struct _COMMON_CONFIG {
+ #ifdef HOSTAPD_MAP_SUPPORT
+ 	BOOLEAN bHostapdMapDisabled;
+ #endif
++#endif
+ #ifdef EAP_STATS_SUPPORT
+ 	BOOLEAN bEapStatsDisabled;
+ #endif
+@@ -3631,7 +3632,6 @@ typedef struct _COMMON_CONFIG {
+ #ifdef APCLI_AS_WDS_STA_SUPPORT
+ 	BOOLEAN bApcliASWDSSTADisabled;
+ #endif
+-#endif
+ #ifdef ANDLINK_FEATURE_SUPPORT
+ 	UINT8 andlink_enable[DBDC_BAND_NUM];
+ 	UINT8 andlink_ip_hostname_en[DBDC_BAND_NUM];
+--- a/mt_wifi/embedded/common/cmm_data.c
++++ b/mt_wifi/embedded/common/cmm_data.c
+@@ -354,6 +354,7 @@ static int ap_fp_tx_pkt_vlan_tag_handle(RTMP_ADAPTER
+ 		TypeLen = ETH_TYPE_VLAN;
+ 	}
+ #else
++#if defined(MBSS_AS_WDS_AP_SUPPORT) && defined(APCLI_AS_WDS_STA_SUPPORT)
+ 	/*insert 802.1Q tag if required*/
+ 	if (pAd->CommonCfg.bEnableVlan && wdev->bVLAN_Tag && (TypeLen != ETH_TYPE_VLAN)
+ 		&& (wdev->VLAN_Policy[TX_VLAN] != VLAN_TX_ALLOW) && (TypeLen != ETH_TYPE_EAPOL) &&
+@@ -372,6 +373,7 @@ #else
+ 		ASSERT(pSrcBuf);
+ 		TypeLen = ETH_TYPE_VLAN;
+ 	}
++#endif /* MBSS_AS_WDS_AP_SUPPORT && APCLI_AS_WDS_STA_SUPPORT */
+ #endif
+ 
+ 	/*skip the Ethernet Header*/
+@@ -3852,7 +3854,7 @@ VOID indicate_802_11_pkt(RTMP_ADAPTER *pAd,
+ 								pRxBlk, Header802_3, wdev_idx, TPID);
+ 	}
+ 
+-#ifndef APCLI_AS_WDS_STA_SUPPORT
++#if !defined(APCLI_AS_WDS_STA_SUPPORT)
+ 	/* pass this 802.3 packet to upper layer or forward this packet to WM directly*/
+ #ifdef CONFIG_AP_SUPPORT
+ 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd) {
+@@ -3934,6 +3936,7 @@ VOID indicate_802_11_pkt(RTMP_ADAPTER *pAd,
+ 	}
+ #endif /* CONFIG_AP_SUPPORT */
+ #else
++#ifndef APCLI_AS_WDS_STA_SUPPORT
+ if (pAd->CommonCfg.bApcliASWDSSTADisabled) {
+ #ifdef CONFIG_AP_SUPPORT
+ 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd) {
+@@ -4018,6 +4021,7 @@ VOID indicate_802_11_pkt(RTMP_ADAPTER *pAd,
+ #endif /* CONFIG_AP_SUPPORT */
+ 	}
+ #endif /* APCLI_AS_WDS_STA_SUPPORT */
++#endif
+ 
+ #ifdef P2P_SUPPORT
+ 
+--- a/mt_wifi_ap/Makefile
++++ b/mt_wifi_ap/Makefile
+@@ -778,12 +778,14 @@ ifeq ($(CONFIG_ENTERPRISE_AP_SUPPORT),y)
+ 
+         ifeq ($(CONFIG_MBSS_AS_WDS_AP_SUPPORT),y)
+                  EXTRA_CFLAGS += -DMBSS_AS_WDS_AP_SUPPORT
+-                 EXTRA_CFLAGS += -DCLIENT_WDS
+-                 ap_objs += $(SRC_EMBEDDED_DIR)/common/client_wds.o
++                 ap_objs += $(SRC_EMBEDDED_DIR)/ap/ap_wds.o \
++                         $(SRC_EMBEDDED_DIR)/ap/ap_wds_inf.o
+         endif
+ 
+         ifeq ($(CONFIG_WDS_STA_SUPPORT),y)
+ 		EXTRA_CFLAGS += -DAPCLI_AS_WDS_STA_SUPPORT
++		EXTRA_CFLAGS += -DCLIENT_WDS
++		ap_objs += $(SRC_EMBEDDED_DIR)/common/client_wds.o
+ 	endif
+ endif
+ 
+--- a/mt_wifi/os/linux/Makefile.mt_wifi_ap
++++ b/mt_wifi/os/linux/Makefile.mt_wifi_ap
+@@ -778,12 +778,14 @@ ifeq ($(CONFIG_ENTERPRISE_AP_SUPPORT),y)
+ 
+         ifeq ($(CONFIG_MBSS_AS_WDS_AP_SUPPORT),y)
+                  EXTRA_CFLAGS += -DMBSS_AS_WDS_AP_SUPPORT
+-                 EXTRA_CFLAGS += -DCLIENT_WDS
+-                 ap_objs += $(SRC_EMBEDDED_DIR)/common/client_wds.o
++                 ap_objs += $(SRC_EMBEDDED_DIR)/ap/ap_wds.o \
++                         $(SRC_EMBEDDED_DIR)/ap/ap_wds_inf.o
+         endif
+ 
+         ifeq ($(CONFIG_WDS_STA_SUPPORT),y)
+ 		EXTRA_CFLAGS += -DAPCLI_AS_WDS_STA_SUPPORT
++		EXTRA_CFLAGS += -DCLIENT_WDS
++		ap_objs += $(SRC_EMBEDDED_DIR)/common/client_wds.o
+ 	endif
+ endif
+ 
+--- a/mt_wifi_ap/Kconfig
++++ b/mt_wifi_ap/Kconfig
+@@ -282,7 +282,6 @@ #WDS STA
+ config WDS_STA_SUPPORT
+ 	bool "WDS STA Support"
+ 	depends on APCLI_SUPPORT
+-	depends on CFG80211_SUPPORT
+         depends on ENTERPRISE_AP_SUPPORT
+ 	default n
+ 
+--- a/mt_wifi/os/linux/Kconfig.mt_wifi_ap
++++ b/mt_wifi/os/linux/Kconfig.mt_wifi_ap
+@@ -282,7 +282,6 @@ #WDS STA
+ config WDS_STA_SUPPORT
+ 	bool "WDS STA Support"
+ 	depends on APCLI_SUPPORT
+-	depends on CFG80211_SUPPORT
+         depends on ENTERPRISE_AP_SUPPORT
+ 	default n
+ 
+--- a/mt_wifi/embedded/mcu/andes_mt.c
++++ b/mt_wifi/embedded/mcu/andes_mt.c
+@@ -2997,10 +2997,12 @@ static VOID ExtEventGetAllStaStats(RTMP_
+ #endif
+ 	}
+ 	break;
++
+ 	case EVENT_PHY_PER_STA_TX_STAT:
+ #ifdef RT_CFG80211_SUPPORT
+-	if (!pAd->CommonCfg.bEapStatsDisabled) {
++	if (!pAd->CommonCfg.bEapStatsDisabled)
+ #endif
++	{
+ #ifdef EAP_STATS_SUPPORT
+ 		P_EXT_EVENT_TX_STAT_RESULT_T prEventExtCmdResult = (P_EXT_EVENT_TX_STAT_RESULT_T)Data;
+ 
+@@ -3023,18 +3025,17 @@ static VOID ExtEventGetAllStaStats(RTMP_
+ 
+ 		}
+ #endif
+-#ifdef RT_CFG80211_SUPPORT
+ 	}
+-#endif
+ 	break;
+ 
+ 	case EVENT_PHY_RX_STAT:
+ #ifdef RT_CFG80211_SUPPORT
+-	if (!pAd->CommonCfg.bEapStatsDisabled) {
++	if (!pAd->CommonCfg.bEapStatsDisabled)
+ #endif
++	{
+ #ifdef EAP_STATS_SUPPORT
+ 		P_EXT_EVENT_RX_STAT_RESULT_T prEventExtCmdResult = (P_EXT_EVENT_RX_STAT_RESULT_T)Data;
+-		UCHAR       concurrent_bands = HcGetAmountOfBand(pAd);
++		UCHAR concurrent_bands = HcGetAmountOfBand(pAd);
+ 
+ 		for (Idx = 0; Idx < concurrent_bands; Idx++) {
+ 			P_EXT_EVENT_RX_STAT_T rRxStatResult = &prEventExtCmdResult->rRxStatResult[Idx];
+@@ -3045,9 +3046,7 @@ static VOID ExtEventGetAllStaStats(RTMP_
+ 													le2cpu16(rRxStatResult->u2PhyRxMdrdyCntOfdm);
+ 		}
+ #endif
+-#ifdef RT_CFG80211_SUPPORT
+ 	}
+-#endif
+ 	break;
+ 
+ 	case EVENT_PHY_PER_STA_TXRX_AIR_TIME:
