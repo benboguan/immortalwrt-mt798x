@@ -38,13 +38,13 @@ mediatek,mt7981-spim-snand-7981r125)
 	ucidef_set_led_netdev "wifi2g" "WIFI2G" "WIFI2G" "ra0"
 	;;
 mediatek,mt7981-spim-snand-7981r128)
-	ucidef_set_led_netdev "lan" "LAN" "LAN" "lan2"
+	ucidef_set_led_netdev "lan" "LAN" "LAN" "eth0" "tx rx"
 	ucidef_set_led_netdev "sfp" "SFP" "SFP" "eth1"
 	ucidef_set_led_netdev "wifi5g" "WIFI5G" "WIFI5G" "rax0"
 	ucidef_set_led_netdev "wifi2g" "WIFI2G" "WIFI2G" "ra0"
 	;;
-mediatek,mt7981-spim-snand-7981r128-gsw)
-	ucidef_set_led_netdev "lan" "LAN" "LAN" "eth0" "tx rx"
+mediatek,mt7981-spim-snand-7981r128-dsa)
+	ucidef_set_led_netdev "lan" "LAN" "LAN" "lan2"
 	ucidef_set_led_netdev "sfp" "SFP" "SFP" "eth1"
 	ucidef_set_led_netdev "wifi5g" "WIFI5G" "WIFI5G" "rax0"
 	ucidef_set_led_netdev "wifi2g" "WIFI2G" "WIFI2G" "ra0"
