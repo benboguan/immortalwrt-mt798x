@@ -47,6 +47,17 @@
  #endif
  #ifdef DFS_VENDOR10_CUSTOM_FEATURE
  		/* Update channel of wdev as new channel */
+--- a/mt_wifi/embedded/common/capi.c
++++ b/mt_wifi/embedded/common/capi.c
+@@ -746,7 +746,7 @@ switch (mode) {
+ 					"Set %s by wcid success.\n", gi_ltf_info[gi]);
+ 			}
+ 			else
+-				MTWF_DBG(pAd, DBG_CAT_TEST, CATTEST_RFEATURE, DBG_LVL_INFO, "Invalid wcid value(%d)!!!.\n", wcid));
++				MTWF_DBG(pAd, DBG_CAT_TEST, CATTEST_RFEATURE, DBG_LVL_INFO, "Invalid wcid value(%d)!!!.\n", wcid);
+ 			break;
+ 		case GI_BY_BSS:
+ 			if (!wdev) {
 --- a/mt_wifi/embedded/include/rtmp.h
 +++ b/mt_wifi/embedded/include/rtmp.h
 @@ -3612,6 +3612,7 @@ typedef struct _COMMON_CONFIG {
