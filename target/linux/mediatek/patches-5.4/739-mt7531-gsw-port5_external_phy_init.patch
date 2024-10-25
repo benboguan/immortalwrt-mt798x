@@ -57,7 +57,7 @@ new file mode 100644
 index 00000000..f58e8a62
 --- /dev/null
 +++ b/drivers/net/phy/mtk/mt753x/mt753x_extphy.c
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,108 @@
 +/*
 + * Driver for MediaTek MT7531 gigabit switch
 + *
@@ -75,16 +75,25 @@ index 00000000..f58e8a62
 +#include "mt753x_regs.h"
 +#include "mt753x_extphy.h"
 +
-+int gpy211_init(struct gsw_mt753x *gsw, int addr)
++static int gpy211_init(struct gsw_mt753x *gsw, int addr)
 +{
 +	/* Enable rate adaption */
 +	gsw->mmd_write(gsw, addr, 0x1e, 0x8, 0x24e2);
++
++	// led0 at 10/100/1000/2.5G
++	gsw->mmd_write(gsw, addr, 0x1f, 0x21, 0x8009);
++	// led on time = 400ms, duty = 12.5%, freq = 60ms, Enable 10M LPI, modeA, act
++	gsw->mmd_write(gsw, addr, 0x1f, 0x24, 0xc003);
++	// all led enable, polar = low
++	gsw->mmd_write(gsw, addr, 0x1f, 0x25, 0x3f);
++
++	msleep(750);
 +
 +	return 0;
 +}
 +
 +static struct mt753x_extphy_id extphy_tbl[] = {
-+        {0x67c9de00, 0x0fffffff0, gpy211_init},
++        {0x67c9de00, 0x0fffffff0, 1, gpy211_init},
 +};
 +
 +static u32 get_cl22_phy_id(struct gsw_mt753x *gsw, int addr)
@@ -107,6 +116,26 @@ index 00000000..f58e8a62
 +	return phy_id;
 +}
 +
++static u32 get_cl45_phy_id(struct gsw_mt753x *gsw, int addr)
++{
++	u16 phy_reg;
++	u32 phy_id = 0;
++
++	gsw->mmd_read(gsw, addr, MII_PHYSID1, phy_reg);
++	if (phy_reg < 0)
++		return 0;
++	phy_id = (phy_reg & 0xffff) << 16;
++
++	/* Grab the bits from PHYIR2, and put them in the lower half */
++	gsw->mmd_read(gsw, addr, MII_PHYSID2, phy_reg);
++	if (phy_reg < 0)
++		return 0;
++
++	phy_id |= (phy_reg & 0xffff);
++
++	return phy_id;
++}
++
 +static inline bool phy_id_is_match(u32 id, struct mt753x_extphy_id *phy)
 +{
 +	return ((id & phy->phy_id_mask) == (phy->phy_id & phy->phy_id_mask));
@@ -118,11 +147,21 @@ index 00000000..f58e8a62
 +	u32 phy_id;
 +	struct mt753x_extphy_id *extphy;
 +
-+	phy_id = get_cl22_phy_id(gsw, addr);
 +	for (i = 0; i < ARRAY_SIZE(extphy_tbl); i++) {
 +		extphy = &extphy_tbl[i];
-+		if(phy_id_is_match(phy_id, extphy))
-+			extphy->init(gsw, addr);
++		if (extphy->is_c45)
++		{	
++			phy_id = get_cl45_phy_id(gsw, addr);
++		
++		}
++		else
++		{	
++			phy_id = get_cl22_phy_id(gsw, addr);
++			
++		}
++
++		if (phy_id_is_match(phy_id, extphy))
++			{extphy->init(gsw, addr);}
 +	}
 +
 +	return 0;
@@ -132,7 +171,7 @@ new file mode 100644
 index 00000000..2b72c8a9
 --- /dev/null
 +++ b/drivers/net/phy/mtk/mt753x/mt753x_extphy.h
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,19 @@
 +/*
 + * Driver for MediaTek MT753x gigabit switch
 + *
@@ -146,8 +185,9 @@ index 00000000..2b72c8a9
 +#ifndef _MT753X_EXTPHY_H_
 +#define _MT753X_EXTPHY_H_
 +struct mt753x_extphy_id {
-+        u32 phy_id;
-+        u32 phy_id_mask;
++	u32 phy_id;
++	u32 phy_id_mask;
++	u32 is_c45;
 +	int (*init)(struct gsw_mt753x *gsw, int addr);
 +};
 +#endif

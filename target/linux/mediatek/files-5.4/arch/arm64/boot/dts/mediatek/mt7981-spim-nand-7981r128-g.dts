@@ -98,7 +98,7 @@
 			reset-assert-us = <600>;
 			reset-deassert-us = <20000>;
 			phy-mode = "2500base-x";
-			maxlinear,led-drive-vdd;
+			//maxlinear,led-drive-vdd;
 			maxlinear,led-reg = <0x3c0 0x330 0x3f 0x0>;
 			label = "eth0";
 		};

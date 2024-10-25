@@ -19,6 +19,7 @@
 #include <linux/lockdep.h>
 #include <linux/workqueue.h>
 #include <linux/of_device.h>
+#include <linux/mii.h>
 
 #include "mt753x.h"
 #include "mt753x_swconfig.h"
@@ -239,16 +240,180 @@ static int mt753x_get_vid(struct switch_dev *dev,
 	return 0;
 }
 
+u32 get_chip_id(struct switch_dev *dev)
+{
+	struct gsw_mt753x *gsw = container_of(dev, struct gsw_mt753x, swdev);
+	u32 reg = 0;
+
+	reg = mt753x_reg_read(gsw, MT7531_CREV);
+	reg >>= CHIP_NAME_SHIFT;
+	if (reg == MT7531_ID)
+		return reg;
+
+	gsw->mmd_read(gsw, GPY211_PORT_ID, MII_PHYSID1, reg);
+	if (reg == GPY211_PHYID1)
+		return reg;
+
+	return reg;
+}
+
+void mt753x_set_port_powerdown(struct switch_dev *dev, int port)
+{
+	struct gsw_mt753x *gsw = container_of(dev, struct gsw_mt753x, swdev);
+	u32 reg_val = 0;
+
+	reg_val = get_chip_id(dev);
+
+	switch (reg_val) {
+	case GPY211_PHYID1:
+		gsw->mmd_read(gsw, port, MII_BMCR, reg_val);
+		reg_val |= BMCR_PDOWN;
+		gsw->mmd_write(gsw, port, MDIO_DEV0, MII_BMCR, reg_val);
+		break;
+	case MT7531_ID:
+		reg_val = gsw->mii_read(gsw, port, MII_BMCR);
+		reg_val |= BMCR_PDOWN;
+		gsw->mii_write(gsw, port, MII_BMCR, (u16)reg_val);
+		break;
+	default:
+		pr_err("[%s] No Chip or PHY ID found\n", __func__);
+		return;
+	}
+	return;
+}
+
+void mt753x_set_port_powerup(struct switch_dev *dev, int port)
+{
+	struct gsw_mt753x *gsw = container_of(dev, struct gsw_mt753x, swdev);
+	u32 reg_val = 0;
+
+	reg_val = get_chip_id(dev);
+
+	switch (reg_val) {
+	case GPY211_PHYID1:
+		gsw->mmd_read(gsw, port, MII_BMCR, reg_val);
+		reg_val &= ~BMCR_PDOWN;
+		gsw->mmd_write(gsw, port, MDIO_DEV0, MII_BMCR, reg_val);
+		break;
+	case MT7531_ID:
+		reg_val = gsw->mii_read(gsw, port, MII_BMCR);
+		reg_val &= ~BMCR_PDOWN;
+		gsw->mii_write(gsw, port, MII_BMCR, (u16)reg_val);
+		break;
+	default:
+		pr_err("[%s] No Chip or PHY ID found\n", __func__);
+		return;
+	}
+	return;
+}
+
+/* BMCR_SPEED10		0x0000 */ /* MSB(bit6) LSB(bit13) 0 0 -> 10Mbit/s   */
+/* BMCR_SPEED100	0x2000 */ /* MSB(bit6) LSB(bit13) 0 1 -> 100Mbit/s  */
+/* BMCR_SPEED1000	0x0040 */ /* MSB(bit6) LSB(bit13) 1 0 -> 1000Mbit/s */
+/* SPEED2500            0x2040 */ /* MSB(bit6) LSB(bit13) 1 1 -> 2500Mbit/s */
+/* PMA_CTRL 1.0.5:2 [0 1 1 0] should set for default 2500Mbit/s setting.    */
+/* BMCR_ANENABLE	0x1000 */
+/* BMCR_ANRESTART	0x0200 */
+/* BMCR_FULLDPLX	0x0100 */
+void gpy211_set_port_link(struct switch_dev *dev, int port, u8 link)
+{
+	struct gsw_mt753x *gsw = container_of(dev, struct gsw_mt753x, swdev);
+	u32 reg_val = 0;
+
+	switch (link) {
+	case SPEED10_FULL:
+	case SPEED10_HALF:
+	case SPEED100_FULL:
+	case SPEED100_HALF:
+	case AN_DEFAULT:
+		/* Apply default for ANEG_MGBT_AN_CTRL, STD_GCTRL, and STD_AN_ADV registers */
+		/* mii_mgr_cl45 -s -p 0x5 -d 0x7 -r 0x20 -v 0x40A2 */
+		/* mii_mgr_cl45 -s -p 0x5 -d 0x0 -r 0x9 -v 0x300 */
+		/* mii_mgr_cl45 -s -p 0x5 -d 0x0 -r 0x4 -v 0x0DE1 */
+		gsw->mmd_write(gsw, port, MDIO_DEV7, ANEG_MGBT_AN_CTRL, 0x40A2);
+		gsw->mmd_write(gsw, port, MDIO_DEV0, STD_GCTRL, 0x300);
+		gsw->mmd_write(gsw, port, MDIO_DEV0, STD_AN_ADV, 0x0DE1);
+
+		switch (link) {
+		case SPEED10_FULL:
+			/* mii_mgr_cl45 -s -p 0x5 -d 0x0 -r 0x0 -v 0x100 */
+			reg_val = (BMCR_SPEED10 | BMCR_FULLDPLX);
+			break;
+		case SPEED10_HALF:
+			/* mii_mgr_cl45 -s -p 0x5 -d 0x0 -r 0x0 -v 0x0 */
+			reg_val = BMCR_SPEED10;
+			break;
+		case SPEED100_FULL:
+			/* mii_mgr_cl45 -s -p 0x5 -d 0x0 -r 0x0 -v 0x2100 */
+			reg_val = (BMCR_SPEED100 | BMCR_FULLDPLX);
+			break;
+		case SPEED100_HALF:
+			/* mii_mgr_cl45 -s -p 0x5 -d 0x0 -r 0x0 -v 0x2000 */
+			reg_val = BMCR_SPEED100;
+			break;
+		default:
+			break;
+		}
+		/* mii_mgr_cl45 -s -p 0x5 -d 0x0 -r 0x0 -v reg_val */
+		gsw->mmd_write(gsw, port, MDIO_DEV0, MII_BMCR, reg_val);
+		break;
+	case SPEED1000_FULL:
+	case SPEED2500_FULL:
+		reg_val = (BMCR_ANENABLE | BMCR_ANRESTART | BMCR_SPEED1000 | BMCR_SPEED100 | BMCR_SPEED10);
+
+		switch (link) {
+		case SPEED1000_FULL:
+			/* mii_mgr_cl45 -s -p 0x5 -d 0x7 -r 0x20 -v 0x0 */
+			/* mii_mgr_cl45 -s -p 0x5 -d 0x0 -r 0x9 -v 0x200 */
+			gsw->mmd_write(gsw, port, MDIO_DEV7, ANEG_MGBT_AN_CTRL, 0x0);
+			gsw->mmd_write(gsw, port, MDIO_DEV0, STD_GCTRL, 0x200);
+			break;
+		case SPEED2500_FULL:
+			/* mii_mgr_cl45 -s -p 0x5 -d 0x7 -r 0x20 -v 0x0082 */
+			/* mii_mgr_cl45 -s -p 0x5 -d 0x0 -r 0x9 -v 0x0 */
+			gsw->mmd_write(gsw, port, MDIO_DEV7, ANEG_MGBT_AN_CTRL, 0x0082);
+			gsw->mmd_write(gsw, port, MDIO_DEV0, STD_GCTRL, 0x0);
+			break;
+		default:
+			break;
+		}
+		/* mii_mgr_cl45 -s -p 0x5 -d 0x0 -r 0x4 -v 0x0C01 */
+		/* mii_mgr_cl45 -s -p 0x5 -d 0x0 -r 0x0 -v 0x3240 */
+		gsw->mmd_write(gsw, port, MDIO_DEV0, STD_AN_ADV, 0x0C01);
+		gsw->mmd_write(gsw, port, MDIO_DEV0, MII_BMCR, reg_val);
+		break;
+	default:
+		break;
+	}
+	/* Force control the SGMII interface to remain in 2.5G speed  */
+	/* mii_mgr_cl45 -s -p 0x5 -d 0x1e -r 0x8 -v 0x24e2 */
+	gsw->mmd_write(gsw, port, MDIO_DEV30, SGMII_CONTROL, 0x24e2);
+
+	return;
+}
+
 static int mt753x_get_port_link(struct switch_dev *dev, int port,
 				struct switch_port_link *link)
 {
 	struct gsw_mt753x *gsw = container_of(dev, struct gsw_mt753x, swdev);
 	u32 speed, pmsr;
+	u32 data = 0;
 
+	data = get_chip_id(dev);
 	if (port < 0 || port >= MT753X_NUM_PORTS)
 		return -EINVAL;
 
-	pmsr = mt753x_reg_read(gsw, PMSR(port));
+	switch (data) {
+	case GPY211_PHYID1:
+		/* Media-Independent Interface Status (Register 0.24) */
+		gsw->mmd_read(gsw, port, MII_STATUS, data);
+		break;
+	case MT7531_ID:
+		pmsr = mt753x_reg_read(gsw, PMSR(port));
+		break;
+	default:
+		break;
+	}
 
 	link->link = pmsr & MAC_LNK_STS;
 	link->duplex = pmsr & MAC_DPX_STS;
@@ -276,6 +441,13 @@ static int mt753x_get_port_link(struct switch_dev *dev, int port,
 static int mt753x_set_port_link(struct switch_dev *dev, int port,
 				struct switch_port_link *link)
 {
+	u32 reg_val = 0;
+
+	reg_val = get_chip_id(dev);
+	switch (reg_val) {
+	case GPY211_PHYID1:
+		gpy211_set_port_link(dev, port, link);
+		break;
 #ifndef MODULE
 	if (port >= MT753X_NUM_PHYS)
 		return -EINVAL;

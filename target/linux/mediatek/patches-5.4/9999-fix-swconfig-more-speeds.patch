@@ -512,7 +512,7 @@
  	case PHY_INTERFACE_MODE_RGMII_ID:
 --- a/drivers/net/phy/mtk/mt753x/mt753x_swconfig.c
 +++ b/drivers/net/phy/mtk/mt753x/mt753x_swconfig.c
-@@ -265,8 +265,8 @@ static int mt753x_get_port_link(struct
+@@ -430,8 +430,8 @@ static int mt753x_get_port_link(struct
  		link->speed = SWITCH_PORT_SPEED_1000;
  		break;
  	case MAC_SPD_2500:
