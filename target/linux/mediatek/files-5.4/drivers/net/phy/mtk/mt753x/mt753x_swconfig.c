@@ -396,17 +396,17 @@ static int mt753x_get_port_link(struct switch_dev *dev, int port,
 				struct switch_port_link *link)
 {
 	struct gsw_mt753x *gsw = container_of(dev, struct gsw_mt753x, swdev);
-	u32 speed, pmsr;
-	u32 data = 0;
+	u32 speed;
+	u32 pmsr = 0;
 
-	data = get_chip_id(dev);
+	pmsr = get_chip_id(dev);
 	if (port < 0 || port >= MT753X_NUM_PORTS)
 		return -EINVAL;
 
-	switch (data) {
+	switch (pmsr) {
 	case GPY211_PHYID1:
 		/* Media-Independent Interface Status (Register 0.24) */
-		gsw->mmd_read(gsw, port, MII_STATUS, data);
+		gsw->mmd_read(gsw, port, MII_STATUS, pmsr);
 		break;
 	case MT7531_ID:
 		pmsr = mt753x_reg_read(gsw, PMSR(port));
@@ -448,6 +448,7 @@ static int mt753x_set_port_link(struct switch_dev *dev, int port,
 	case GPY211_PHYID1:
 		gpy211_set_port_link(dev, port, link);
 		break;
+	}
 #ifndef MODULE
 	if (port >= MT753X_NUM_PHYS)
 		return -EINVAL;
