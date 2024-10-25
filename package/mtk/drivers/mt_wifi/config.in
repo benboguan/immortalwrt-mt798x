@@ -216,6 +216,9 @@ choice
 
 	config MTK_MT_WIFI_MT7981_20240613
 	bool "mt7981-fw-20240613"
+
+	config MTK_MT_WIFI_MT7981_20240823
+	bool "mt7981-fw-20240823"
 endchoice
 
 choice
@@ -237,6 +240,9 @@ choice
 
 	config MTK_MT_WIFI_MT7986_20231024
 	bool "mt7986-fw-20231024"
+
+	config MTK_MT_WIFI_MT7986_20240823
+	bool "mt7986-fw-20240823"
 endchoice
 
 config MTK_MT_WIFI_FIRMWARE_PATH
@@ -257,7 +263,7 @@ config MTK_MT_WIFI_FIRMWARE_PATH
 
 config MTK_FW_NEW_API_PATCH
 	bool
-#	depends on MTK_MT_WIFI_DRIVER_VERSION_7661
+	depends on MTK_MT_WIFI_DRIVER_VERSION_7661
 	default y if !(MTK_MT_WIFI_MT7981_DEFAULT_FIRMWARE || MTK_MT_WIFI_MT7986_DEFAULT_FIRMWARE)
 
 menu "WiFi Generic Feature Options"
