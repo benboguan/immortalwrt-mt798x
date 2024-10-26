@@ -994,7 +994,7 @@ return view.extend({
 					o.value('0', _('Disable'));
 					o.value('1', _('Enable'));
 					o.value('3', _('Enable for MTK Repeater mode'));
-					o.default = '0';
+					o.default = '1';
 
 					/*o = ss.taboption('advanced', form.Value, 'distance', _('Distance Optimization'), _('Distance to farthest network member in meters.'));
 					o.datatype = 'or(range(0,114750),"auto")';
