@@ -19,7 +19,7 @@
  
  	return NDIS_STATUS_SUCCESS;
  }
-@@ -3622,6 +3620,10 @@ static INT multi_profile_merge_ft(
+@@ -3742,6 +3744,10 @@ static INT multi_profile_merge_ft(
  {
  	/*merge FtMdId*/
  	multi_profile_merge_increase(data, 1, "FtMdId", buf1, buf2, final);
@@ -30,7 +30,7 @@
  	/*merge FtSupport */
  	multi_profile_merge_perbss(data, "FtSupport", buf1, buf2, final, MPF_APPEND_BSS0);
  	/*merge FtOnly */
-@@ -3642,11 +3644,25 @@ static INT multi_profile_merge_rrm(
+@@ -3766,11 +3768,25 @@ static INT multi_profile_merge_rrm(
  	CHAR *final)
  {
  	/*merge FtSupport */
@@ -57,7 +57,7 @@
  #ifdef DSCP_PRI_SUPPORT
  INT multi_profile_merge_dscp_pri(
  	struct mpf_data *data,
-@@ -3999,6 +4015,11 @@ #ifdef DOT11K_RRM_SUPPORT
+@@ -4146,6 +4162,11 @@ #ifdef DOT11K_RRM_SUPPORT
  		return retval;
  #endif
  

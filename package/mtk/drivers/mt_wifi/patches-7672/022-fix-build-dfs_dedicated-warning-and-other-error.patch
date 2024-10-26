@@ -36,14 +36,38 @@
  	endif
  endif
  
+--- a/mt_wifi_ap/Kconfig
++++ b/mt_wifi_ap/Kconfig
+@@ -282,7 +282,6 @@ #WDS STA
+ config WDS_STA_SUPPORT
+ 	bool "WDS STA Support"
+ 	depends on APCLI_SUPPORT
+-	depends on CFG80211_SUPPORT
+         depends on ENTERPRISE_AP_SUPPORT
+ 	default n
+ 
+--- a/mt_wifi/os/linux/Kconfig.mt_wifi_ap
++++ b/mt_wifi/os/linux/Kconfig.mt_wifi_ap
+@@ -282,7 +282,6 @@ #WDS STA
+ config WDS_STA_SUPPORT
+ 	bool "WDS STA Support"
+ 	depends on APCLI_SUPPORT
+-	depends on CFG80211_SUPPORT
+         depends on ENTERPRISE_AP_SUPPORT
+ 	default n
+ 
 --- a/mt_wifi/embedded/ap/ap.c
 +++ b/mt_wifi/embedded/ap/ap.c
-@@ -416,7 +416,7 @@ UCHAR ApAutoChannelAtBootUp(RTMP_
- 		if (pAd->CommonCfg.DfsParameter.BW160DedicatedSup == TRUE)
+@@ -413,10 +413,11 @@ UCHAR ApAutoChannelAtBootUp(RTMP_
+ 			MTWF_DBG(pAd, DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_INFO, "[ApAutoChannelAtBootUp] ACS of BandIdx = %d is already DONE, Channel = %d\n", BandIdx, NewChannel);
+ 		}
+ #if defined(DFS_MT7916_DEDICATED_ZW) || defined(DFS_MT7981_DEDICATED_ZW)
+-		if (pAd->CommonCfg.DfsParameter.BW160DedicatedSup == TRUE)
++		if (pAd->CommonCfg.DfsParameter.BW160DedicatedSup == TRUE) {
  			DfsZeroWaitBW160StateUpdate(pAd, &vht_bw, NewChannel);
  
--			wlan_config_set_vht_bw(wdev, vht_bw);
-+		wlan_config_set_vht_bw(wdev, vht_bw);
+ 			wlan_config_set_vht_bw(wdev, vht_bw);
++		}
  #endif
  #ifdef DFS_VENDOR10_CUSTOM_FEATURE
  		/* Update channel of wdev as new channel */
@@ -60,15 +84,29 @@
  			if (!wdev) {
 --- a/mt_wifi/embedded/include/rtmp.h
 +++ b/mt_wifi/embedded/include/rtmp.h
-@@ -3612,6 +3612,7 @@ typedef struct _COMMON_CONFIG {
+@@ -3612,25 +3612,25 @@ typedef struct _COMMON_CONFIG {
  #ifdef HOSTAPD_MAP_SUPPORT
  	BOOLEAN bHostapdMapDisabled;
  #endif
-+#endif
- #ifdef EAP_STATS_SUPPORT
- 	BOOLEAN bEapStatsDisabled;
+-#ifdef EAP_STATS_SUPPORT
+-	BOOLEAN bEapStatsDisabled;
+-#endif
+ #ifdef RADIUS_MAC_AUTH_SUPPORT
+ 	BOOLEAN bRadiusMacAuthDisabled;
  #endif
-@@ -3631,7 +3632,6 @@ typedef struct _COMMON_CONFIG {
+ #ifdef DYNAMIC_VLAN_SUPPORT
+ 	BOOLEAN bDynamicVlanDisabled;
+ #endif
++#endif
++#ifdef EAP_STATS_SUPPORT
++	BOOLEAN bEapStatsDisabled;
++#endif
+ #ifdef MBSS_AS_WDS_AP_SUPPORT
+ 	BOOLEAN bMBSSASWDSAPDisabled;
+ #endif
+ #ifdef CLIENT_WDS
+ 	BOOLEAN bClientWdsDisabled;
+ #endif
  #ifdef APCLI_AS_WDS_STA_SUPPORT
  	BOOLEAN bApcliASWDSSTADisabled;
  #endif
@@ -78,49 +116,50 @@
  	UINT8 andlink_ip_hostname_en[DBDC_BAND_NUM];
 --- a/mt_wifi/embedded/mcu/andes_mt.c
 +++ b/mt_wifi/embedded/mcu/andes_mt.c
-@@ -2997,10 +2997,12 @@ static VOID ExtEventGetAllStaStats(RTMP_
+@@ -2997,11 +2997,10 @@ static VOID ExtEventGetAllStaStats(RTMP_
  #endif
  	}
  	break;
 +
  	case EVENT_PHY_PER_STA_TX_STAT:
- #ifdef RT_CFG80211_SUPPORT
--	if (!pAd->CommonCfg.bEapStatsDisabled) {
-+	if (!pAd->CommonCfg.bEapStatsDisabled)
- #endif
-+	{
- #ifdef EAP_STATS_SUPPORT
+-#ifdef RT_CFG80211_SUPPORT
++#ifdef EAP_STATS_SUPPORT
+ 	if (!pAd->CommonCfg.bEapStatsDisabled) {
+-#endif
+-#ifdef EAP_STATS_SUPPORT
  		P_EXT_EVENT_TX_STAT_RESULT_T prEventExtCmdResult = (P_EXT_EVENT_TX_STAT_RESULT_T)Data;
  
-@@ -3023,18 +3025,17 @@ static VOID ExtEventGetAllStaStats(RTMP_
+ 		prEventExtCmdResult->u2StaNum = le2cpu16(prEventExtCmdResult->u2StaNum);
+@@ -3022,19 +3021,15 @@ static VOID ExtEventGetAllStaStats(RTMP_
+ 			}
  
  		}
- #endif
+-#endif
 -#ifdef RT_CFG80211_SUPPORT
  	}
--#endif
+ #endif
  	break;
  
  	case EVENT_PHY_RX_STAT:
- #ifdef RT_CFG80211_SUPPORT
--	if (!pAd->CommonCfg.bEapStatsDisabled) {
-+	if (!pAd->CommonCfg.bEapStatsDisabled)
- #endif
-+	{
- #ifdef EAP_STATS_SUPPORT
+-#ifdef RT_CFG80211_SUPPORT
++#ifdef EAP_STATS_SUPPORT
+ 	if (!pAd->CommonCfg.bEapStatsDisabled) {
+-#endif
+-#ifdef EAP_STATS_SUPPORT
  		P_EXT_EVENT_RX_STAT_RESULT_T prEventExtCmdResult = (P_EXT_EVENT_RX_STAT_RESULT_T)Data;
 -		UCHAR       concurrent_bands = HcGetAmountOfBand(pAd);
 +		UCHAR concurrent_bands = HcGetAmountOfBand(pAd);
  
  		for (Idx = 0; Idx < concurrent_bands; Idx++) {
  			P_EXT_EVENT_RX_STAT_T rRxStatResult = &prEventExtCmdResult->rRxStatResult[Idx];
-@@ -3045,9 +3046,7 @@ static VOID ExtEventGetAllStaStats(RTMP_
+@@ -3044,10 +3039,8 @@ static VOID ExtEventGetAllStaStats(RTMP_
+ 			pAd->OneSecMibBucket.MdrdyCount[Idx] = le2cpu16(rRxStatResult->u2PhyRxMdrdyCntCck) +
  													le2cpu16(rRxStatResult->u2PhyRxMdrdyCntOfdm);
  		}
- #endif
+-#endif
 -#ifdef RT_CFG80211_SUPPORT
  	}
--#endif
+ #endif
  	break;
  
  	case EVENT_PHY_PER_STA_TXRX_AIR_TIME:

@@ -1,6 +1,6 @@
 --- a/mt_wifi/embedded/ap/ap_cfg.c	2023-12-03 11:58:49.612252012 +0800
 +++ b/mt_wifi/embedded/ap/ap_cfg.c	2023-12-03 11:58:03.205793459 +0800
-@@ -11439,7 +11439,7 @@ INT RTMPAPQueryInformation(
+@@ -11670,7 +11670,7 @@ INT RTMPAPQueryInformation(
  			Status = copy_to_user(wrq->u.data.pointer, &pAd->ApCfg.MBSSID[ifIndex].AccessControlList, sizeof(RT_802_11_ACL));
  
  		break;
@@ -9,7 +9,7 @@
  #ifdef CONFIG_DOT11V_WNM
  
  	case OID_802_11_WNM_IPV4_PROXY_ARP_LIST: {
-@@ -11477,19 +11477,37 @@ INT RTMPAPQueryInformation(
+@@ -11708,19 +11708,37 @@ INT RTMPAPQueryInformation(
  
  	case OID_802_11_SECURITY_TYPE: {
  		BSS_STRUCT *pMbss;
@@ -51,7 +51,7 @@
  		os_free_mem(pType);
  	}
  	break;
-@@ -11547,7 +11565,7 @@ INT RTMPAPQueryInformation(
+@@ -11778,7 +11796,7 @@ INT RTMPAPQueryInformation(
  	}
  	break;
  #endif /* CONFIG_HOTSPOT_R3 */
@@ -62,7 +62,7 @@
  		int ret;
 --- a/mt_wifi/embedded/include/oid.h	2022-11-27 21:58:55.000000000 +0800
 +++ b/mt_wifi/embedded/include/oid.h	2023-12-03 10:30:10.630435691 +0800
-@@ -2002,6 +2002,12 @@ struct security_type {
+@@ -2005,6 +2005,12 @@ struct security_type {
  	UINT8 encryp_type;
  };
  
