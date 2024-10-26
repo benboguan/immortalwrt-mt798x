@@ -799,7 +799,7 @@ drv_mtk_setup() {
 			tx_stbc_2by1:1 \
 			su_beamformer:1 \
 			su_beamformee:1 \
-			mu_beamformer:0 \
+			mu_beamformer:1 \
 			mu_beamformee:1 \
 			vht_txop_ps:1 \
 			htc_vht:1 \
@@ -1262,7 +1262,7 @@ MbssMaxStaNum=${maxassoc:-64}
 MlmeMultiQEnable=1
 MLREnable=0
 MultiIntr=1
-MUTxRxEnable=${mu_beamformer:-0}
+MUTxRxEnable=${mu_beamformer:-1}
 NoForwardingBTNBSSID=0
 NoForwardingMBCast=0
 NonTxBSSIndex=0
