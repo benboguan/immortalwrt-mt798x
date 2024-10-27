@@ -81,7 +81,7 @@ function render_signal_badge(signalPercent, signalValue, noiseValue, wrap, mode)
 		}
 
 		if (noiseValue != null && noiseValue != 0) {
-			value = '---/%d\x0a%s'.format(noiseValue, _('dBm'));
+			value = '---/%d\xa0%s'.format(noiseValue, _('dBm'));
 			title = '%s / %s: %d %s'.format(title, _('Noise'), noiseValue, _('dBm'));
 		}
 		else {
@@ -1724,18 +1724,19 @@ return view.extend({
 					o = ss.taboption('encryption', form.Value, 'nasid', _('NAS ID'), _('Used for two different purposes: RADIUS NAS ID and 802.11r R0KH-ID. Not needed with normal WPA(2)-PSK.'));
 					add_dependency_permutations(o, { mode: ['ap'], encryption: ['wpa', 'wpa-mixed', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 					o.depends({ ieee80211r: '1' });
+					o.placeholder = 'Ralink:macaddr';
 					o.rmempty = true;
 
 					o = ss.taboption('encryption', form.Value, 'mobility_domain', _('Mobility Domain'), _('4-character hexadecimal ID'));
 					o.depends({ ieee80211r: '1' });
-					o.placeholder = '4f57';
+					o.placeholder = '0101:H';
 					o.datatype = 'and(hexstring,length(4))';
 					o.rmempty = true;
 
 					o = ss.taboption('encryption', form.Value, 'reassociation_deadline', _('Reassociation Deadline'), _('time units (TUs / 1.024 ms) [1000-65535]'));
 					o.depends({ ieee80211r: '1' });
-					o.placeholder = '1000';
-					o.datatype = 'range(1000,65535)';
+					o.placeholder = '100';
+					o.datatype = 'range(100,65535)';
 					o.rmempty = true;
 
 					o = ss.taboption('encryption', form.ListValue, 'ft_over_ds', _('FT protocol'));
@@ -1749,11 +1750,11 @@ return view.extend({
 					o.default = o.enabled;
 					o.rmempty = false;
 
-					/*o = ss.taboption('encryption', form.Value, 'r0_key_lifetime', _('R0 Key Lifetime'), _('minutes'));
+					o = ss.taboption('encryption', form.Value, 'r0_key_lifetime', _('R0 Key Lifetime'), _('minutes'));
 					o.depends({ ieee80211r: '1' });
 					o.placeholder = '10000';
 					o.datatype = 'uinteger';
-					o.rmempty = true;*/
+					o.rmempty = true;
 
 					o = ss.taboption('encryption', form.Value, 'r1_key_holder', _('R1 Key Holder'), _('6-octet identifier as a hex string - no colons'));
 					o.depends({ ieee80211r: '1' });
@@ -1766,14 +1767,14 @@ return view.extend({
 					o.placeholder = '0';
 					o.rmempty = true;
 
-					/*o = ss.taboption('encryption', form.DynamicList, 'r0kh', _('External R0 Key Holder List'), _('List of R0KHs in the same Mobility Domain. <br />Format: MAC-address,NAS-Identifier,128-bit key as hex string. <br />This list is used to map R0KH-ID (NAS Identifier) to a destination MAC address when requesting PMK-R1 key from the R0KH that the STA used during the Initial Mobility Domain Association.'));
+					/* o = ss.taboption('encryption', form.DynamicList, 'r0kh', _('External R0 Key Holder List'), _('List of R0KHs in the same Mobility Domain. <br />Format: MAC-address,NAS-Identifier,128-bit key as hex string. <br />This list is used to map R0KH-ID (NAS Identifier) to a destination MAC address when requesting PMK-R1 key from the R0KH that the STA used during the Initial Mobility Domain Association.'));
 					o.depends({ ieee80211r: '1' });
 					o.rmempty = true;
 
 					o = ss.taboption('encryption', form.DynamicList, 'r1kh', _('External R1 Key Holder List'), _ ('List of R1KHs in the same Mobility Domain. <br />Format: MAC-address,R1KH-ID as 6 octets with colons,128-bit key as hex string. <br />This list is used to map R1KH-ID to a destination MAC address when sending PMK-R1 key from the R0KH. This is also the list of authorized R1KHs in the MD that can request PMK-R1 keys.'));
 					o.depends({ ieee80211r: '1' });
-					o.rmempty = true;
-					// End of 802.11r options*/
+					o.rmempty = true; */
+					// End of 802.11r options
 
 					if (hwtype == 'mtk') {
 						// ieee802.11w options
@@ -1781,7 +1782,7 @@ return view.extend({
 						o.value('0', _('Disabled'));
 						o.value('1', _('Optional'));
 						o.value('2', _('Required'));
-						add_dependency_permutations(o, { mode: ['ap', 'ap-wds', 'sta', 'sta-wds'], encryption: ['owe', 'psk2', 'psk-mixed', 'sae', 'sae-mixed', 'wpa-mixed', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
+						add_dependency_permutations(o, { mode: ['ap'], encryption: ['owe', 'psk2', 'psk-mixed', 'sae', 'sae-mixed', 'wpa-mixed', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 
 						o.defaults = {
 							'2': [{ encryption: 'sae' }, { encryption: 'owe' }, { encryption: 'wpa3' }, { encryption: 'wpa3-192' }],
@@ -1796,19 +1797,20 @@ return view.extend({
 								return form.ListValue.prototype.remove.call(this, section_id);
 						};
 
-						/*o = ss.taboption('encryption', form.Value, 'ieee80211w_max_timeout', _('802.11w maximum timeout'), _('802.11w Association SA Query maximum timeout'));
+						/* o = ss.taboption('encryption', form.Value, 'ieee80211w_max_timeout', _('802.11w maximum timeout'), _('802.11w Association SA Query maximum timeout'));
 						o.depends('ieee80211w', '1');
 						o.depends('ieee80211w', '2');
 						o.datatype = 'uinteger';
 						o.placeholder = '1000';
-						o.rmempty = true;
+						o.rmempty = true; */
 
 						o = ss.taboption('encryption', form.Value, 'ieee80211w_retry_timeout', _('802.11w retry timeout'), _('802.11w Association SA Query retry timeout'));
 						o.depends('ieee80211w', '1');
 						o.depends('ieee80211w', '2');
 						o.datatype = 'uinteger';
-						o.placeholder = '201';
-						o.rmempty = true; */
+						o.placeholder = '200';
+						o.datatype = 'range(200,1000)';
+						o.rmempty = true;
 
 						o = ss.taboption('encryption', form.ListValue, 'ocv', _('Operating Channel Validation'), _("Note: Workaround mode allows a STA that claims OCV capability to connect even if the STA doesn't send OCI or negotiate PMF."));
 						o.value('0', _('Disabled'));

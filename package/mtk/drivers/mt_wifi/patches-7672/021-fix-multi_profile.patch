@@ -19,7 +19,16 @@
  
  	return NDIS_STATUS_SUCCESS;
  }
-@@ -3746,6 +3748,12 @@ static INT multi_profile_merge_ft(
+@@ -1068,6 +1066,8 @@ #endif
+ 	multi_profile_merge_perbss(mpf, "PMFMFPR", buf1, buf2, final, MPF_APPEND_BSS0);
+ 	/*PMFSHA256*/
+ 	multi_profile_merge_perbss(mpf, "PMFSHA256", buf1, buf2, final, MPF_APPEND_BSS0);
++	/*PMFSA_Q*/
++	multi_profile_merge_perbss(mpf, "PMFSA_Q", buf1, buf2, final, MPF_APPEND_BSS0);
+ #ifdef BCN_PROTECTION_SUPPORT
+ 	/* BcnProt */
+ 	multi_profile_merge_perbss(mpf, "BcnProt", buf1, buf2, final, MPF_APPEND_BSS0);
+@@ -3746,6 +3746,14 @@ static INT multi_profile_merge_ft(
  {
  	/*merge FtMdId*/
  	multi_profile_merge_increase(data, 1, "FtMdId", buf1, buf2, final);
@@ -29,10 +38,12 @@
 +	multi_profile_merge_increase(data, 1, "FtR1khId", buf1, buf2, final);
 +	/*merge AssocDeadLine*/
 +	multi_profile_merge_increase(data, 1, "AssocDeadLine", buf1, buf2, final);
++	/*merge R0KeyLifeTime*/
++	multi_profile_merge_increase(data, 1, "R0KeyLifeTime", buf1, buf2, final);
  	/*merge FtSupport */
  	multi_profile_merge_perbss(data, "FtSupport", buf1, buf2, final, MPF_APPEND_BSS0);
  	/*merge FtOnly */
-@@ -3765,12 +3769,27 @@ static INT multi_profile_merge_rrm(
+@@ -3765,12 +3773,27 @@ static INT multi_profile_merge_rrm(
  	CHAR *buf2,
  	CHAR *final)
  {
@@ -62,7 +73,7 @@
  #ifdef DSCP_PRI_SUPPORT
  INT multi_profile_merge_dscp_pri(
  	struct mpf_data *data,
-@@ -4146,6 +4165,11 @@ #ifdef DOT11K_RRM_SUPPORT
+@@ -4146,6 +4169,11 @@ #ifdef DOT11K_RRM_SUPPORT
  		return retval;
  #endif
  

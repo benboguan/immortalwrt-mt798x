@@ -60,8 +60,8 @@ drv_mtk_init_iface_config() {
 	config_add_boolean hidden isolate isolate_mb br_isolate_mode ieee80211k ieee80211v ieee80211r
 	config_add_boolean powersave enable coloring ldpc lofdm mesh_fwding
 	config_add_string key key1 key2 key3 key4
-	config_add_string wds_bridge wps_pushbutton pin mesh_id mapmode mesh_rssi_threshold
-	config_add_string macfilter 'macfile:file' nasid mobility_domain r1_key_holder reassociation_deadline ft_over_ds
+	config_add_string wds_bridge wps_pushbutton pin mesh_id mapmode mesh_rssi_threshold ieee80211w_retry_timeout
+	config_add_string macfilter 'macfile:file' nasid mobility_domain r1_key_holder r0_key_lifetime reassociation_deadline ft_over_ds
 	config_add_array 'maclist:list(macaddr)' r0kh r1kh
 
 	config_add_boolean wds wmm wnm_sleep_mode bss_transition proxy_arp mbo rrm_neighbor_report rrm_beacon_report ft_psk_generate_local pmk_r1_push
@@ -89,9 +89,9 @@ mtk_ap_vif_pre_config() {
 	json_get_vars disabled encryption auth_secret acct_secret auth_server auth_port acct_server \
 		acct_port key key1 key2 key3 key4 wmm own_ip_addr own_radius_port macaddr short_preamble wpa_group_rekey \
 		ssid mode wps_pushbutton pin pbc isolate hidden disassoc_low_ack kicklow assocthres rsn_preauth \
-		ieee80211k ieee80211v ieee80211r ieee80211w macfilter nasid mobility_domain r1_key_holder reassociation_deadline r0kh r1kh \
+		ieee80211k ieee80211v ieee80211r ieee80211w macfilter nasid mobility_domain r1_key_holder r0_key_lifetime reassociation_deadline r0kh r1kh \
 		ft_over_ds ft_psk_generate_local pmk_r1_push rrm_neighbor_report rrm_beacon_report wnm_sleep_mode bss_transition proxy_arp \
-		frag rts dtim_period mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv
+		frag rts dtim_period mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv ieee80211w_retry_timeout
 	json_get_values maclist maclist
 	set_default wmm 1
 	set_default isolate 0
@@ -282,10 +282,11 @@ mtk_ap_vif_pre_config() {
 	Apofdmadl="${Apofdmadl}${ofdma_dl};"
 	Apofdmaul="${Apofdmaul}${ofdma_ul};"
 	Apocv="${Apocv}${ocv};"
-	echo "FtMdId${ApBssidNum}=${mobility_domain}" >> $MTWIFI_PROFILE_PATH
+	echo "FtMdId${ApBssidNum}=${mobility_domain:-0101:H}" >> $MTWIFI_PROFILE_PATH
 	echo "FtR0khId${ApBssidNum}=${nasid}" >> $MTWIFI_PROFILE_PATH
 	echo "FtR1khId${ApBssidNum}=${r1_key_holder}" >> $MTWIFI_PROFILE_PATH
-	echo "AssocDeadLine${ApBssidNum}=${reassociation_deadline}" >> $MTWIFI_PROFILE_PATH
+	echo "R0KeyLifeTime${ApBssidNum}=${r0_key_lifetime:-10000}" >> $MTWIFI_PROFILE_PATH
+	echo "AssocDeadLine${ApBssidNum}=${reassociation_deadline:-100}" >> $MTWIFI_PROFILE_PATH
 
 	mt_cmd ifconfig $ifname up
 	mt_cmd echo "Interface $ifname now up."
@@ -300,6 +301,8 @@ mtk_ap_vif_pre_config() {
 		ApPMFMFPC="${ApPMFMFPC}${PMFMFPC:-0};"
 		ApPMFMFPR="${ApPMFMFPR}${PMFMFPR:-0};"
 	fi
+	ApPMFSA_Q="${ApPMFSA_Q}${ieee80211w_retry_timeout:-200};"
+
 	# if [ "$wps" = "pbc" -o \( "$wps" = "pin" -a "$encryption" != "none" \) ]; then
 	if [ "$wps_pushbutton" == "1" ] && [ "$encryption" != "none" ]; then
 		mt_cmd echo "Enable WPS PIN for ${ifname}."
@@ -1141,6 +1144,7 @@ AMSDU_NUM=8
 AntCtrl=
 APACM=0;0;0;0
 APAifsn=3;7;1;1
+ApCliNum=2
 ApCliPMFSHA256=0
 ApCliTxMcs=33
 ApCliWirelessMode=
@@ -1480,6 +1484,7 @@ EOF
 	ApRekeyInterval=""
 	ApPMFMFPC=""
 	ApPMFMFPR=""
+	ApPMFSA_Q=""
 	ApBSS=""
 	ApARP=""
 	ApFtOtd=""
@@ -1532,6 +1537,7 @@ EOF
 	echo "OCVSupport=${Apocv%?}" >> $MTWIFI_PROFILE_PATH
 	echo "PMFMFPC=${ApPMFMFPC%?}" >> $MTWIFI_PROFILE_PATH
 	echo "PMFMFPR=${ApPMFMFPR%?}" >> $MTWIFI_PROFILE_PATH
+	echo "PMFSA_Q=${ApPMFSA_Q%?}" >> $MTWIFI_PROFILE_PATH
 	echo "NoForwarding=${ApNoForwarding%?}" >> $MTWIFI_PROFILE_PATH
 	echo "RekeyInterval=${ApRekeyInterval%?}" >> $MTWIFI_PROFILE_PATH
 	echo "FragThreshold=${ApFrag%?}" >> $MTWIFI_PROFILE_PATH
