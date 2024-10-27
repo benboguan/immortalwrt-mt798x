@@ -5,7 +5,7 @@
 # Copyright (c) 2013, Hoowa <hoowa.sun@gmail.com>
 # Copyright (c) 2015-2017, GuoGuo <gch981213@gmail.com>
 # Copyright (c) 2020,2023, jjm2473 <jjm2473@gmail.com>
-# Copyright (c) 2022,2023, nanchuci <nanchuci023@gmail.com>
+# Copyright (c) 2022-2024, nanchuci <nanchuci023@gmail.com>
 #
 # 	netifd config script for MT7615/MT7915/MT7916/MT798X DBDC mode.
 #
@@ -256,6 +256,7 @@ mtk_ap_vif_pre_config() {
 	ApK2Tp="${ApK2Tp}${K2Tp:-0};"
 	ApK3Tp="${ApK3Tp}${K3Tp:-0};"
 	ApK4Tp="${ApK4Tp}${K4Tp:-0};"
+
 	ApHideESSID="${ApHideESSID}${hidden:-0};"
 	ApWmmCapable="${ApWmmCapable}${wmm};"
 	ApRADIUSServer="${ApRADIUSServer}${auth_server};"
@@ -264,12 +265,12 @@ mtk_ap_vif_pre_config() {
 	ApRADIUSAcctPort="${ApRADIUSAcctPort}${acct_port};"
 	ApRADIUSAcctKey="${ApRADIUSAcctKey}${acct_secret};"
 	ApPreAuth="${ApPreAuth}${rsn_preauth:-0};"
-	ApRRMEnable="${ApRRMEnable}${ieee80211k};"
-	ApFtSupport="${ApFtSupport}${ieee80211r};"
 	ApNoForwarding="${ApNoForwarding}${isolate};"
 	ApRekeyInterval="${ApRekeyInterval}${wpa_group_rekey};"
+	ApRRMEnable="${ApRRMEnable}${ieee80211k};"
 	ApBSS="${ApBSS}${bss_transition:-0};"
 	ApARP="${ApARP}${proxy_arp:-0};"
+	ApFtSupport="${ApFtSupport}${ieee80211r};"
 	ApFtOtd="${ApFtOtd}${ft_over_ds:-0};"
 	ApFtOnly="${ApFtOnly}${ft_psk_generate_local:-0};"
 	ApFtRic="${ApFtRic}${pmk_r1_push:-0};"
