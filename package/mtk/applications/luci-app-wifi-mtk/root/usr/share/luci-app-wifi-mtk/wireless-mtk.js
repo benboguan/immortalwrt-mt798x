@@ -1175,7 +1175,6 @@ return view.extend({
 
 						case 'wds':
 							uci.set('wireless', section_id, 'mode', 'wds');
-							uci.set('wireless', section_id, 'wds', '1');
 							break;
 
 						default:
@@ -1730,7 +1729,7 @@ return view.extend({
 
 					o = ss.taboption('encryption', form.Value, 'mobility_domain', _('Mobility Domain'), _('4-character hexadecimal ID'));
 					o.depends({ ieee80211r: '1' });
-					o.placeholder = '0101:H';
+					o.placeholder = '4f57';
 					o.datatype = 'and(hexstring,length(4))';
 					o.rmempty = true;
 
