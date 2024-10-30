@@ -1241,7 +1241,7 @@ return view.extend({
 					o.value('GREENFIELD', _('GREENFIELD'));
 					o.value('VHT', _('VHT'));
 					o.value('HE', _('HE'));
-					o.default = 'GREENFIELD';
+					o.default = 'HE';
 
 					/* https://w1.fi/cgit/hostap/commit/?id=34f7c699a6bcb5c45f82ceb6743354ad79296078  */
 					/* multicast_to_unicast https://github.com/openwrt/openwrt/commit/7babb978ad9d7fc29acb1ff86afb1eb343af303a */

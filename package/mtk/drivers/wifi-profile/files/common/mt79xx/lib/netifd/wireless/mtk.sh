@@ -347,7 +347,7 @@ mtk_wds_vif_pre_config() {
 	json_select config
 	json_get_vars disabled encryption key key1 key2 key3 key4 mode bssid wdsen wdsenctype wdskey wdswepid wdsphymode wdstxmcs
 	set_default wdsen 0
-	set_default wdsphymode "GREENFIELD"
+	set_default wdsphymode "HE"
 	json_select ..
 
 	[[ "$disabled" = "1" ]] && return
