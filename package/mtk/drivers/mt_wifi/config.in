@@ -1020,7 +1020,7 @@ config MTK_MBSS_SUPPORT
 config MTK_MESH_SUPPORT
 	bool "Mesh Mode Support"
 	depends on MTK_MT_AP_SUPPORT
-	default y
+	default n
 
 config MTK_APCLI_SUPPORT
 	bool "AP-Client Support"
@@ -1042,6 +1042,12 @@ config MTK_MAC_REPEATER_SUPPORT
 
 config MTK_APCLI_CONNECTION_TRIAL
 	bool "Trial Connection"
+	depends on MTK_MT_AP_SUPPORT
+	depends on MTK_APCLI_SUPPORT
+	default n
+
+config MTK_STA_ADHOC_SUPPORT
+	bool "STA_ADHOC Mode Support"
 	depends on MTK_MT_AP_SUPPORT
 	depends on MTK_APCLI_SUPPORT
 	default n
