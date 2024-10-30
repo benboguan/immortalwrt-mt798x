@@ -9,7 +9,7 @@
  #ifdef CONFIG_DOT11V_WNM
  
  	case OID_802_11_WNM_IPV4_PROXY_ARP_LIST: {
-@@ -11708,19 +11708,56 @@ INT RTMPAPQueryInformation(
+@@ -11708,19 +11708,51 @@ INT RTMPAPQueryInformation(
  
  	case OID_802_11_SECURITY_TYPE: {
  		BSS_STRUCT *pMbss;
@@ -43,20 +43,15 @@
 +			SecurityType->encryp_type = pApCliEntry->wdev.SecConfig.PairwiseCipher;
 +			wrq->u.data.length = sizeof(*SecurityType);
 +			Status = copy_to_user(wrq->u.data.pointer, pType, sizeof(*SecurityType));
-+		} else if(pObj->ioctl_if_type == INT_WDS) {
-+			if (!VALID_UCAST_ENTRY_WCID(pAd, wcid))
-+				return;
-+
++		} else if (pObj->ioctl_if_type == INT_WDS) {
 +			pEntry = &pAd->MacTab.Content[wcid];
 +			wds_entry = &pAd->WdsTab.WdsEntry[pEntry->func_tb_idx];
-+			if (!IS_ENTRY_WDS(pEntry))
-+				return;
 +			SecurityType->ifindex = pEntry->func_tb_idx;
 +			SecurityType->auth_mode = wds_entry->wdev.SecConfig.AKMMap;
 +			SecurityType->encryp_type = wds_entry->wdev.SecConfig.PairwiseCipher;
 +			wrq->u.data.length = sizeof(*SecurityType);
 +			Status = copy_to_user(wrq->u.data.pointer, pType, sizeof(*SecurityType));
-+		} else if(pObj->ioctl_if_type == INT_MAIN || pObj->ioctl_if_type == INT_MBSSID) {
++		} else if (pObj->ioctl_if_type == INT_MAIN || pObj->ioctl_if_type == INT_MBSSID) {
 -		pMbss = &pAd->ApCfg.MBSSID[ifIndex];
 -		SecurityType->ifindex = ifIndex;
 -		SecurityType->auth_mode = SecAuthModeNewToOld(pMbss->wdev.SecConfig.AKMMap);
@@ -74,7 +69,7 @@
  		os_free_mem(pType);
  	}
  	break;
-@@ -11778,7 +11815,7 @@ INT RTMPAPQueryInformation(
+@@ -11778,7 +11810,7 @@ INT RTMPAPQueryInformation(
  	}
  	break;
  #endif /* CONFIG_HOTSPOT_R3 */
