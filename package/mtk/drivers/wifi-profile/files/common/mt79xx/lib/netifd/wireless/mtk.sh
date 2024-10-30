@@ -88,7 +88,7 @@ mtk_ap_vif_pre_config() {
 	json_select config
 	json_get_vars disabled encryption auth_secret acct_secret auth_server auth_port acct_server \
 		acct_port key key1 key2 key3 key4 wmm own_ip_addr own_radius_port macaddr short_preamble wpa_group_rekey \
-		ssid mode wps_pushbutton pin pbc isolate hidden disassoc_low_ack kicklow assocthres rsn_preauth \
+		bssid ssid mode wps_pushbutton pin pbc isolate hidden disassoc_low_ack kicklow assocthres rsn_preauth \
 		ieee80211k ieee80211v ieee80211r ieee80211w macfilter nasid mobility_domain r1_key_holder r0_key_lifetime reassociation_deadline r0kh r1kh \
 		ft_over_ds ft_psk_generate_local pmk_r1_push rrm_neighbor_report rrm_beacon_report wnm_sleep_mode bss_transition proxy_arp \
 		frag rts dtim_period mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv ieee80211w_retry_timeout
@@ -291,6 +291,16 @@ mtk_ap_vif_pre_config() {
 	mt_cmd ifconfig $ifname up
 	mt_cmd echo "Interface $ifname now up."
 	# mt_cmd iwpriv ra${MTWIFI_IFPREFIX}0 set PartialScanNumOfCh=4
+	if [ "$mode" == "ap-wds" ]; then
+		echo "WDSEnabled=1" >> $MTWIFI_PROFILE_PATH
+		echo "ApMWDS=1" >> $MTWIFI_PROFILE_PATH
+		echo "WdsMac=${bssid}" >> $MTWIFI_PROFILE_PATH
+	else
+		echo "WDSEnabled=0" >> $MTWIFI_PROFILE_PATH
+		echo "ApMWDS=0" >> $MTWIFI_PROFILE_PATH
+		echo "WdsMac=" >> $MTWIFI_PROFILE_PATH
+	fi
+
 	if [ "$ieee80211w" == "1" ] || [ "$encryption" == "sae-mixed" -o "$encryption" == "wpa3-mixed" ]; then
 		ApPMFMFPC="${ApPMFMFPC}${PMFMFPC:-1};"
 		ApPMFMFPR="${ApPMFMFPR}${PMFMFPR:-0};"
@@ -380,34 +390,43 @@ mtk_wds_vif_pre_config() {
 			*tkipaes*|*tkip+ccmp*|*tkip+aes*|*aes+tkip*|*ccmp+tkip*)
 				crypto="TKIPAES"
 			;;
+			*gcmp256*)
+				crypto="GCMP256"
+			;;
+			*ccmp256*)
+				crypto="CCMP256"
+			;;
+			*gcmp*|*gcmp128*)
+				crypto="GCMP"
+			;;
 			*aes*|*ccmp*|*ccmp128*)
 				crypto="AES"
 			;;
-			*tkip*)
+			*tkip*) 
 				crypto="TKIP"
 				echo "Warning!!! TKIP is not support in 802.11n 40Mhz!!!"
 			;;
 		esac
-			WdsEncrypType="${WdsEncrypType}${crypto};"
-			WdsDefKId="${WdsDefKId}2;"
+			WDSEncType="${WDSEncType}${crypto};"
+			WDSDefKeyID="${WDSDefKeyID}2;"
 			# echo "Wds${WDSBssidNum}Key=${key}" >> $MTWIFI_PROFILE_PATH #WDS Key
 			;;
 	WEP|wep|wep-open|wep-shared)
-		WdsEncrypType="${WdsEncrypType}WEP;"
-		WdsK1Tp=$(get_wep_key_type "$key1")
-		[ $WdsK1Tp -eq 1 ] && key1=$(echo $key1 | cut -d ':' -f 2- )
-		WdsDefKId="${WdsDefKId}1;"
+		WDSEncType="${WDSEncType}WEP;"
+		WDSK1Tp=$(get_wep_key_type "$key1")
+		[ $WDSK1Tp -eq 1 ] && key1=$(echo $key1 | cut -d ':' -f 2- )
+		WDSDefKeyID="${WDSDefKeyID}1;"
 		;;
 	none|open)
-		WdsEncrypType="${WdsEncrypType}NONE;"
-		WdsDefKId="${WdsDefKId}1;"
+		WDSEncType="${WDSEncType}NONE;"
+		WDSDefKeyID="${WDSDefKeyID}1;"
 		;;
 	esac
 
-	if [ ! -z "$bssid" ] && [ "$wdsen" -eq 3 ] || [ "$wdsen" -eq 4 ]; then
-		WdsList="${WdsList}$(echo $bssid | tr 'A-Z' 'a-z');"
-	elif [ "$wdsen" -eq 2 ]; then
-		WdsList="${WdsList}${bssid};"
+	if [ ! -z "$bssid" ] && [ "$wdsen" == "3" -o "$wdsen" == "4" ]; then
+		WDSList="${WDSList}$(echo $bssid | tr 'A-Z' 'a-z');"
+	elif [ "$wdsen" == "2" ]; then
+		WDSList="${WDSList}${bssid};"
 	fi
 
 	if [ "$encryption" == "wep-open" -o "$encryption" == "wep-shared" ]; then
@@ -416,8 +435,8 @@ mtk_wds_vif_pre_config() {
 		echo "Wds${WDSBssidNum}Key=${key}" >> $MTWIFI_PROFILE_PATH #WDS Key
 	fi
 
-	WdsEnable="${WdsEnable}${wdsen:-0};"
-	WdsPhyMode="${WdsPhyMode}${wdsphymode:-0};"
+	WDSEnable="${WDSEnable}${wdsen};"
+	WDSPhyMode="${WDSPhyMode}${wdsphymode};"
 	echo "WdsNum=${WDSBssidNum:-0}" >> $MTWIFI_PROFILE_PATH
 
 	mt_cmd ifconfig $ifname up
@@ -554,6 +573,11 @@ mtk_sta_vif_pre_config() {
 	}
 	mt_cmd iwpriv $APCLI_IF set ApCliSsid=${ssid}
 	mt_cmd iwpriv $APCLI_IF set ApCliDelPMKIDList=1
+	if [ "$mode" == "sta-wds" ]; then
+		echo "ApCliMWDS=1" >> $MTWIFI_PROFILE_PATH
+	else
+		echo "ApCliMWDS=0" >> $MTWIFI_PROFILE_PATH
+	fi
 	if [ "$wps_pushbutton" == "1" ] && [ "${ApCliAuthMode}" != "none" ]; then
 		mt_cmd echo "Enable WPS PIN for ${APCLI_IF}."
 		mt_cmd iwpriv $APCLI_IF set WscConfMode=1
@@ -1150,8 +1174,6 @@ ApCliTxMcs=33
 ApCliWirelessMode=
 APCwmax=6;10;4;3
 APCwmin=4;4;3;2
-ApMWDS=1
-ApCliMWDS=1
 ApProbeRspTimes=3
 APSDCapable=1
 APTxop=0;0;94;47
@@ -1549,20 +1571,21 @@ EOF
 
 #WDS接口
 	WDSBssidNum=0
-	WdsEnable=""
-	WdsList=""
-	WdsEncrypType=""
-	WdsDefKId=""
-	WdsPhyMode=""
+	WDSEnable=""
+	WDSList=""
+	WDSEncType=""
+	WDSDefKeyID=""
+	WDSPhyMode=""
 	for_each_interface "wds" mtk_wds_vif_pre_config
 
 #For WDS profile merging......
 	# echo "WdsNum=${WDSBssidNum:-0}" >> $MTWIFI_PROFILE_PATH
-	echo "WdsEnable=${WdsEnable%?}" >> $MTWIFI_PROFILE_PATH
-	echo "WdsList=${WdsList%?}" >> $MTWIFI_PROFILE_PATH
-	echo "WdsEncrypType=${WdsEncrypType%?}" >> $MTWIFI_PROFILE_PATH
-	echo "WdsDefaultKeyID=${WdsDefKId%?}" >> $MTWIFI_PROFILE_PATH
-	echo "WdsPhyMode=${WdsPhyMode%?}" >> $MTWIFI_PROFILE_PATH
+	echo "WdsEnable=${WDSEnable%?}" >> $MTWIFI_PROFILE_PATH
+	echo "WdsList=${WDSList%?}" >> $MTWIFI_PROFILE_PATH
+	echo "WdsEncrypType=${WDSEncType%?}" >> $MTWIFI_PROFILE_PATH
+	echo "WdsDefaultKeyID=${WDSDefKeyID%?}" >> $MTWIFI_PROFILE_PATH
+	echo "WdsPhyMode=${WDSPhyMode%?}" >> $MTWIFI_PROFILE_PATH
+	echo "WdsTxMode=${WDSPhyMode%?}" >> $MTWIFI_PROFILE_PATH
 
 #STA模式
 	stacount=0
