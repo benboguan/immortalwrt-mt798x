@@ -1132,6 +1132,7 @@ return view.extend({
 					bssid.depends('mode', 'adhoc');
 					bssid.depends('mode', 'wds');
 					bssid.depends('mode', 'sta');
+					bssid.depends('mode', 'ap-wds');
 					bssid.depends('mode', 'sta-wds');
 
 					o = ss.taboption('macfilter', form.ListValue, 'macfilter', _('MAC Address Filter'));
@@ -1158,7 +1159,7 @@ return view.extend({
 
 					mode.value('ap-wds', '%s (%s)'.format(_('Access Point'), _('WDS')));
 					mode.value('sta-wds', '%s (%s)'.format(_('Client'), _('WDS')));
-					mode.value('wds', '%s (%s)'.format(_('WDS')));
+					mode.value('wds', '%s (%s)'.format(_('MTK'), _('WDS')));
 
 					mode.write = function(section_id, value) {
 						switch (value) {
