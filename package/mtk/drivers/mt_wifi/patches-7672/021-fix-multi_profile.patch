@@ -1,33 +1,5 @@
 --- a/mt_wifi/embedded/common/multi_profile.c
 +++ b/mt_wifi/embedded/common/multi_profile.c
-@@ -713,18 +713,16 @@ static INT multi_profile_merge_mac_address(
- 		}
- 	}
- 
--#ifdef CONFIG_APSTA_MIXED_SUPPORT
- 	/* apcli mac addr */
- 	if (RTMPGetKeyParameter("ApcliMacAddress", tmpbuf, 25, buf2, TRUE)) {
- 		ret = snprintf(tok_str, sizeof(tok_str), "ApcliMacAddress1");
- 		if (os_snprintf_error(sizeof(tok_str), ret)) {
- 			MTWF_DBG(NULL, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
- 					 "tok_str snprintf error!!!\n");
- 			return NDIS_STATUS_FAILURE;
- 		}
- 		RTMPAddKeyParameter(tok_str, tmpbuf, 25, final);
- 	}
--#endif /* CONFIG_APSTA_MIXED_SUPPORT */
- 
- 	return NDIS_STATUS_SUCCESS;
- }
-@@ -1068,6 +1066,8 @@ #endif
- 	multi_profile_merge_perbss(mpf, "PMFMFPR", buf1, buf2, final, MPF_APPEND_BSS0);
- 	/*PMFSHA256*/
- 	multi_profile_merge_perbss(mpf, "PMFSHA256", buf1, buf2, final, MPF_APPEND_BSS0);
-+	/*PMFSA_Q*/
-+	multi_profile_merge_perbss(mpf, "PMFSA_Q", buf1, buf2, final, MPF_APPEND_BSS0);
- #ifdef BCN_PROTECTION_SUPPORT
- 	/* BcnProt */
- 	multi_profile_merge_perbss(mpf, "BcnProt", buf1, buf2, final, MPF_APPEND_BSS0);
 @@ -3746,6 +3746,14 @@ static INT multi_profile_merge_ft(
  {
  	/*merge FtMdId*/
