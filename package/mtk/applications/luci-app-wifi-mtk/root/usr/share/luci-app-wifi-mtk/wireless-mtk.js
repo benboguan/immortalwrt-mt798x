@@ -1175,6 +1175,7 @@ return view.extend({
 
 						case 'wds':
 							uci.set('wireless', section_id, 'mode', 'wds');
+							uci.set('wireless', section_id, 'wds', '1');
 							break;
 
 						default:
@@ -1797,20 +1798,19 @@ return view.extend({
 								return form.ListValue.prototype.remove.call(this, section_id);
 						};
 
-						/* o = ss.taboption('encryption', form.Value, 'ieee80211w_max_timeout', _('802.11w maximum timeout'), _('802.11w Association SA Query maximum timeout'));
+						/*o = ss.taboption('encryption', form.Value, 'ieee80211w_max_timeout', _('802.11w maximum timeout'), _('802.11w Association SA Query maximum timeout'));
 						o.depends('ieee80211w', '1');
 						o.depends('ieee80211w', '2');
 						o.datatype = 'uinteger';
 						o.placeholder = '1000';
-						o.rmempty = true; */
+						o.rmempty = true;
 
 						o = ss.taboption('encryption', form.Value, 'ieee80211w_retry_timeout', _('802.11w retry timeout'), _('802.11w Association SA Query retry timeout'));
 						o.depends('ieee80211w', '1');
 						o.depends('ieee80211w', '2');
 						o.datatype = 'uinteger';
-						o.placeholder = '200';
-						o.datatype = 'range(200,1000)';
-						o.rmempty = true;
+						o.placeholder = '201';
+						o.rmempty = true; */
 
 						o = ss.taboption('encryption', form.ListValue, 'ocv', _('Operating Channel Validation'), _("Note: Workaround mode allows a STA that claims OCV capability to connect even if the STA doesn't send OCI or negotiate PMF."));
 						o.value('0', _('Disabled'));
@@ -1824,7 +1824,7 @@ return view.extend({
 							var modeopt = this.section.children.filter(function(o) { return o.option == 'mode' })[0],
 							modeval = modeopt.formvalue(section_id);
 
-							if ((value == '2') && ((modeval == 'sta') || (modeval == 'sta-wds'))) {
+							if ((value == '2') && (modeval == 'sta')) {
 								return _('Workaround mode can only be used when acting as an access point.');
 							}
 

@@ -60,7 +60,7 @@ drv_mtk_init_iface_config() {
 	config_add_boolean hidden isolate isolate_mb br_isolate_mode ieee80211k ieee80211v ieee80211r
 	config_add_boolean powersave enable coloring ldpc lofdm mesh_fwding
 	config_add_string key key1 key2 key3 key4
-	config_add_string wds_bridge wps_pushbutton pin mesh_id mapmode mesh_rssi_threshold ieee80211w_retry_timeout
+	config_add_string wds_bridge wps_pushbutton pin mesh_id mapmode mesh_rssi_threshold
 	config_add_string macfilter 'macfile:file' nasid mobility_domain r1_key_holder r0_key_lifetime reassociation_deadline ft_over_ds
 	config_add_array 'maclist:list(macaddr)' r0kh r1kh
 
@@ -91,7 +91,7 @@ mtk_ap_vif_pre_config() {
 		bssid ssid mode wps_pushbutton pin pbc isolate hidden disassoc_low_ack kicklow assocthres rsn_preauth \
 		ieee80211k ieee80211v ieee80211r ieee80211w macfilter nasid mobility_domain r1_key_holder r0_key_lifetime reassociation_deadline r0kh r1kh \
 		ft_over_ds ft_psk_generate_local pmk_r1_push rrm_neighbor_report rrm_beacon_report wnm_sleep_mode bss_transition proxy_arp \
-		frag rts dtim_period mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv ieee80211w_retry_timeout
+		frag rts dtim_period mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv
 	json_get_values maclist maclist
 	set_default wmm 1
 	set_default isolate 0
@@ -252,11 +252,17 @@ mtk_ap_vif_pre_config() {
 	else
 		ApRekeyMethod="${ApRekeyMethod}TIME;"
 	fi
+
+	if [ "$encryption" == "wpa" -o "$encryption" == "wpa-mixed" -o "$encryption" == "wpa2" -o "$encryption" == "wpa3" -o "$encryption" == "wpa3-mixed" -o "$encryption" == "wpa3-192" ]; then
+		echo "NasId${ApBssidNum}=${nasid}" >> $MTWIFI_PROFILE_PATH
+	else
+		echo "FtR0khId${ApBssidNum}=${nasid}" >> $MTWIFI_PROFILE_PATH
+	fi
+
 	ApK1Tp="${ApK1Tp}${K1Tp:-0};"
 	ApK2Tp="${ApK2Tp}${K2Tp:-0};"
 	ApK3Tp="${ApK3Tp}${K3Tp:-0};"
 	ApK4Tp="${ApK4Tp}${K4Tp:-0};"
-
 	ApHideESSID="${ApHideESSID}${hidden:-0};"
 	ApWmmCapable="${ApWmmCapable}${wmm};"
 	ApRADIUSServer="${ApRADIUSServer}${auth_server:-0};"
@@ -283,7 +289,6 @@ mtk_ap_vif_pre_config() {
 	Apofdmaul="${Apofdmaul}${ofdma_ul};"
 	Apocv="${Apocv}${ocv};"
 	echo "FtMdId${ApBssidNum}=${mobility_domain:-4f57}" >> $MTWIFI_PROFILE_PATH
-	echo "FtR0khId${ApBssidNum}=${nasid}" >> $MTWIFI_PROFILE_PATH
 	echo "FtR1khId${ApBssidNum}=${r1_key_holder:-00004f577274}" >> $MTWIFI_PROFILE_PATH
 	echo "R0KeyLifeTime${ApBssidNum}=${r0_key_lifetime:-10000}" >> $MTWIFI_PROFILE_PATH
 	echo "AssocDeadLine${ApBssidNum}=${reassociation_deadline:-100}" >> $MTWIFI_PROFILE_PATH
@@ -301,8 +306,6 @@ mtk_ap_vif_pre_config() {
 		ApPMFMFPC="${ApPMFMFPC}${PMFMFPC:-0};"
 		ApPMFMFPR="${ApPMFMFPR}${PMFMFPR:-0};"
 	fi
-	ApPMFSA_Q="${ApPMFSA_Q}${ieee80211w_retry_timeout:-200};"
-
 	# if [ "$wps" = "pbc" -o \( "$wps" = "pin" -a "$encryption" != "none" \) ]; then
 	if [ "$wps_pushbutton" == "1" ] && [ "$encryption" != "none" ]; then
 		mt_cmd echo "Enable WPS PIN for ${ifname}."
@@ -392,32 +395,33 @@ mtk_wds_vif_pre_config() {
 			*aes*|*ccmp*|*ccmp128*)
 				crypto="AES"
 			;;
-			*tkip*) 
+			*tkip*)
 				crypto="TKIP"
 				echo "Warning!!! TKIP is not support in 802.11n 40Mhz!!!"
 			;;
 		esac
+			WDSAuthMode="${WDSAuthMode}${enc};"
 			WDSEncType="${WDSEncType}${crypto};"
 			WDSDefKeyID="${WDSDefKeyID}2;"
 			# echo "Wds${WDSBssidNum}Key=${key}" >> $MTWIFI_PROFILE_PATH #WDS Key
 			;;
 	WEP|wep|wep-open|wep-shared)
+		if [ "$encryption" == "wep-shared" ]; then
+			WDSAuthMode="${WDSAuthMode}SHARED;"
+		else
+			WDSAuthMode="${WDSAuthMode}OPEN;"
+		fi
 		WDSEncType="${WDSEncType}WEP;"
 		WDSK1Tp=$(get_wep_key_type "$key1")
 		[ $WDSK1Tp -eq 1 ] && key1=$(echo $key1 | cut -d ':' -f 2- )
 		WDSDefKeyID="${WDSDefKeyID}1;"
 		;;
 	none|open)
+		WDSAuthMode="${WDSAuthMode}OPEN;"
 		WDSEncType="${WDSEncType}NONE;"
 		WDSDefKeyID="${WDSDefKeyID}1;"
 		;;
 	esac
-
-	if [ ! -z "$bssid" ] && [ "$wdsen" == "3" -o "$wdsen" == "4" ]; then
-		WDSList="${WDSList}$(echo $bssid | tr 'A-Z' 'a-z');"
-	elif [ "$wdsen" == "2" ]; then
-		WDSList="${WDSList}${bssid};"
-	fi
 
 	if [ "$encryption" == "wep-open" -o "$encryption" == "wep-shared" ]; then
 		echo "Wds${WDSBssidNum}Key=${key1}" >> $MTWIFI_PROFILE_PATH #WDS Key
@@ -427,6 +431,9 @@ mtk_wds_vif_pre_config() {
 
 	WDSEnable="${WDSEnable}${wdsen:-0};"
 	WDSPhyMode="${WDSPhyMode}${wdsphymode:-0};"
+	[ -n "$bssid" ] && {
+		WDSList="${WDSList}${bssid};"
+	}
 
 	mt_cmd ifconfig $ifname up
 	mt_cmd echo "WDS interface $ifname now up."
@@ -724,13 +731,15 @@ mtk_vif_down() {
 	case "$phy_name" in
 		rax0)
 			for vif in ra0 ra1 ra2 ra3 ra4 ra5 ra6 ra7 ra8 ra9 ra10 \
-				ra11 ra12 ra13 ra14 ra15 wds0 wds1 wds2 wds3 apcli0 mesh0; do
+				ra11 ra12 ra13 ra14 ra15 wds0 wds1 wds2 wds3 wds4 \
+				wds5 wds6 wds7 apcli0 mesh0; do
 				[ -d "/sys/class/net/$vif" ] && ifconfig $vif down 2>/dev/null
 			done
 		;;
 		ra0)
 			for vif in rax0 rax1 rax2 rax3 rax4 rax5 rax6 rax7 rax8 rax9 rax10 \
-				rax11 rax12 rax13 rax14 rax15 wdsx0 wdsx1 wdsx2 wdsx3 apclix0 meshx0; do
+				rax11 rax12 rax13 rax14 rax15 wdsx0 wdsx1 wdsx2 wdsx3 wdsx4 \
+				wdsx5 wdsx6 wdsx7 apclix0 meshx0; do
 				[ -d "/sys/class/net/$vif" ] && ifconfig $vif down 2>/dev/null
 			done
 		;;
@@ -760,14 +769,16 @@ drv_mtk_teardown() {
 	case "$phy_name" in
 		ra0)
 			for vif in ra0 ra1 ra2 ra3 ra4 ra5 ra6 ra7 ra8 ra9 ra10 \
-				ra11 ra12 ra13 ra14 ra15 wds0 wds1 wds2 wds3 apcli0 mesh0; do
+				ra11 ra12 ra13 ra14 ra15 wds0 wds1 wds2 wds3 wds4 \
+				wds5 wds6 wds7 apcli0 mesh0; do
 				# iwpriv $vif set DisConnectAllSta=1
 				[ -d "/sys/class/net/$vif" ] && ifconfig $vif down 2>/dev/null
 			done
 		;;
 		rax0)
 			for vif in rax0 rax1 rax2 rax3 rax4 rax5 rax6 rax7 rax8 rax9 rax10 \
-				rax11 rax12 rax13 rax14 rax15 wdsx0 wdsx1 wdsx2 wdsx3 apclix0 meshx0; do
+				rax11 rax12 rax13 rax14 rax15 wdsx0 wdsx1 wdsx2 wdsx3 wdsx4 \
+				wdsx5 wdsx6 wdsx7 apclix0 meshx0; do
 				# iwpriv $vif set DisConnectAllSta=1
 				[ -d "/sys/class/net/$vif" ] && ifconfig $vif down 2>/dev/null
 			done
@@ -781,7 +792,7 @@ drv_mtk_setup() {
 	json_get_vars main_if phy_name macaddr channel mode hwmode htmode \
 		txpower country macfilter maclist greenap diversity \
 		hidden disabled ht_coex band #device所有配置项
-		
+
 	json_get_vars \
 			noscan:1 \
 			ldpc:1 \
@@ -1424,9 +1435,7 @@ QoSR1Enable=1
 QoSMgmtCapa=0
 BcnProt=0
 ApCliBcnProt=0
-WDSEnabled=1
 ApMWDS=1
-WdsMac=${bssid}
 ApCliMWDS=1
 EOF
 
@@ -1495,7 +1504,6 @@ EOF
 	ApRekeyInterval=""
 	ApPMFMFPC=""
 	ApPMFMFPR=""
-	ApPMFSA_Q=""
 	ApBSS=""
 	ApARP=""
 	ApFtOtd=""
@@ -1548,7 +1556,6 @@ EOF
 	echo "OCVSupport=${Apocv%?}" >> $MTWIFI_PROFILE_PATH
 	echo "PMFMFPC=${ApPMFMFPC%?}" >> $MTWIFI_PROFILE_PATH
 	echo "PMFMFPR=${ApPMFMFPR%?}" >> $MTWIFI_PROFILE_PATH
-	echo "PMFSA_Q=${ApPMFSA_Q%?}" >> $MTWIFI_PROFILE_PATH
 	echo "NoForwarding=${ApNoForwarding%?}" >> $MTWIFI_PROFILE_PATH
 	echo "RekeyInterval=${ApRekeyInterval%?}" >> $MTWIFI_PROFILE_PATH
 	echo "FragThreshold=${ApFrag%?}" >> $MTWIFI_PROFILE_PATH
@@ -1562,6 +1569,7 @@ EOF
 	WDSBssidNum=0
 	WDSEnable=""
 	WDSList=""
+	WDSAuthMode=""
 	WDSEncType=""
 	WDSDefKeyID=""
 	WDSPhyMode=""
@@ -1573,6 +1581,7 @@ EOF
 	# echo "WdsNum=${WDSBssidNum:-0}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsEnable=${WDSEnable%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsList=${WDSList%?}" >> $MTWIFI_PROFILE_PATH
+	echo "WdsAuthMode=${WDSAuthMode%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsEncrypType=${WDSEncType%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsDefaultKeyID=${WDSDefKeyID%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsPhyMode=${WDSPhyMode%?}" >> $MTWIFI_PROFILE_PATH
