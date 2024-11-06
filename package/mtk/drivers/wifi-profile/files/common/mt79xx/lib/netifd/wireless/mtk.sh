@@ -28,8 +28,9 @@ WIFI_OP_LOCK=$MTWIFI_PROFILE_DIR"mtk.lock"
 MTWIFI_IFPREFIX=""
 MTWIFI_DEF_BAND=""
 MTWIFI_FORCE_HT=0
-MTWIFI_WDS_MAX_BSSID=8
+MTWIFI_WDS_MAX_BSSID=4
 MTWIFI_DEF_MAX_BSSID=16
+hostname=$(uci -q get system.@system[-1].hostname)
 
 mt_cmd() {
 	echo "$@" >> $MTWIFI_CMD_PATH
@@ -54,7 +55,7 @@ drv_mtk_init_device_config() {
 
 #读取iface相关设置项并写入json
 drv_mtk_init_iface_config() {
-	config_add_boolean disabled
+	config_add_boolean disabled wds
 	config_add_string mode ifname 'macaddr:macaddr' bssid 'ssid:string' encryption
 	config_add_string auth_server auth_port auth_secret acct_secret own_ip_addr own_radius_port
 	config_add_boolean hidden isolate isolate_mb br_isolate_mode ieee80211k ieee80211v ieee80211r
@@ -91,7 +92,7 @@ mtk_ap_vif_pre_config() {
 		bssid ssid mode wps_pushbutton pin pbc isolate hidden disassoc_low_ack kicklow assocthres rsn_preauth \
 		ieee80211k ieee80211v ieee80211r ieee80211w macfilter nasid mobility_domain r1_key_holder r0_key_lifetime reassociation_deadline r0kh r1kh \
 		ft_over_ds ft_psk_generate_local pmk_r1_push rrm_neighbor_report rrm_beacon_report wnm_sleep_mode bss_transition proxy_arp \
-		frag rts dtim_period mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv
+		frag rts dtim_period mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv wds
 	json_get_values maclist maclist
 	set_default wmm 1
 	set_default isolate 0
@@ -158,28 +159,28 @@ mtk_ap_vif_pre_config() {
 			psk*)
 				enc=WPAPSK
 			;;
-			SAE*|psk3*|sae)
+			SAE*|psk3|sae)
 				enc=WPA3PSK
 			;;
-			SAE*|psk2+psk3|sae-mixed)
+			psk2+psk3|psk3-mixed|sae-mixed)
 				enc=WPA2PSKWPA3PSK
 			;;
-			8021x*|eap*|wpa)
+			8021x*|eap|wpa)
 				enc=WPA
 			;;
-			8021x*|eap2*|wpa2)
+			8021x*|eap2|wpa2)
 				enc=WPA2
 			;;
 			8021x*|eap+eap2|wpa-mixed)
 				enc=WPA1WPA2
 			;;
-			eap3*|wpa3)
+			8021x*|wpa3) #在mt_wifi驱动中，WPA3也就是SHA256的WPA2，所以加密模式实际为WPA2-EAP/SHA256。
 				enc=WPA3
 			;;
-			eap2+eap3|wpa3-mixed)
-				enc=WPA2WPA3
+			8021x*|eap3-mixed|wpa3-mixed) #在mt_wifi驱动中，WPA3也就是SHA256的WPA2，所以选择WPA2MIX。
+				enc=WPA2MIX
 			;;
-			eap192*|wpa3-192)
+			8021x*|eap192*|wpa3-192)
 				enc=WPA3-192
 			;;
 			OWE*|owe)
@@ -296,6 +297,15 @@ mtk_ap_vif_pre_config() {
 	mt_cmd ifconfig $ifname up
 	mt_cmd echo "Interface $ifname now up."
 	# mt_cmd iwpriv ra${MTWIFI_IFPREFIX}0 set PartialScanNumOfCh=4
+	if [ "$wds" == "1" ]; then
+		ApWDSEnable="${wds:-1}"
+		ApWdsMac="${bssid}"
+		ApApMWDS="${wds:-1}"
+	else
+		ApWDSEnable="${wds:-0}"
+		ApWdsMac="${bssid}"
+		ApApMWDS="${wds:-0}"
+	fi
 	if [ "$ieee80211w" == "1" ] || [ "$encryption" == "sae-mixed" -o "$encryption" == "wpa3-mixed" ]; then
 		ApPMFMFPC="${ApPMFMFPC}${PMFMFPC:-1};"
 		ApPMFMFPR="${ApPMFMFPR}${PMFMFPR:-0};"
@@ -316,6 +326,9 @@ mtk_ap_vif_pre_config() {
 		mt_cmd iwpriv $ifname set WscGenPinCode=1
 		mt_cmd iwpriv $ifname set WscV2Support=1
 		mt_cmd iwpriv $ifname set WscPinCode=$pin
+		ApWscConfMode="${WscConfMode:-4}"
+		ApWscConfStatus="${WscConfStatus:-2}"
+		ApWPSRadio="${WPSRadio:-1}"
 	elif [ "$wps_pushbutton" == "2" ] && [ "$encryption" != "none" ]; then
 		mt_cmd echo "Enable WPS PBC for ${ifname}."
 		mt_cmd iwpriv $ifname set WscConfMode=4
@@ -323,9 +336,15 @@ mtk_ap_vif_pre_config() {
 		mt_cmd iwpriv $ifname set WscMode=2
 		mt_cmd iwpriv $ifname set WscGetConf=1
 		mt_cmd iwpriv $ifname set WscV2Support=1
+		ApWscConfMode="${WscConfMode:-4}"
+		ApWscConfStatus="${WscConfStatus:-2}"
+		ApWPSRadio="${WPSRadio:-1}"
 	else
 		mt_cmd echo "Disabled WPS for ${ifname}."
 		mt_cmd iwpriv $ifname set WscConfMode=0
+		ApWscConfMode="${WscConfMode:-0}"
+		ApWscConfStatus="${WscConfStatus:-1}"
+		ApWPSRadio="${WPSRadio:-0}"
 	fi
 	mt_cmd echo "Other settings for ${ifname}."
 	[ -n "$disassoc_low_ack" ] && [ "$disassoc_low_ack" != "0" ] && {
@@ -403,7 +422,6 @@ mtk_wds_vif_pre_config() {
 			WDSAuthMode="${WDSAuthMode}${enc};"
 			WDSEncType="${WDSEncType}${crypto};"
 			WDSDefKeyID="${WDSDefKeyID}2;"
-			# echo "Wds${WDSBssidNum}Key=${key}" >> $MTWIFI_PROFILE_PATH #WDS Key
 			;;
 	WEP|wep|wep-open|wep-shared)
 		if [ "$encryption" == "wep-shared" ]; then
@@ -431,9 +449,7 @@ mtk_wds_vif_pre_config() {
 
 	WDSEnable="${WDSEnable}${wdsen:-0};"
 	WDSPhyMode="${WDSPhyMode}${wdsphymode:-0};"
-	[ -n "$bssid" ] && {
-		WDSList="${WDSList}${bssid};"
-	}
+	WDSList="${WDSList}$(echo $bssid | tr 'A-Z' 'a-z');"
 
 	mt_cmd ifconfig $ifname up
 	mt_cmd echo "WDS interface $ifname now up."
@@ -445,7 +461,7 @@ mtk_sta_vif_pre_config() {
 
 	json_select config
 	json_get_vars disabled encryption key key1 key2 key3 key4 ssid mode bssid wps_pushbutton pin pbc ieee80211w macaddr \
-		apclipe mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv
+		apclipe mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv wds
 	json_select ..
 
 	[ $stacount -gt 1 ] && {
@@ -576,14 +592,16 @@ mtk_sta_vif_pre_config() {
 		mt_cmd iwpriv $APCLI_IF show WscPin
 		[ -n "$ssid" ] && mt_cmd iwpriv $APCLI_IF set ApCliWscSsid="${ssid}"
 		mt_cmd iwpriv $APCLI_IF set WscGetConf=1
-		mt_cmd iwpriv $APCLI_IF set WscGenPinCode=1
 		mt_cmd iwpriv $APCLI_IF set WscPinCode=$pin
-		# echo "ApCliWscSsid=${ssid}" >> $MTWIFI_PROFILE_PATH
 	elif [ "$wps_pushbutton" == "2" ] && [ "${ApCliAuthMode}" != "none" ]; then
 		mt_cmd echo "Enable WPS PBC for ${APCLI_IF}."
 		mt_cmd iwpriv $APCLI_IF set WscConfMode=1
 		mt_cmd iwpriv $APCLI_IF set WscMode=2
 		mt_cmd iwpriv $APCLI_IF set WscGetConf=1
+	elif [ "$ACTION" = "released" -o "$ACTION" = "pressed" ] && [ "$BUTTON" = "wps" -o "$BUTTON" = "mesh" ]; then
+		mt_cmd iwpriv ra${MTWIFI_IFPREFIX}0 set ConWpsApcliPreferlface=1
+		mt_cmd iwpriv $APCLI_IF set ConWpsApcliPreferlface=0
+		mt_cmd iwpriv ra${MTWIFI_IFPREFIX}0 set WscConfMode=5
 	else
 		mt_cmd echo "Disabled WPS for ${APCLI_IF}."
 		mt_cmd iwpriv $APCLI_IF set WscConfMode=0
@@ -597,6 +615,12 @@ mtk_sta_vif_pre_config() {
 	else
 		ApCliPMFMFPC="${ApCliPMFMFPC:-0}"
 		ApCliPMFMFPR="${ApCliPMFMFPR:-0}"
+	fi
+
+	if [ "$wds" == "1" -a "$mode" == "sta" ]; then
+		ApCliMWDS="${wds:-1}"
+	else
+		ApCliMWDS="${wds:-0}"
 	fi
 
 	ApCliMuMimoDlEnable="${mumimo_dl:-0}"
@@ -689,6 +713,13 @@ mtk_mesh_vif_pre_config() {
 	mt_cmd iwpriv ra${MTWIFI_IFPREFIX}0 set mapR3Enable=1
 	# mt_cmd iwpriv ra${MTWIFI_IFPREFIX}0 set mapR4Enable=0
 	mt_cmd iwpriv ra${MTWIFI_IFPREFIX}0 set mapTSEnable=1
+	# MapMode="${mapmode}"
+	# if [ "$mapmode" == "1" ]; then
+	# 	SREnable="${SREnable:-0}"
+	# 	SRMode="${SRMode:-0}"
+	# else
+	# 	SRMode="${SRMode:-0}"
+	# fi
 
 	MeshAutoLink="${MeshAutoLink:-1}"
 	if [ "$encryption" == "wep-open" -o "$encryption" == "wep-shared" ]; then
@@ -731,15 +762,13 @@ mtk_vif_down() {
 	case "$phy_name" in
 		rax0)
 			for vif in ra0 ra1 ra2 ra3 ra4 ra5 ra6 ra7 ra8 ra9 ra10 \
-				ra11 ra12 ra13 ra14 ra15 wds0 wds1 wds2 wds3 wds4 \
-				wds5 wds6 wds7 apcli0 mesh0; do
+				ra11 ra12 ra13 ra14 ra15 wds0 wds1 wds2 wds3 apcli0 mesh0; do
 				[ -d "/sys/class/net/$vif" ] && ifconfig $vif down 2>/dev/null
 			done
 		;;
 		ra0)
 			for vif in rax0 rax1 rax2 rax3 rax4 rax5 rax6 rax7 rax8 rax9 rax10 \
-				rax11 rax12 rax13 rax14 rax15 wdsx0 wdsx1 wdsx2 wdsx3 wdsx4 \
-				wdsx5 wdsx6 wdsx7 apclix0 meshx0; do
+				rax11 rax12 rax13 rax14 rax15 wdsx0 wdsx1 wdsx2 wdsx3 apclix0 meshx0; do
 				[ -d "/sys/class/net/$vif" ] && ifconfig $vif down 2>/dev/null
 			done
 		;;
@@ -769,16 +798,14 @@ drv_mtk_teardown() {
 	case "$phy_name" in
 		ra0)
 			for vif in ra0 ra1 ra2 ra3 ra4 ra5 ra6 ra7 ra8 ra9 ra10 \
-				ra11 ra12 ra13 ra14 ra15 wds0 wds1 wds2 wds3 wds4 \
-				wds5 wds6 wds7 apcli0 mesh0; do
+				ra11 ra12 ra13 ra14 ra15 wds0 wds1 wds2 wds3 apcli0 mesh0; do
 				# iwpriv $vif set DisConnectAllSta=1
 				[ -d "/sys/class/net/$vif" ] && ifconfig $vif down 2>/dev/null
 			done
 		;;
 		rax0)
 			for vif in rax0 rax1 rax2 rax3 rax4 rax5 rax6 rax7 rax8 rax9 rax10 \
-				rax11 rax12 rax13 rax14 rax15 wdsx0 wdsx1 wdsx2 wdsx3 wdsx4 \
-				wdsx5 wdsx6 wdsx7 apclix0 meshx0; do
+				rax11 rax12 rax13 rax14 rax15 wdsx0 wdsx1 wdsx2 wdsx3 apclix0 meshx0; do
 				# iwpriv $vif set DisConnectAllSta=1
 				[ -d "/sys/class/net/$vif" ] && ifconfig $vif down 2>/dev/null
 			done
@@ -789,15 +816,18 @@ drv_mtk_teardown() {
 #接口启动
 drv_mtk_setup() {
 	json_select config
-	json_get_vars main_if phy_name macaddr channel mode hwmode htmode \
-		txpower country macfilter maclist greenap diversity \
-		hidden disabled ht_coex band #device所有配置项
+	json_get_vars main_if phy_name mode hwmode htmode \
+		txpower macfilter maclist greenap diversity \
+		hidden ht_coex band #device所有配置项
 
 	json_get_vars \
+			macaddr:bssid \
+			channel:0 \
+			country:CN \
 			noscan:1 \
 			ldpc:1 \
 			txburst:1 \
-			twt:0 \
+			disabled:0 \
 			doth:0 \
 			whnat:1 \
 			legacy_rates:0 \
@@ -838,6 +868,7 @@ drv_mtk_setup() {
 
 	# 802.11ax
 	json_get_vars \
+			twt:0 \
 			he_su_beamformer:1 \
 			he_su_beamformee:1 \
 			he_mu_beamformer:1
@@ -907,14 +938,28 @@ drv_mtk_setup() {
 	hwmode=${hwmode##11}
 	case "$hwmode" in
 		a)
-			WirelessMode=17
 			ITxBfEn=1
 			HT_HTC=1
+			if [ "$htmode" == "HE160" -o "$htmode" == "HE80" -o "$htmode" == "HE40" -o "$htmode" == "HE20" ]; then
+				WirelessMode=17
+			elif [ "$htmode" == "VHT160" -o "$htmode" == "VHT80" -o "$htmode" == "VHT40" -o "$htmode" == "VHT20" ]; then
+				WirelessMode=14
+			elif [ "$htmode" == "HT40" -o "$htmode" == "HT20" ]; then
+				WirelessMode=8
+			else
+				WirelessMode=2
+			fi
 		;;
 		g)
-			WirelessMode=16
 			ITxBfEn=1
 			HT_HTC=1
+			if [ "$htmode" == "HE40" -o "$htmode" == "HE20" ]; then
+				WirelessMode=16
+			elif [ "$htmode" == "HT40" -o "$htmode" == "HT20" ]; then
+				WirelessMode=9
+			else
+				WirelessMode=4
+			fi
 		;;
 		*)
 			echo "Unknown wireless mode.Use default value:${WirelessMode}"
@@ -1160,13 +1205,11 @@ drv_mtk_setup() {
 Default
 AckPolicy=0;0;0;0
 AMSDU_NUM=8
-AntCtrl=
 APACM=0;0;0;0
 APAifsn=3;7;1;1
 ApCliNum=2
 ApCliPMFSHA256=0
 ApCliTxMcs=33
-ApCliWirelessMode=
 APCwmax=6;10;4;3
 APCwmin=4;4;3;2
 ApProbeRspTimes=3
@@ -1206,7 +1249,7 @@ CountryRegionABand=${countryregion_a:-0}
 CP_SUPPORT=2
 CSPeriod=6
 DBDC_MODE=1
-DbdcBandSupport=0
+WirelessMode=${WirelessMode}
 DebugFlags=0
 DfsCalibration=0
 DfsEnable=${dfs:-0}
@@ -1222,7 +1265,7 @@ DppEnable=1
 DscpPriMapBss=
 DscpPriMapEnable=1
 E2pAccessMode=2
-EAPifname=
+EAPifname=br-lan
 EDCCAEnable=1
 EDCCAThreshold=3:127
 EDCCACfgMode=0
@@ -1276,9 +1319,9 @@ ITxBfTimeout=0
 KernelRps=${KernelRps}
 LinkTestSupport=0
 MACRepeaterOuiMode=2
-MapEnable=1
+MapEnable=0
 MapAccept3Addr=1
-MAP_Turnkey=1
+MAP_Turnkey=0
 MAP_Ext=0
 MaxStaNum=${maxassoc:-64}
 MboSupport=1
@@ -1315,7 +1358,7 @@ PowerUpVHT80=0:0:0:0:0:0:0
 PPDUTxType=4
 PPEnable=${PPEnable}
 PreAntSwitch=
-PreAuthifname=
+PreAuthifname=br-lan
 RadioLinkSelection=0
 RadioOn=1
 RDRegion=${RDRegion}
@@ -1426,17 +1469,18 @@ WHNAT=${whnat:-1}
 WifiCert=1
 WiFiTest=0
 WirelessEvent=1
-WirelessMode=${WirelessMode}
-WscConfMode=0
-WscConfStatus=2
-WscV2Support=0
+WscModelName=${hostname}
 BSSColorValue=255
 QoSR1Enable=1
 QoSMgmtCapa=0
+QuickChannelSwitch=1
 BcnProt=0
+ApCliWirelessMode=
 ApCliBcnProt=0
-ApMWDS=1
-ApCliMWDS=1
+WEP1Type1=0
+WEP4Type1=0
+WEP3Type1=0
+WEP2Type1=0
 EOF
 
 #for 11ax
@@ -1451,14 +1495,13 @@ HeOmiUlMuDataDisableRx=0
 HeraStbcPriority=0
 HE_TXOP_RTS_THLD=1023
 MuEdcaOverride=1
-QuickChannelSwitch=1
 TWTSupport=${twt:-0}
 TWTInfoFrame=${twt:-0}
 TxCmdMode=1
 Vht1024QamSupport=${vht_1024}
 WDS_VLANID=
 DynWmmEnable=0
-SRMeshUlMode=1
+SRMeshUlMode=0
 EnableCNInfo=0
 ZeroLossEnable=1
 FgiFltf=0
@@ -1502,6 +1545,9 @@ EOF
 	ApFtSupport=""
 	ApNoForwarding=""
 	ApRekeyInterval=""
+	ApWDSEnable=""
+	ApWdsMac=""
+	ApApMWDS=""
 	ApPMFMFPC=""
 	ApPMFMFPR=""
 	ApBSS=""
@@ -1517,6 +1563,9 @@ EOF
 	Apofdmadl=""
 	Apofdmaul=""
 	Apocv=""
+	ApWscConfMode=""
+	ApWscConfStatus=""
+	ApWPSRadio=""
 	for_each_interface "ap" mtk_ap_vif_pre_config
 
 #For DBDC profile merging......
@@ -1561,9 +1610,15 @@ EOF
 	echo "FragThreshold=${ApFrag%?}" >> $MTWIFI_PROFILE_PATH
 	echo "RTSThreshold=${ApRts%?}" >> $MTWIFI_PROFILE_PATH
 	echo "DtimPeriod=${ApDtim%?}" >> $MTWIFI_PROFILE_PATH
+	echo "WDSEnable=${ApWDSEnable}" >> $MTWIFI_PROFILE_PATH
+	echo "WdsMac=${ApWdsMac}" >> $MTWIFI_PROFILE_PATH
+	echo "ApMWDS=${ApApMWDS}" >> $MTWIFI_PROFILE_PATH
 	echo "TxPreamble=${short_preamble}" >> $MTWIFI_PROFILE_PATH
 	echo "KickStaRssiLow=${kicklow}" >> $MTWIFI_PROFILE_PATH
 	echo "AssocReqRssiThres=${assocthres}" >> $MTWIFI_PROFILE_PATH
+	echo "WscConfMode=${ApWscConfMode}" >> $MTWIFI_PROFILE_PATH
+	echo "WscConfStatus=${ApWscConfStatus}" >> $MTWIFI_PROFILE_PATH
+	echo "WPSRadio=${ApWPSRadio}" >> $MTWIFI_PROFILE_PATH
 
 #WDS接口
 	WDSBssidNum=0
@@ -1605,6 +1660,7 @@ EOF
 	ApCliK4Tp=""
 	ApCliPMFMFPC=""
 	ApCliPMFMFPC=""
+	ApCliMWDS=""
 	# ApCliMacAddress=""
 	ApCliPESupport=""
 	ApCliMuMimoDlEnable=""
@@ -1639,6 +1695,7 @@ EOF
 	echo "ApCliMuOfdmaDlEnable=${ApCliMuOfdmaDlEnable:-0}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliMuOfdmaUlEnable=${ApCliMuOfdmaUlEnable:-0}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliOCVSupport=${ApCliOCVSupport:-0}" >> $MTWIFI_PROFILE_PATH
+	echo "ApCliMWDS=${wds:-0}" >> $MTWIFI_PROFILE_PATH
 
 #MESH模式
 	meshcount=0
@@ -1671,8 +1728,9 @@ EOF
 #停用wapp
 	# wapp_openwrt.sh stop
 	
-	if lock -z $WIFI_OP_LOCK; then
-		sleep 2
+	if lock -n $WIFI_OP_LOCK; then
+		echo "reload wifi"
+		sleep 3
 		drv_mtk_teardown $phy_name
 		mtk_vif_down $phy_name
 #Start root device
@@ -1705,7 +1763,6 @@ EOF
 		/etc/init.d/turboacc restart
 	}
 #设置无线上线
-	[ "$phy_name" == "rax0" ] && [ "$ApBssidNum" == "0" ] && ifconfig ra0 down
 
 	wireless_set_up
 

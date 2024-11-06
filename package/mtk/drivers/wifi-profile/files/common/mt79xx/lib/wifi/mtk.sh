@@ -17,10 +17,27 @@ append DRIVERS "mtk"
 . /lib/functions.sh
 . /lib/functions/system.sh
 
+board=$(board_name)
+
+mtk_get_first_if_mac() {
+	local wlan_mac=""
+	case $board in
+	*)
+		mac_offset="0x4"
+		factory_part=$(find_mtd_part factory)
+		[ -z "$factory_part" ] && factory_part=$(find_mtd_part Factory)
+		wlan_mac=$(dd bs=1 skip=$mac_offset count=6 if=$factory_part 2>/dev/null | /usr/sbin/maccalc bin2mac)
+		[ "$wlan_mac" == "ff:ff:ff:ff:ff:ff" -o "$wlan_mac" == "00:00:00:00:00:00" ] && wlan_mac=
+		;;
+	esac
+
+	echo ${wlan_mac}
+}
 
 is_11ax_dbdc_dev()
 {
   [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0 |grep MT7915D)" ] && echo yes;
+  [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0 |grep MT7916)" ] && echo yes;
   [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0 |grep MT7981)" ] && echo yes;
   [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0 |grep MT7986)" ] && echo yes;
 
@@ -36,6 +53,7 @@ is_11ac_dbdc_dev()
 
 is_support_11ax_ht160_dev()
 {
+  [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0 |grep MT7916)" ] && echo yes;
   [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0 |grep MT7981)" ] && echo yes;
   [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0 |grep MT7986)" ] && echo yes;
 
@@ -53,7 +71,13 @@ detect_mtk() {
 		for phyname in ra0 rax0; do
 			config_get type "$phyname" type
 
-			base_mac=$(cat /sys/class/net/eth0/address)
+			case $board in
+			*)
+				base_mac=$(mtk_get_first_if_mac)
+				;;
+			esac
+
+			[ -z "$base_mac" ] && base_mac=$(cat /sys/class/net/eth0/address)
 
 			[ "$type" == "mtk" ] || {
 				case $phyname in
