@@ -76,7 +76,7 @@ struct gsw_mt753x {
 	bool hw_phy_cal;
 	bool phy_status_poll;
 	struct mt753x_phy phys[MT753X_NUM_PHYS];
-	int phy_irqs[PHY_MAX_ADDR]; //FIXME 
+//	int phy_irqs[PHY_MAX_ADDR]; //FIXME
 
 	int phy_link_sts;
 
@@ -86,22 +86,12 @@ struct gsw_mt753x {
 
 #ifdef CONFIG_SWCONFIG
 	struct switch_dev swdev;
-	
+	u32 cpu_port;
+#endif
+
+	int global_vlan_enable;
 	struct mt753x_vlan_entry vlan_entries[MT753X_NUM_VLANS];
 	struct mt753x_port_entry port_entries[MT753X_NUM_PORTS];
-
-	int global_vlan_enable;	
-	int phy_vid;
-	
-	u32 cpu_port;
-
-	char wan_dev_name[64];
-	
-	struct delayed_work switch_work;      /*用于周期检测端口的carrier状态*/
-	struct net_device *vlan_dev[MT753X_NUM_VLANS];
-	u8 vlan_carrier_off_cnt[MT753X_NUM_VLANS]; /*统计每个vlan设备连续carrier off的次数*/
-	u8 vlan_carrier_on_cnt[MT753X_NUM_VLANS];  /*统计每个vlan设备连续carrier on的次数*/
-#endif
 
 	int (*mii_read)(struct gsw_mt753x *gsw, int phy, int reg);
 	void (*mii_write)(struct gsw_mt753x *gsw, int phy, int reg, u16 val);

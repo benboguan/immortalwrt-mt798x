@@ -34,17 +34,6 @@
 		.name = (_n),   \
 	}
 
-#define MT753X_PHY_MAX_PORT		4
-#define MT753X_DEV_PREX         "eth0"	/* mt753x对应的网卡名称 */
-#define PHY_DEV_PREX         	"eth1"	/* phy设备对应的网卡名称 */
-#define INTERFACE_DEV         	"inf"	/* 上层使用的统一接口 */
-#define MT753X_CARRIER_OFF_NUM  1      /* carrier off 事件平滑次数 */
-#define MT753X_CARRIER_ON_NUM   1       /* carrier on 事件平滑次数 */
-#define SWITCH_WORK_DELAY 2000 /* 2000ms */
-
-#define port_sfp 5
-#define port_cpu 6
-
 struct mt753x_mib_desc {
 	unsigned int size;
 	unsigned int offset;
@@ -254,26 +243,16 @@ static int mt753x_get_port_link(struct switch_dev *dev, int port,
 				struct switch_port_link *link)
 {
 	struct gsw_mt753x *gsw = container_of(dev, struct gsw_mt753x, swdev);
-	u32 speed, pmsr, link_bit, sfp_status;
+	u32 speed, pmsr;
 
 	if (port < 0 || port >= MT753X_NUM_PORTS)
 		return -EINVAL;
-		
+
 	pmsr = mt753x_reg_read(gsw, PMSR(port));
-	
+
+	link->link = pmsr & MAC_LNK_STS;
 	link->duplex = pmsr & MAC_DPX_STS;
 	speed = (pmsr & MAC_SPD_STS_M) >> MAC_SPD_STS_S;
-	if (port == port_sfp)
-	{
-		sfp_status = mt753x_reg_read(gsw, 0x5000);
-		sfp_status = sfp_status >> 18;
-		link_bit = sfp_status & 0x1;
-		link->link = link_bit;
-	}
-	else
-	{
-		link->link = pmsr & MAC_LNK_STS;
-	}
 
 	switch (speed) {
 	case MAC_SPD_10:
@@ -443,91 +422,6 @@ static int mt753x_phy_write16(struct switch_dev *dev, int addr, u8 reg,
 	return 0;
 }
 
-static int mt753x_get_phy_reg_val(struct switch_dev *dev, int phy_index, struct switch_val *val)
-{
-	static char buf[64];
-	struct gsw_mt753x *gsw = container_of(dev, struct gsw_mt753x, swdev);
-	int reg = 0;
-	int value = 0;
-	
-	sscanf(val->value.s, "%x", &reg);
-	value = gsw->mii_read(gsw, phy_index, reg);
-	val->len = snprintf(buf, sizeof(buf), "%x", value);
-	val->value.s = buf;
-	
-	return 0;
-}
-
-static int mt753x_set_phy_reg_val(struct switch_dev *dev, int phy_index, struct switch_val *val)
-{
-	struct gsw_mt753x *gsw = container_of(dev, struct gsw_mt753x, swdev);
-	int reg = 0;
-	int value = 0;
-
-	sscanf(val->value.s, "%x-%x", &reg, &value);
-	gsw->mii_write(gsw, phy_index, reg, value);
-
-	return 0;
-}
-
-static int mt753x_sw_get_reg_val(struct switch_dev *dev, int reg, int *val)
-{
-	struct gsw_mt753x *gsw = container_of(dev, struct gsw_mt753x, swdev);
-
-	*val = mt753x_reg_read(gsw, reg);
-	return 0;
-}
-
-static int mt753x_sw_set_reg_val(struct switch_dev *dev, int reg, int val)
-{
-	struct gsw_mt753x *gsw = container_of(dev, struct gsw_mt753x, swdev);
-
-    mt753x_reg_write(gsw, reg, val);
-    return 0;
-}
-
-static int
-mt753x_get_wan_device_name(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
-{
-	static char buf[64];
-	int len = 0;
-	struct gsw_mt753x *gsw = container_of(dev, struct gsw_mt753x, swdev);
-
-	len = snprintf(buf, sizeof(buf), "%s", gsw->wan_dev_name);
-	val->value.s = buf;
-	val->len = len;
-	return 0;
-}
-
-static int
-mt753x_set_wan_device_name(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
-{
-	struct gsw_mt753x *gsw = container_of(dev, struct gsw_mt753x, swdev);
-
-	snprintf(gsw->wan_dev_name, sizeof(gsw->wan_dev_name), "%s", val->value.s);
-	return 0;
-}
-
-static int
-mt753x_get_phy_dev_vlan(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
-{
-	struct gsw_mt753x *gsw = container_of(dev, struct gsw_mt753x, swdev);
-
-	val->value.i = gsw->phy_vid;
-	return 0;
-}
-
-/* 当phy设备vlan被配置为MT753X_MAX_VID时，表示未使用设备/此时该设备作为lan口 */
-static int
-mt753x_set_phy_dev_vlan(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
-{
-	struct gsw_mt753x *gsw = container_of(dev, struct gsw_mt753x, swdev);
-	if ((val->value.i > 0) && (val->value.i <= MT753X_MAX_VID))
-		gsw->phy_vid = val->value.i;
-	return 0;
-}
-
-
 static const struct switch_attr mt753x_global[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -537,20 +431,6 @@ static const struct switch_attr mt753x_global[] = {
 		.id = MT753X_ATTR_ENABLE_VLAN,
 		.get = mt753x_get_vlan_enable,
 		.set = mt753x_set_vlan_enable,
-	},
-	{
-		.type = SWITCH_TYPE_STRING,
-		.name = "wan_dev_name",
-		.description = "wan device name for hotplug monitor.",
-		.set = mt753x_set_wan_device_name,
-		.get = mt753x_get_wan_device_name,
-	},
-	{
-		.type = SWITCH_TYPE_INT,
-		.name = "phy_dev_vlan",
-		.description = "get/set phy vlan id",
-		.get = mt753x_get_phy_dev_vlan,
-		.set = mt753x_set_phy_dev_vlan,
 	}
 };
 
@@ -568,10 +448,10 @@ static const struct switch_attr mt753x_vlan[] = {
 	{
 		.type = SWITCH_TYPE_INT,
 		.name = "vid",
-		.description = "VLAN ID (0-4095)",
+		.description = "VLAN ID (0-4094)",
 		.set = mt753x_set_vid,
 		.get = mt753x_get_vid,
-		.max = 4095,
+		.max = 4094,
 	},
 };
 
@@ -599,163 +479,7 @@ static const struct switch_dev_ops mt753x_swdev_ops = {
 	.reset_switch = mt753x_reset_switch,
 	.phy_read16 = mt753x_phy_read16,
 	.phy_write16 = mt753x_phy_write16,
-	.get_reg_val = mt753x_sw_get_reg_val,
-    .set_reg_val = mt753x_sw_set_reg_val,
-    .get_phy_reg_val = mt753x_get_phy_reg_val,
-    .set_phy_reg_val = mt753x_set_phy_reg_val,
 };
-
-static int mt753x_get_vlan_dev(struct gsw_mt753x *gsw, int vlan_id, struct net_device **vlan_dev)
-{
-	char name[32] = {0};
-
-	sprintf(name, "%s.%d", gsw->wan_dev_name[0]?gsw->wan_dev_name:MT753X_DEV_PREX, vlan_id);
-	(*vlan_dev) = dev_get_by_name(&init_net, name);
-	if((*vlan_dev) != NULL)
-	{
-		dev_put(*vlan_dev);
-		return 1;
-	}
-
-	return 0;
-}
-
-static int mt753x_get_phy_vlan_dev(struct gsw_mt753x *gsw, int vlan_id, struct net_device **vlan_dev)
-{
-	char name[32] = {0};
-
-	sprintf(name, "%s.%d", INTERFACE_DEV, vlan_id);
-	(*vlan_dev) = dev_get_by_name(&init_net, name);
-	if((*vlan_dev) != NULL)
-	{
-		dev_put(*vlan_dev);
-		return 1;
-	}
-
-	return 0;
-}
-
-static int
-mt753x_work(struct work_struct *work)
-{
-	int i = 0;
-	int ret = 0;
-	u32 port_status = 0;
-	u32 status = 0;
-	struct net_device *vlan_dev = NULL;
-	struct net_device *phy_original_dev = NULL;
-	struct net_device *phy_vlan_dev = NULL;
-	struct gsw_mt753x *gsw = container_of((struct delayed_work*)work, struct gsw_mt753x, switch_work);
-	u32 sfp_status = 0;
-	int link_bit = 0;
-	
-	phy_original_dev = __dev_get_by_name(&init_net, PHY_DEV_PREX);
-	
-	if(phy_original_dev == NULL)
-	{
-		printk(KERN_ERR"mt753x can not find interface %s\n", PHY_DEV_PREX);
-		return 1;
-	}
-
-	for(i = 0; i <= MT753X_PHY_MAX_PORT; i++)
-	{
-		status = mt753x_reg_read(gsw, PMSR(i));
-		/* Get status */
-		if (status & MAC_LNK_STS)
-		{
-			port_status |= 1 << i;
-		}
-	}
-	
-	/* 光口状态特殊处理 */
-	sfp_status = mt753x_reg_read(gsw, 0x5000);
-	sfp_status = sfp_status >> 18;
-	
-	link_bit = sfp_status & 0x1;
-	
-	if (link_bit == 1)
-	{
-		port_status |= 1 << port_sfp;
-	}
-
-	for(i = 1; i < MT753X_NUM_VLANS; i++)
-	{
-		if(i == gsw->phy_vid)
-		{
-			if(mt753x_get_phy_vlan_dev(gsw, gsw->phy_vid, &phy_vlan_dev))
-			{
-				if((netif_carrier_ok(phy_original_dev))&&(!netif_carrier_ok(phy_vlan_dev)))
-				{
-					printk(KERN_ALERT"%s is on\n", phy_vlan_dev->name);
-					netif_carrier_on(phy_vlan_dev);
-				}
-				else if((!netif_carrier_ok(phy_original_dev))&&(netif_carrier_ok(phy_vlan_dev)))
-				{
-					printk(KERN_ALERT"%s is off\n", phy_vlan_dev->name);
-					netif_carrier_off(phy_vlan_dev);
-				}
-			}
-			continue;
-		}
-		if(gsw->vlan_entries[i].member == 0)
-		{
-			continue;
-		}
-
-		ret = mt753x_get_vlan_dev(gsw, i, &vlan_dev);
-		if (!ret)
-		{
-			continue;
-		}
-
-		if((port_status & gsw->vlan_entries[i].member) != 0)
-		{
-			gsw->vlan_carrier_off_cnt[i] = 0;
-			if(!netif_carrier_ok(vlan_dev))
-			{
-				gsw->vlan_carrier_on_cnt[i]++;
-				if(gsw->vlan_carrier_on_cnt[i] > MT753X_CARRIER_ON_NUM)
-				{
-					gsw->vlan_carrier_on_cnt[i] = 0;
-					printk(KERN_ALERT"%s is on\n", vlan_dev->name);
-					netif_carrier_on(vlan_dev);
-				}
-			}
-			else
-			{
-				gsw->vlan_carrier_on_cnt[i] = 0;
-			}
-		}
-		else if((port_status & gsw->vlan_entries[i].member) == 0)
-		{
-			gsw->vlan_carrier_on_cnt[i] = 0;
-			if(netif_carrier_ok(vlan_dev))
-			{
-				gsw->vlan_carrier_off_cnt[i]++;
-				if(gsw->vlan_carrier_off_cnt[i] > MT753X_CARRIER_OFF_NUM)
-				{
-					gsw->vlan_carrier_off_cnt[i] = 0;
-					printk(KERN_ALERT"%s is off\n", vlan_dev->name);
-					netif_carrier_off(vlan_dev);
-				}
-			}
-			else
-			{
-				gsw->vlan_carrier_off_cnt[i] = 0;
-			}
-		}
-	}
-
-	return 0;
-}
-
-static void switch_work_func(struct work_struct *work)
-{
-	struct gsw_mt753x *gsw = container_of((struct delayed_work*)work, struct gsw_mt753x, switch_work);
-
-	mt753x_work(work);
-	schedule_delayed_work(&gsw->switch_work, msecs_to_jiffies(SWITCH_WORK_DELAY));
-}
 
 int mt753x_swconfig_init(struct gsw_mt753x *gsw)
 {
@@ -766,7 +490,6 @@ int mt753x_swconfig_init(struct gsw_mt753x *gsw)
 	if (of_property_read_u32(np, "mediatek,cpuport", &gsw->cpu_port))
 		gsw->cpu_port = MT753X_DFL_CPU_PORT;
 
-	gsw->phy_vid = MT753X_MAX_VID;
 	swdev = &gsw->swdev;
 
 	swdev->name = gsw->name;
@@ -776,18 +499,14 @@ int mt753x_swconfig_init(struct gsw_mt753x *gsw)
 	swdev->vlans = MT753X_NUM_VLANS;
 	swdev->ops = &mt753x_swdev_ops;
 
-	INIT_DELAYED_WORK(&gsw->switch_work, switch_work_func);
-	
-	ret = register_switch(swdev, dev_get_by_name(&init_net,"eth0"));
+	ret = register_switch(swdev, NULL);
 	if (ret) {
-		dev_err(gsw->dev, "Failed to register switch %s\n",
+		dev_notice(gsw->dev, "Failed to register switch %s\n",
 			   swdev->name);
 		return ret;
 	}
 
 	mt753x_apply_config(swdev);
-
-	schedule_delayed_work(&gsw->switch_work, msecs_to_jiffies(SWITCH_WORK_DELAY));
 
 	return 0;
 }
