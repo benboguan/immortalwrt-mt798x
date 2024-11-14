@@ -71,7 +71,7 @@ function render_signal_badge(signalPercent, signalValue, noiseValue, wrap, mode)
 				break;
 
 			case 'sta':
-			case 'adhoc':
+			//case 'adhoc':
 			case 'mesh':
 				title = _('Not associated');
 				break;
@@ -1042,7 +1042,7 @@ return view.extend({
 				o = ss.taboption('general', form.ListValue, 'mode', _('Mode'));
 				o.value('ap', _('Access Point'));
 				o.value('sta', _('Client'));
-				o.value('adhoc', _('Ad-Hoc'));
+				/* o.value('adhoc', _('Ad-Hoc')); */
 
 				o = ss.taboption('general', form.Value, 'mesh_id', _('Mesh Id'));
 				o.depends('mode', 'mesh');
@@ -1062,9 +1062,9 @@ return view.extend({
 				o.datatype = 'maxlength(32)';
 				o.depends('mode', 'ap');
 				o.depends('mode', 'sta');
-				o.depends('mode', 'adhoc');
-				//o.depends('mode', 'ahdemo');
-				o.depends('mode', 'monitor');
+				/* o.depends('mode', 'adhoc');
+				o.depends('mode', 'ahdemo');
+				o.depends('mode', 'monitor'); */
 				o.depends('mode', 'ap-wds');
 				o.depends('mode', 'sta-wds');
 				o.depends('mode', 'wds');
@@ -1126,10 +1126,10 @@ return view.extend({
 					    encr;
 
 					mode.value('mesh', '802.11s');
-					/*mode.value('ahdemo', _('Pseudo Ad-Hoc (ahdemo)'));*/
+					/* mode.value('ahdemo', _('Pseudo Ad-Hoc (ahdemo)'));
 					mode.value('monitor', _('Monitor'));
 
-					bssid.depends('mode', 'adhoc');
+					bssid.depends('mode', 'adhoc'); */
 					bssid.depends('mode', 'wds');
 					bssid.depends('mode', 'sta');
 					bssid.depends('mode', 'ap-wds');
@@ -1348,8 +1348,8 @@ return view.extend({
 				encr = o = ss.taboption('encryption', form.ListValue, 'encryption', _('Encryption'));
 				o.depends('mode', 'ap');
 				o.depends('mode', 'sta');
-				o.depends('mode', 'adhoc');
-				//o.depends('mode', 'ahdemo');
+				/* o.depends('mode', 'adhoc');
+				o.depends('mode', 'ahdemo'); */
 				o.depends('mode', 'ap-wds');
 				o.depends('mode', 'sta-wds');
 				o.depends('mode', 'wds');
@@ -1463,13 +1463,13 @@ return view.extend({
 							'sae-mixed': true,
 							'owe': true
 						},
-						'adhoc': {
+						/*'adhoc': {
 							'wep-open': true,
 							'wep-shared': true,
 							'psk': true,
 							'psk2': true,
 							'psk-mixed': true
-						},
+						},*/
 						'mesh': {
 							'wep-open': true,
 							'wep-shared': true,
