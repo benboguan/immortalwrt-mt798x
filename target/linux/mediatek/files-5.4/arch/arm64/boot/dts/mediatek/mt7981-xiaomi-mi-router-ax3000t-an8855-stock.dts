@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include "mt7981-xiaomi-mi-router-ax3000t-stock.dts"
+
+/ { 
+	model = "Xiaomi Mi Router AX3000T with AN8855 (stock layout)";
+	compatible = "xiaomi,mi-router-ax3000t-an8855-stock", "mediatek,mt7981";
+};
+
+&gsw {
+	status = "disabled";
+};
+
+&gsw_an8855 {
+	status = "okay";
+};

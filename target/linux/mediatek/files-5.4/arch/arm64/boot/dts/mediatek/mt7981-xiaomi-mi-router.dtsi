@@ -61,6 +61,13 @@
 		#size-cells = <0>;
 	};
 
+	gsw_an8855: gsw@1 {
+		compatible = "airoha,an8855";
+		#mediatek,ethsys = <&ethsys>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
 	nmbm_spim_nand: nmbm_spim_nand {
 		compatible = "generic,nmbm";
 
@@ -129,6 +136,25 @@
 		mediatek,ssc-on;
 		reg = <6>;
 		phy-mode = "sgmii";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+		};
+	};
+};
+
+&gsw_an8855 {
+	airoha,mdio = <&mdio>;
+	reset-gpios = <&pio 39 0>;
+	interrupt-parent = <&pio>;
+	interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
+	status = "disabled";
+
+	port@5 {
+		compatible = "airoha,an8855-port";
+		reg = <5>;
+		phy-mode = "2500base-x";
 
 		fixed-link {
 			speed = <2500>;
