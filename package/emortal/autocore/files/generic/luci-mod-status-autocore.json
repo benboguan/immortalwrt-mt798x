@@ -4,6 +4,9 @@
 		"read": {
 			"ubus": {
 				"luci": [ "getCPUInfo", "getETHInfo", "getTempInfo" ]
+			},
+			"file": {
+				"/sbin/swconfig dev switch0 show": ["exec"]
 			}
 		}
 	}
