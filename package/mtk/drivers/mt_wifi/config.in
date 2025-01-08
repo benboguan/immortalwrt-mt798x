@@ -1427,6 +1427,12 @@ config MTK_WNM_SUPPORT
         depends on MTK_MT_AP_SUPPORT
         default n
 
+config MTK_CUSTOMER_VENDOR_IE_SUPPORT
+	bool "Customer Vendor IE support"
+	depends on MTK_MT_AP_SUPPORT
+#	depends on CHIP_MT7663E
+	default n
+
 config MTK_INTERWORKING
         bool "802.11u Interworking"
         depends on MTK_MT_AP_SUPPORT
