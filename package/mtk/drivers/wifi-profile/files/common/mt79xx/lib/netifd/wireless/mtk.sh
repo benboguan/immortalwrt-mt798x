@@ -1068,7 +1068,7 @@ drv_mtk_setup() {
 	[ "${country}" == "BG" ] && countryregion_a=1 && countryregion=1
 	[ "${country}" == "CA" ] && countryregion_a=0 && countryregion=0
 	[ "${country}" == "CL" ] && countryregion_a=0 && countryregion=1
-	[ "${country}" == "CN" ] && countryregion_a=0 && countryregion=1
+	[ "${country}" == "CN" ] && countryregion_a=0 && countryregion=1 && RDRegion=CHN
 	[ "${country}" == "CO" ] && countryregion_a=0 && countryregion=0
 	[ "${country}" == "CR" ] && countryregion_a=0 && countryregion=1
 	[ "${country}" == "HR" ] && countryregion_a=2 && countryregion=1
@@ -1323,7 +1323,6 @@ MapEnable=0
 MapAccept3Addr=1
 MAP_Turnkey=0
 MAP_Ext=0
-MaxStaNum=${maxassoc:-64}
 MboSupport=1
 MbssMaxStaNum=${maxassoc:-64}
 MlmeMultiQEnable=1

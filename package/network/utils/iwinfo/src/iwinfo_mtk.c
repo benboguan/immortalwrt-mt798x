@@ -309,58 +309,24 @@ static int mtk_get_channel(const char *ifname, int *buf)
 
 static int mtk_get_center_chan1(const char *ifname, int *buf)
 {
-	int channel;
 	struct iwreq wrq;
-	unsigned char bw = 0;
-	unsigned long wmode = 0;
+	int channel, band, freq;
 
-	wrq.u.data.length = sizeof(bw);
-	wrq.u.data.pointer = &bw;
-	wrq.u.data.flags = OID_802_11_BW;
+	band = mtk_get_band(ifname);
+	if (band < 0)
+		return -1;
+
+	if (mtk_get_channel(ifname, &channel) < 0)
+		return -1;
+
+	wrq.u.data.length = sizeof(freq);
+	wrq.u.data.pointer = &freq;
+	wrq.u.data.flags = OID_802_11_WIFISPECTRUM_GET_CENTRAL_FREQ;
 
 	if (mtk_ioctl(ifname, RT_PRIV_IOCTL, &wrq) >= 0)
 	{
-		channel = mtk_freq2channel(*buf);
-		wrq.u.data.length = sizeof(wmode);
-		wrq.u.data.pointer = &wmode;
-		wrq.u.data.flags = RT_OID_802_11_PHY_MODE;
-
-		if (mtk_ioctl(ifname, RT_PRIV_IOCTL, &wrq) >= 0)
-		{
-			if (channel == 0)
-				*buf = 0;
-			if (WMODE_CAP_AX(wmode) || WMODE_CAP_AC(wmode)) {
-				switch (bw) {
-				// case BW_20: *buf = channel; break;
-				case BW_40:
-					if (( (channel / 4) % 2 ) == 1)
-						*buf = channel + 2;
-					else if (( (channel / 4) % 2 ) == 0)
-						*buf = channel - 2;
-					break;
-				case BW_80:
-					if (( (channel / 4) % 4 ) == 1)
-						*buf = channel + 6;
-					else if (( (channel / 4) % 4 ) == 2)
-						*buf = channel + 2;
-					else if (( (channel / 4) % 4 ) == 3)
-						*buf = channel - 2;
-					else if (( (channel / 4) % 4 ) == 0)
-						*buf = channel - 6;
-					break;
-				// case BW_8080:
-				case BW_160:
-					if (channel >= 36 && channel <= 64)
-						*buf = 50;
-					else if (channel >= 100 && channel <= 128)
-						*buf = 114;
-					else if (channel >= 149 && channel <= 177)
-						*buf = 163;
-					break;
-				}
-			}
-			return 0;
-		}
+		*buf = mtk_freq2channel(freq);
+		return 0;
 	}
 
 	return -1;
@@ -368,7 +334,12 @@ static int mtk_get_center_chan1(const char *ifname, int *buf)
 
 static int mtk_get_center_chan2(const char *ifname, int *buf)
 {
-	/* Not Supported */
+	if (!mtk_get_center_chan1(ifname, buf))
+	{
+		*buf = mtk_freq2channel(*buf);
+		return 0;
+	}
+
 	return -1;
 }
 
@@ -670,9 +641,9 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 			else
 				e->signal = pe->AvgRssi2;
 		}
-		//e->signal = pe->AvgRssi0;
-		e->signal_avg = pe->AvgRssi0;
+		e->signal_avg = pe->AvgSignal;
 		e->noise = noise;
+		//e->inactive = pe->InactiveTime;
 		e->connected_time = pe->ConnectedTime;
 
 		e->rx_packets = pe->RxPackets;

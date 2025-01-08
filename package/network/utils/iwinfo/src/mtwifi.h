@@ -41,7 +41,8 @@ typedef struct _RT_802_11_MAC_ENTRY_FIX {
 	signed char             AvgRssi1;
 	signed char             AvgRssi2;
 	signed char             AvgRssi3;
-	//unsigned int            InactiveTime;
+	signed char           	AvgSignal;
+	unsigned int            InactiveTime;
 	unsigned int            ConnectedTime;
 	HTTRANSMIT_SETTING      TxRate;
 	HTTRANSMIT_SETTING      LastRxRate;
@@ -97,6 +98,11 @@ struct channel_list_basic {
 #define OID_GET_WIRELESS_BAND				0x09B4
 #define OID_802_11_SECURITY_TYPE            0x093e
 #define RT_OID_802_11_PHY_MODE				0x050C
+#define OID_802_11_WIFISPECTRUM_SET_PARAMETER				0x0970
+#define OID_802_11_WIFISPECTRUM_GET_CAPTURE_STATUS			0x0971
+#define OID_802_11_WIFISPECTRUM_DUMP_DATA			0x0972
+#define OID_802_11_WIFISPECTRUM_GET_CAPTURE_BW		0x0973
+#define OID_802_11_WIFISPECTRUM_GET_CENTRAL_FREQ		0x0974
 #define GET_MAC_TABLE_STRUCT_FLAG_RAW_SSID	0x1
 
 #define MODE_CCK 0
