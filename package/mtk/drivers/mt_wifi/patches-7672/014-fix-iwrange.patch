@@ -29,7 +29,7 @@
 +				range.we_version_source = 21;
 +				range.max_qual.qual = 100;
 +				range.max_qual.level = 0; /* dB */
-+				range.max_qual.noise = 0x100 - 127; /* dB */
++				range.max_qual.noise = 0; /* dB */
 +				// range.max_qual.updated = 10;
 +				// range.avg_qual.qual = 20;
 +				// range.avg_qual.level = -60;

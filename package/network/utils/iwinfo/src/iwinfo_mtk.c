@@ -80,25 +80,6 @@ static char * mtk_getval(const char *ifname, const char *buf, const char *key)
 	return NULL;
 }
 
-static const char *is_5g(const char *ifname)
-{
-	const char *phy = NULL;
-	struct uci_section *s;
-
-	if (strstr(ifname, "rax") || strstr(ifname, "wdsx") || strstr(ifname, "meshx") || strstr(ifname, "apclix"))
-		return ifname;
-
-	s = iwinfo_uci_get_radio(ifname, "mtk");
-	if (!s)
-		goto out;
-
-	phy = uci_lookup_option_string(uci_ctx, s, "phy");
-
-out:
-	iwinfo_uci_free();
-	return phy;
-}
-
 static int mtk_probe(const char *ifname)
 {
 	const char *phy = NULL;
@@ -429,7 +410,7 @@ static int mtk_get_txpower(const char *ifname, int *buf)
 static int mtk_get_signal(const char *ifname, int *buf)
 {
 //	return mtk_get_txpower(ifname, buf);
-	int ra_snr_sum, num;
+	int snr_sum, num;
 	char tmp_buf[IWINFO_BUFSIZE];
 	struct iwinfo_assoclist_entry tmp;
 	int ret_len, i;
@@ -437,18 +418,18 @@ static int mtk_get_signal(const char *ifname, int *buf)
 	if (mtk_get_assoclist(ifname, tmp_buf, &ret_len) == 0)
 	{
 		num = ret_len / sizeof(struct iwinfo_assoclist_entry);
-		ra_snr_sum = 0;
+		snr_sum = 0;
 
 		for (i = 0; i < num; i++)
 		{
 			memset(&tmp, 0, sizeof(struct iwinfo_assoclist_entry));
 			memcpy(&tmp, tmp_buf + i * sizeof(struct iwinfo_assoclist_entry), sizeof(struct iwinfo_assoclist_entry));
 
-			ra_snr_sum -= tmp.signal;
+			snr_sum -= tmp.signal;
 		}
 
 		if (num > 0)
-			*buf = -(ra_snr_sum / num);
+			*buf = -(snr_sum / num);
 		else
 			*buf = -127;
 
@@ -460,7 +441,7 @@ static int mtk_get_signal(const char *ifname, int *buf)
 
 static int mtk_get_noise(const char *ifname, int *buf)
 {
-	int nr;
+	int nr, chband;
 	struct iwreq wrq;
 	struct iw_statistics stats;
 
@@ -473,16 +454,25 @@ static int mtk_get_noise(const char *ifname, int *buf)
 		nr = (stats.qual.updated & IW_QUAL_DBM)
 			? (stats.qual.noise - 0x117) : stats.qual.noise;
 
-		if (nr <= -127)
-		{
+		chband = mtk_get_band(ifname);
+		if (chband < 0)
+			return -1;
+
+		if (nr <= -127) {
 			*buf = -127;
-		}
-		else
-		{
-			if (is_5g(ifname))
-				*buf = nr - 5;
-			else
-				*buf = nr;
+		} else {
+			switch (chband)
+			{
+				case MTK_CH_BAND_24G:
+					*buf = nr;
+					break;
+				case MTK_CH_BAND_5G:
+					*buf = nr - 5;
+					break;
+				case MTK_CH_BAND_6G:
+					*buf = nr - 10;
+					break;
+			}
 		}
 
 		return 0;
@@ -557,9 +547,8 @@ static void fill_rate_info(HTTRANSMIT_SETTING HTSetting, struct iwinfo_rate_entr
 	}
 
 	if (HTSetting.field.MODE >= MODE_HE) {
-		// re->he_gi = HTSetting.field.ShortGI;
-		re->he_gi = (HTSetting.field.MCS & 0xf) & 0x3;
-		re->he_dcm = HTSetting.field.MCS & 0x10 ? 1 : 0;
+		re->he_gi = HTSetting.field.ShortGI;
+		re->he_dcm = !(HTSetting.field.MCS & 0x10);
 	}
 
 	if (HTSetting.field.BW == BW_20)
@@ -639,8 +628,7 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 {
 	struct iwreq wrq = {};
 	RT_802_11_MAC_TABLE *table;
-	int i;
-	int noise;
+	int i, noise, chband;
 
 	table = calloc(1, sizeof(RT_802_11_MAC_TABLE));
 	if (!table)
@@ -659,16 +647,33 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 	if (mtk_get_noise(ifname, &noise))
 		noise = 0;
 
+	chband = mtk_get_band(ifname);
+	if (chband < 0) {
+		free(table);
+		return -1;
+	}
+
 	for (i = 0; i < table->Num; i++) {
 		RT_802_11_MAC_ENTRY *pe = &(table->Entry[i]);
 		struct iwinfo_assoclist_entry *e = (struct iwinfo_assoclist_entry *)buf + i;
 
 		memcpy(e->mac, pe->Addr, 6);
-		e->signal = pe->AvgRssi0;
+
+		if (chband == MTK_CH_BAND_24G) {
+			e->signal = (pe->AvgRssi0 > pe->AvgRssi1) ? pe->AvgRssi0 : pe->AvgRssi1;
+		} else {
+			if (pe->AvgRssi0 > pe->AvgRssi1 && pe->AvgRssi1 > pe->AvgRssi2)
+				e->signal = pe->AvgRssi0;
+			else if (pe->AvgRssi1 > pe->AvgRssi0 && pe->AvgRssi0 > pe->AvgRssi2)
+				e->signal = pe->AvgRssi1;
+			else
+				e->signal = pe->AvgRssi2;
+		}
+		//e->signal = pe->AvgRssi0;
 		e->signal_avg = pe->AvgRssi0;
 		e->noise = noise;
-		//e->noise = ((int)(pe->AvgRssi2) + (int)(pe->AvgRssi3)) / 2;
 		e->connected_time = pe->ConnectedTime;
+
 		e->rx_packets = pe->RxPackets;
 		e->tx_packets = pe->TxPackets;
 		e->rx_bytes = pe->RxBytes;
@@ -915,26 +920,6 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 	return 0;
 }
 
-static double wext_freq2float(const struct iw_freq *in)
-{
-	int		i;
-	double	res = (double) in->m;
-	for(i = 0; i < in->e; i++) res *= 10;
-	return res;
-}
-
-static inline int wext_freq2mhz(const struct iw_freq *in)
-{
-	if( in->e == 6 )
-	{
-		return in->m;
-	}
-	else
-	{
-		return (int)(wext_freq2float(in) / 1000000);
-	}
-}
-
 static int mtk_get_freqlist(const char *ifname, char *buf, int *len)
 {
 	struct iwreq wrq;
@@ -959,8 +944,19 @@ static int mtk_get_freqlist(const char *ifname, char *buf, int *len)
 		bl = 0;
 		for (i = 0; i < ch_list.ChListNum; i++)
 		{
-			entry.band = band;
 			entry.channel = ch_list.ChList[i].channel;
+			switch (band)
+			{
+				case MTK_CH_BAND_24G:
+					entry.band = IWINFO_BAND_24;
+					break;
+				case MTK_CH_BAND_5G:
+					entry.band = IWINFO_BAND_5;
+					break;
+				case MTK_CH_BAND_6G:
+					entry.band = IWINFO_BAND_6;
+					break;
+			}
 			entry.mhz = mtk_channel2freq(ch_list.ChList[i].channel, band);
 			entry.restricted = 0;
 
@@ -1078,8 +1074,8 @@ uciout:
 		if (!strcmp(band,"2g"))
 			*buf = (IWINFO_HTMODE_HT20 | IWINFO_HTMODE_HT40 | IWINFO_HTMODE_HE20 | IWINFO_HTMODE_HE40);
 		else if (!strcmp(band,"5g"))
-			*buf = (IWINFO_HTMODE_HT20 | IWINFO_HTMODE_HT40 | IWINFO_HTMODE_VHT20 | IWINFO_HTMODE_VHT40 | IWINFO_HTMODE_VHT80 | IWINFO_HTMODE_VHT80_80
-			| IWINFO_HTMODE_VHT160 | IWINFO_HTMODE_HE20 | IWINFO_HTMODE_HE40 | IWINFO_HTMODE_HE80 | IWINFO_HTMODE_HE80_80 | IWINFO_HTMODE_HE160);
+			*buf = (IWINFO_HTMODE_VHT20 | IWINFO_HTMODE_VHT40 | IWINFO_HTMODE_VHT80 | IWINFO_HTMODE_VHT80_80 | IWINFO_HTMODE_VHT160 
+			| IWINFO_HTMODE_HE20 | IWINFO_HTMODE_HE40 | IWINFO_HTMODE_HE80 | IWINFO_HTMODE_HE80_80 | IWINFO_HTMODE_HE160);
 		else if (!strcmp(band,"6g"))
 			*buf = (IWINFO_HTMODE_HE20 | IWINFO_HTMODE_HE40 | IWINFO_HTMODE_HE80 | IWINFO_HTMODE_HE80_80 | IWINFO_HTMODE_HE160);
 
@@ -1096,8 +1092,8 @@ uciout:
 			*buf = (IWINFO_HTMODE_HT20 | IWINFO_HTMODE_HT40 | IWINFO_HTMODE_HE20 | IWINFO_HTMODE_HE40);
 			break;
 		case MTK_CH_BAND_5G:
-			*buf = (IWINFO_HTMODE_HT20 | IWINFO_HTMODE_HT40 | IWINFO_HTMODE_VHT20 | IWINFO_HTMODE_VHT40 | IWINFO_HTMODE_VHT80 | IWINFO_HTMODE_VHT80_80
-			| IWINFO_HTMODE_VHT160 | IWINFO_HTMODE_HE20 | IWINFO_HTMODE_HE40 | IWINFO_HTMODE_HE80 | IWINFO_HTMODE_HE80_80 | IWINFO_HTMODE_HE160);
+			*buf = (IWINFO_HTMODE_VHT20 | IWINFO_HTMODE_VHT40 | IWINFO_HTMODE_VHT80 | IWINFO_HTMODE_VHT80_80 | IWINFO_HTMODE_VHT160 
+			| IWINFO_HTMODE_HE20 | IWINFO_HTMODE_HE40 | IWINFO_HTMODE_HE80 | IWINFO_HTMODE_HE80_80 | IWINFO_HTMODE_HE160);
 			break;
 		case MTK_CH_BAND_6G:
 			*buf = (IWINFO_HTMODE_HE20 | IWINFO_HTMODE_HE40 | IWINFO_HTMODE_HE80 | IWINFO_HTMODE_HE80_80 | IWINFO_HTMODE_HE160);
