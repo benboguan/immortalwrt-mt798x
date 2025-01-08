@@ -51,7 +51,7 @@ typedef struct _RT_802_11_MAC_ENTRY_FIX {
 	unsigned long long      RxPackets; //RxPackets.QuadPart
 	unsigned long long      TxBytes;
 	unsigned long long      RxBytes;
-	//unsigned int            ExPected_throughput;
+	unsigned int            ExPected_throughput;
 	unsigned int            EncryMode;
 	unsigned int            AuthMode;
 } RT_802_11_MAC_ENTRY;

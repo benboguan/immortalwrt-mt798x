@@ -14,7 +14,7 @@
  	IWINFO_CLI_LDFLAGS += -lnl-tiny
 --- a/include/iwinfo.h
 +++ b/include/iwinfo.h
-@@ -400,6 +400,7 @@ extern const struct iwinfo_ops wext_ops;
+@@ -400,6 +400,7 @@ struct iwinfo_ops {
  	int (*survey)(const char *, char *, int *);
  	int (*lookup_phy)(const char *, char *);
  	int (*phy_path)(const char *phyname, const char **path);
@@ -77,7 +77,28 @@
  
  static void print_assoclist(const struct iwinfo_ops *iw, const char *ifname)
  {
-@@ -923,6 +937,7 @@ int main(int argc, char **argv)
+@@ -799,14 +813,16 @@ static void print_assoclist(const
+ 			(e->signal - e->noise),
+ 			e->inactive);
+ 
+-		printf("	RX: %-38s  %8d Pkts.\n",
++		printf("	RX: %-38s  %8d Pkts  %8d Byts.\n",
+ 			format_assocrate(&e->rx_rate),
+-			e->rx_packets
++			e->rx_packets,
++			e->rx_bytes
+ 		);
+ 
+-		printf("	TX: %-38s  %8d Pkts.\n",
++		printf("	TX: %-38s  %8d Pkts  %8d Byts.\n",
+ 			format_assocrate(&e->tx_rate),
+-			e->tx_packets
++			e->tx_packets,
++			e->tx_bytes
+ 		);
+ 
+ 		printf("	expected throughput: %s\n\n",
+@@ -923,6 +939,7 @@ int main(int argc, char **argv)
  			"	iwinfo <device> freqlist\n"
  			"	iwinfo <device> assoclist\n"
  			"	iwinfo <device> countrylist\n"
@@ -85,7 +106,7 @@
  			"	iwinfo <device> htmodelist\n"
  			"	iwinfo <backend> phyname <section>\n"
  		);
-@@ -1020,6 +1035,10 @@ int main(int argc, char **argv)
+@@ -1020,6 +1037,10 @@ int main(int argc, char **argv)
  					print_countrylist(iw, argv[1]);
  					break;
  
@@ -98,7 +119,20 @@
  					break;
 --- a/iwinfo_lua.c
 +++ b/iwinfo_lua.c
-@@ -777,6 +777,36 @@ LUA_WRAP_STRUCT_OP(nl80211,mbssid_suppor
+@@ -355,6 +355,12 @@ static int iwinfo_L_assoclist(lua_State *L
+ 			lua_pushnumber(L, e->tx_packets);
+ 			lua_setfield(L, -2, "tx_packets");
+ 
++			lua_pushnumber(L, e->rx_bytes);
++			lua_setfield(L, -2, "rx_bytes");
++
++			lua_pushnumber(L, e->tx_bytes);
++			lua_setfield(L, -2, "tx_bytes");
++
+ 			set_rateinfo(L, &e->rx_rate, true);
+ 			set_rateinfo(L, &e->tx_rate, false);
+ 
+@@ -777,6 +783,36 @@ LUA_WRAP_STRUCT_OP(nl80211,mbssid_suppor
  LUA_WRAP_STRUCT_OP(nl80211,hardware_id)
  #endif
  
@@ -135,7 +169,7 @@
  /* Wext */
  #ifdef USE_WEXT
  LUA_WRAP_INT_OP(wext,channel)
-@@ -906,6 +936,39 @@ static const luaL_reg R_nl80211[] = {
+@@ -906,6 +942,39 @@ static const luaL_reg R_nl80211[] = {
  };
  #endif
  
@@ -175,7 +209,7 @@
  /* Wext table */
  #ifdef USE_WEXT
  static const luaL_reg R_wext[] = {
-@@ -977,6 +1040,15 @@ LUALIB_API int luaopen_iwinfo(lua_State
+@@ -977,6 +1046,15 @@ LUALIB_API int luaopen_iwinfo(lua_State
  	lua_setfield(L, -2, "nl80211");
  #endif
  

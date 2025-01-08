@@ -156,8 +156,6 @@ static int mtk_freq2channel(int freq)
 	else if (freq <= 45000) /* DMG band lower limit */
 		/* see 802.11ax D6.1 27.3.22.2 */
 		return (freq - 5950) / 5;
-	else if (freq >= 58320 && freq <= 70200)
-		return (freq - 56160) / 2160;
 	else
 		return 0;
 }
@@ -629,6 +627,7 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 	struct iwreq wrq = {};
 	RT_802_11_MAC_TABLE *table;
 	int i, noise, chband;
+	struct iwinfo_assoclist_entry *e;
 
 	table = calloc(1, sizeof(RT_802_11_MAC_TABLE));
 	if (!table)
@@ -655,7 +654,9 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 
 	for (i = 0; i < table->Num; i++) {
 		RT_802_11_MAC_ENTRY *pe = &(table->Entry[i]);
-		struct iwinfo_assoclist_entry *e = (struct iwinfo_assoclist_entry *)buf + i;
+		e = (struct iwinfo_assoclist_entry *)(buf + (*len));
+
+		memset(e, 0, sizeof(*e));
 
 		memcpy(e->mac, pe->Addr, 6);
 
@@ -678,6 +679,7 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 		e->tx_packets = pe->TxPackets;
 		e->rx_bytes = pe->RxBytes;
 		e->tx_bytes = pe->TxBytes;
+		e->thr = pe->ExPected_throughput;
 		mtk_parse_rateinfo(pe, &e->rx_rate, &e->tx_rate);
 
 		*len += sizeof(struct iwinfo_assoclist_entry);
@@ -720,6 +722,8 @@ static int mtk_get_scanlist_dump(const char *ifname, int index, char *data, size
 
 enum {
 	SCAN_DATA_CH,
+	SCAN_DATA_CCH,
+	SCAN_DATA_SCCH,
 	SCAN_DATA_SSID,
 	SCAN_DATA_BSSID,
 	SCAN_DATA_SECURITY,
@@ -727,6 +731,8 @@ enum {
 	SCAN_DATA_SIG,
 	SCAN_DATA_EXTCH,
 	SCAN_DATA_NT,
+	SCAN_DATA_HT_WIDTH,
+	SCAN_DATA_VHT_WIDTH,
 	SCAN_DATA_SSID_LEN,
 	SCAN_DATA_MAX
 };
@@ -735,12 +741,12 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 {
 	struct iwinfo_scanlist_entry *e = (struct iwinfo_scanlist_entry *)buf;
 	char *data = NULL;
-	unsigned int data_len = 5000;
+	unsigned int data_len = IWINFO_BUFSIZE;
 	int offsets[SCAN_DATA_MAX];
 	char cmd[128];
 	int index = 0;
 	int total = -1;
-	char *pos, *flags;
+	char *pos;
 
 	*len = 0;
 
@@ -767,6 +773,8 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 		pos = strtok(NULL, "\n");
 
 		offsets[SCAN_DATA_CH] = strstr(pos, "Ch ") - pos;
+		offsets[SCAN_DATA_CCH] = strstr(pos, "CCh ") - pos;
+		offsets[SCAN_DATA_SCCH] = strstr(pos, "SCCh ") - pos;
 		offsets[SCAN_DATA_SSID] = strstr(pos, "SSID ") - pos;
 		offsets[SCAN_DATA_BSSID] = strstr(pos, "BSSID ") - pos;
 		offsets[SCAN_DATA_SECURITY] = strstr(pos, "Security ") - pos;
@@ -774,6 +782,8 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 		offsets[SCAN_DATA_SIG] = strstr(pos, "Siganl") - pos;
 		offsets[SCAN_DATA_EXTCH] = strstr(pos, "ExtCH") - pos;
 		offsets[SCAN_DATA_NT] = strstr(pos, "NT") - pos;
+		offsets[SCAN_DATA_HT_WIDTH] = strstr(pos, "HT_Width") - pos;
+		offsets[SCAN_DATA_VHT_WIDTH] = strstr(pos, "VHT_Width") - pos;
 		offsets[SCAN_DATA_SSID_LEN] = strstr(pos, "SSID_Len") - pos;
 
 		while (1) {
@@ -781,14 +791,11 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 			struct iwinfo_scanlist_ht_chan_entry *ht_chan_info = &e->ht_chan_info;
 			struct iwinfo_scanlist_vht_chan_entry *vht_chan_info = &e->vht_chan_info;
 			const char *security;
-			char *extch = NULL;
 			uint8_t *mac = e->mac;
-			int channel = 0, center_chan1 = 0, bw = 0;
-			int ssid_len, band;
+			int ssid_len, chband;
 
 			pos = strtok(NULL, "\n");
-			flags = strtok(NULL, "\t");
-			if (!pos || !flags)
+			if (!pos)
 				break;
 
 			sscanf(pos, "%d", &index);
@@ -846,53 +853,57 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 				}
 			}
 
-			extch = pos + offsets[SCAN_DATA_EXTCH];
-			memset(extch, 0, sizeof(struct iwinfo_scanlist_ht_chan_entry));
-
-			if (ht_chan_info->primary_chan) {
-				if (mtk_get_channel(ifname, &channel))
-					ht_chan_info->primary_chan = channel;
-				// if (strstr(extch, "ABOVE")) {
-				if (strncmp(extch, "ABOVE", 5)) {
-					ht_chan_info->secondary_chan_off = (intptr_t)(uint8_t *)(ht_secondary_offset[1]);
-					ht_chan_info->chan_width = ht_chan_width[1];
-				} else if (strncmp(extch, "BELOW", 5)) {
-					ht_chan_info->secondary_chan_off = (intptr_t)(uint8_t *)(ht_secondary_offset[3]);
-					ht_chan_info->chan_width = ht_chan_width[1];
-				} else if (strncmp(extch, "NONE", 4)) {
-					ht_chan_info->secondary_chan_off = (intptr_t)(uint8_t *)(ht_secondary_offset[0]);
-					ht_chan_info->chan_width = ht_chan_width[0];
-				}
-			}
-
-			if (vht_chan_info->center_chan_1) {
-				if (mtk_get_center_chan1(ifname, &center_chan1))
-					vht_chan_info->center_chan_1 = center_chan1;
-				if (mtk_get_center_chan1(ifname, &bw)) {
-					if (bw == BW_40)
-						vht_chan_info->chan_width = vht_chan_width[0];
-					else if (bw == BW_80)
-						vht_chan_info->chan_width = vht_chan_width[1];
-					else if (bw == BW_160)
-						vht_chan_info->chan_width = vht_chan_width[2];
-					// e->vht_chan_info.center_chan_2;
-				}
-			}
-
-			if (strstr(flags, "[MESH]"))
-				e->mode = IWINFO_OPMODE_MESHPOINT;
-			else if (strstr(flags, "[IBSS]"))
+			if (strncmp(pos + offsets[SCAN_DATA_NT], "Ad", 2) == 0)
 				e->mode = IWINFO_OPMODE_ADHOC;
-			else if (strstr(flags, "[WDS]"))
-				e->mode = IWINFO_OPMODE_WDS;
+			else if (strncmp(pos + offsets[SCAN_DATA_NT], "Mo", 2) == 0)
+				e->mode = IWINFO_OPMODE_MONITOR;
+			else if (strncmp(pos + offsets[SCAN_DATA_NT], "Me", 2) == 0)
+				e->mode = IWINFO_OPMODE_MESHPOINT;
 			else
 				e->mode = IWINFO_OPMODE_MASTER;
 
-			band = mtk_get_band(ifname);
-			if (band > 0)
-				e->band = band;
+			chband = mtk_get_band(ifname);
+			if (chband < 0)
+				return -1;
+
+			switch (chband)
+			{
+				case MTK_CH_BAND_24G:
+					e->band = IWINFO_BAND_24;
+					break;
+				case MTK_CH_BAND_5G:
+					e->band = IWINFO_BAND_5;
+					break;
+				case MTK_CH_BAND_6G:
+					e->band = IWINFO_BAND_6;
+					break;
+			}
 
 			sscanf(pos + offsets[SCAN_DATA_CH], "%"SCNu8, &e->channel);
+			e->mhz = mtk_channel2freq(e->channel, chband);
+
+			ht_chan_info->primary_chan = e->channel;
+			if (strncmp(pos + offsets[SCAN_DATA_EXTCH], "ABOVE", 5) == 0)
+				ht_chan_info->secondary_chan_off = EXTCHA_ABOVE;
+			else if (strncmp(pos + offsets[SCAN_DATA_EXTCH], "BELOW", 5) == 0)
+				ht_chan_info->secondary_chan_off = EXTCHA_BELOW;
+			else if (strncmp(pos + offsets[SCAN_DATA_EXTCH], "NONE", 4) == 0)
+				ht_chan_info->secondary_chan_off = EXTCHA_NONE;
+			else
+				ht_chan_info->secondary_chan_off = EXTCHA_NOASSIGN;
+			sscanf(pos + offsets[SCAN_DATA_HT_WIDTH], "%"SCNu8, &ht_chan_info->chan_width);
+
+			if (e->band != IWINFO_BAND_24) {
+				sscanf(pos + offsets[SCAN_DATA_CCH], "%"SCNu8, &vht_chan_info->center_chan_1);
+				sscanf(pos + offsets[SCAN_DATA_SCCH], "%"SCNu8, &vht_chan_info->center_chan_2);
+				if ((vht_chan_info->center_chan_1 == 50 && e->channel >= 36 && e->channel <= 64) ||
+				 (vht_chan_info->center_chan_1 == 114 && e->channel >= 100 && e->channel <= 128) ||
+				 (vht_chan_info->center_chan_1 == 163 && e->channel >= 149 && e->channel <= 177))
+					vht_chan_info->chan_width = 2;
+				else
+					sscanf(pos + offsets[SCAN_DATA_VHT_WIDTH], "%"SCNu8, &vht_chan_info->chan_width);
+			}
+
 			sscanf(pos + offsets[SCAN_DATA_RSSI], "%"SCNu8, &e->signal);
 			sscanf(pos + offsets[SCAN_DATA_SIG], "%"SCNu8, &e->quality);
 			e->quality_max = 100;
