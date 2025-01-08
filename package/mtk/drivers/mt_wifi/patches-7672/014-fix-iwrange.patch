@@ -112,7 +112,7 @@
  		}
 --- a/mt_wifi/embedded/ap/ap_cfg.c
 +++ b/mt_wifi/embedded/ap/ap_cfg.c
-@@ -10614,6 +10614,26 @@ INT RTMPAPQueryInformation(
+@@ -10662,6 +10662,26 @@ INT RTMPAPQueryInformation(
  		MTWF_DBG(pAd, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_INFO, "Query::OID_802_11_ASSOLIST\n");
  		RTMPAPGetAssoMacTable(pAd, wrq);
  		break;
@@ -139,7 +139,7 @@
  #ifdef WSC_AP_SUPPORT
  
  	case OID_802_11_CURRENT_CRED:
-@@ -30244,6 +30264,12 @@ BOOLEAN wdev_down_exec_ioctl(RTMP_IOCTL_
+@@ -30306,6 +30326,12 @@ BOOLEAN wdev_down_exec_ioctl(RTMP_IOCTL_
  		}
  	}
  

@@ -215,7 +215,9 @@ function format_wifirate(rate) {
 		s += ', HE-MCS\xa0%d'.format(mcs);
 		if (nss) s += ', HE-NSS\xa0%d'.format(nss);
 		if (he_gi) s += ', HE-GI\xa0%d'.format(he_gi);
+		else s += ', ' + _('HE-GI 0').replace(/ /g, '\xa0');
 		if (he_dcm) s += ', HE-DCM\xa0%d'.format(he_dcm);
+		else s += ', ' + _('HE-DCM 0').replace(/ /g, '\xa0');
 	}
 
 	return s;

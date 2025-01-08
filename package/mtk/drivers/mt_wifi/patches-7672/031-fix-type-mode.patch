@@ -1,0 +1,37 @@
+--- a/mt_wifi/embedded/include/oid.h
++++ b/mt_wifi/embedded/include/oid.h
+@@ -1058,6 +1058,9 @@ #ifdef DOT11R_FT_SUPPORT
+ #define	RT_OID_802_11R_RIC							(OID_GET_SET_TOGGLE | OID_802_11R_RIC)
+ #define RT_OID_802_11R_OTD							(OID_GET_SET_TOGGLE | OID_802_11R_OTD)
+ #define RT_OID_802_11R_INFO							(OID_GET_SET_TOGGLE | OID_802_11R_INFO)
++#define RT_OID_802_11R_R1KHID						(OID_GET_SET_TOGGLE | OID_802_11R_R1KHID)
++#define RT_OID_802_11R_ADLINE						(OID_GET_SET_TOGGLE | OID_802_11R_ADLINE)
++#define RT_OID_802_11R_KEYLIFE						(OID_GET_SET_TOGGLE | OID_802_11R_KEYLIFE)
+ #endif /* DOT11R_FT_SUPPORT */
+ 
+ 
+--- a/mt_wifi/embedded/include/rtmp_def.h
++++ b/mt_wifi/embedded/include/rtmp_def.h
+@@ -835,6 +835,7 @@ /* BSS Type definitions */
+ #define BSS_INFRA                       1	/* = Ndis802_11Infrastructure */
+ #define BSS_ANY                         2	/* = Ndis802_11AutoUnknown */
+ #define BSS_MONITOR			            3	/* = Ndis802_11Monitor */
++#define BSS_MESH			            4	/* = Ndis802_11Mesh */
+ 
+ /* Reason code definitions */
+ #define REASON_RESERVED                 0
+--- a/mt_wifi/embedded/include/rtmp_def.h
++++ b/mt_wifi/embedded/include/rtmp_def.h
+@@ -784,6 +784,12 @@ case SIOCGIWMODE:  /*get operation mode */
+ 	case SIOCGIWMODE:  /*get operation mode */
+ 		if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_APCLI)
+ 			wrqin->u.mode = IW_MODE_INFRA;		/* ApCli Mode. */
++		else if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_MESH)
++			wrqin->u.mode = IW_MODE_MESH;		/* Mesh Mode. */
++		else if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_WDS)
++			wrqin->u.mode = IW_MODE_REPEAT;		/* Wds Mode. */
++		else if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_MONITOR)
++			wrqin->u.mode = IW_MODE_MONITOR;	/* Monitor Mode. */
+ 		else
+ 			wrqin->u.mode = IW_MODE_MASTER;		/* AP Mode. */
+ 		break;

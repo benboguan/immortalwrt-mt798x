@@ -1,0 +1,207 @@
+--- a/mt_wifi/embedded/common/cmm_info.c
++++ b/mt_wifi/embedded/common/cmm_info.c
+@@ -6487,12 +6487,8 @@ RTMP_STRING *GetAuthMode(CHAR auth)
+ 			3.) UI needs to prepare at least 4096bytes to get the results
+     ==========================================================================
+ */
+-#define	LINE_LEN	(4+4+33+20+23+8+9+11+7+3+8+10+8)	/* No+Channel+SSID+Bssid+Security+RSSI+Signal+WiressMode+ExtCh+NetworkType+LEN+BcnRept+MWDSCap*/
+ #ifdef CUSTOMER_VENDOR_IE_SUPPORT
+-#ifdef CUSTOMER_MAXBITRATE_SUPPORT
+-#define	LINE_LEN	(4+4+33+20+33+9+11+7+3+10+8+8)
+-/* Channel+LEN+SSID+Bssid+Security+Signal+WiressMode+ExtCh+NetworkType*/
+-#endif
++#define	LINE_LEN	(4+4+4+5+33+20+23+8+9+11+7+3+8+9+8+8+8)	/* No+Channel+CentralChannel+SecCentralChannel+SSID+Bssid+Security+RSSI+Signal+WiressMode+ExtCh+NetworkType+ht_ch_bandwidth+vht_ch_bandwidth+LEN+BcnRept+MWDSCap*/
+ #endif
+ #ifdef CONFIG_STA_SUPPORT
+ #ifdef WSC_STA_SUPPORT
+@@ -6523,6 +6519,20 @@ VOID RTMPCommSiteSurveyData(
+ 		MTWF_DBG(NULL, DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
+ 		return;
+ 	}
++	/*CentralChannel*/
++	LeftBufSize = MsgLen - strlen(msg);
++	ret = snprintf(msg + strlen(msg), LeftBufSize, "%-4d", pBss->CentralChannel);
++	if (os_snprintf_error(LeftBufSize, ret)) {
++		MTWF_DBG(NULL, DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
++		return;
++	}
++	/*SecCentralChannel*/
++	LeftBufSize = MsgLen - strlen(msg);
++	ret = snprintf(msg + strlen(msg), LeftBufSize, "%-5d", pBss->SecCentralChannel);
++	if (os_snprintf_error(LeftBufSize, ret)) {
++		MTWF_DBG(NULL, DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
++		return;
++	}
+ 	/*SSID*/
+ 	NdisZeroMemory(Ssid, (MAX_LEN_OF_SSID + 1));
+ 
+@@ -6728,6 +6738,20 @@ VOID RTMPCommSiteSurveyData(
+ 			MTWF_DBG(NULL, DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
+ 			return;
+ 		}
++	} else if (pBss->BssType == BSS_MONITOR) {
++		LeftBufSize = MsgLen - strlen(msg);
++		ret = snprintf(msg + strlen(msg), LeftBufSize, "%-3s", " Mo");
++		if (os_snprintf_error(LeftBufSize, ret)) {
++			MTWF_DBG(NULL, DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
++			return;
++		}
++	} else if (pBss->BssType == BSS_MESH) {
++		LeftBufSize = MsgLen - strlen(msg);
++		ret = snprintf(msg + strlen(msg), LeftBufSize, "%-3s", " Me");
++		if (os_snprintf_error(LeftBufSize, ret)) {
++			MTWF_DBG(NULL, DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
++			return;
++		}
+ 	} else {
+ 		LeftBufSize = MsgLen - strlen(msg);
+ 		ret = snprintf(msg + strlen(msg), LeftBufSize, "%-3s", " In");
+@@ -6737,6 +6761,22 @@ VOID RTMPCommSiteSurveyData(
+ 		}
+ 	}
+ 
++	/* ht_ch_bandwidth */
++	LeftBufSize = MsgLen - strlen(msg);
++	ret = snprintf(msg + strlen(msg), LeftBufSize, " %-8d", pBss->CustomerBssEntry.ht_ch_bandwidth);
++	if (os_snprintf_error(LeftBufSize, ret)) {
++		MTWF_DBG(NULL, DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
++		return;
++	}
++
++	/* vht_ch_bandwidth */
++	LeftBufSize = MsgLen - strlen(msg);
++	ret = snprintf(msg + strlen(msg), LeftBufSize, " %-9d", pBss->CustomerBssEntry.vht_ch_bandwidth);
++	if (os_snprintf_error(LeftBufSize, ret)) {
++		MTWF_DBG(NULL, DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
++		return;
++	}
++
+ 	/* SSID Length */
+ 	LeftBufSize = MsgLen - strlen(msg);
+ 	ret = snprintf(msg + strlen(msg), LeftBufSize, " %-8d", pBss->SsidLen);
+@@ -6913,8 +6953,8 @@ VOID RTMPIoctlGetSiteSurvey(
+ #else
+ 	LeftBufSize = TotalLen - strlen(msg);
+ 
+-	Status = snprintf(msg + strlen(msg), LeftBufSize, "%-4s%-4s%-33s%-20s%-23s%-8s%-9s%-11s%-7s%-3s%-8s\n",
+-				"No", "Ch", "SSID", "BSSID", "Security", "Rssi", "Siganl(%)", "W-Mode", " ExtCH", " NT", " SSID_Len");
++	Status = snprintf(msg + strlen(msg), LeftBufSize, "%-4s%-4s%-4s%-5s%-33s%-20s%-23s%-8s%-9s%-11s%-7s%-3s%-8s%-9s%-8s\n",
++				"No", "Ch", "CCh", "SCCh", "SSID", "BSSID", "Security", "Rssi", "Siganl(%)", "W-Mode", " ExtCH", " NT", " HT_Width", " VHT_Width", " SSID_Len");
+ 
+ 	if (os_snprintf_error(LeftBufSize, Status)) {
+ 		MTWF_DBG(pAdapter, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
+@@ -6930,7 +6970,7 @@ VOID RTMPIoctlGetSiteSurvey(
+ 	}
+ #endif /* WSC_INCLUDED */
+ 	LeftBufSize = TotalLen - strlen(msg);
+-	Status = snprintf(msg + strlen(msg) - 1, LeftBufSize, "%-10s\n", " BcnRept");
++	Status = snprintf(msg + strlen(msg) - 1, LeftBufSize, "%-8s\n", " BcnRept");
+ 	if (os_snprintf_error(LeftBufSize, Status)) {
+ 		MTWF_DBG(pAdapter, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
+ 		goto ERROR;
+@@ -6981,7 +7021,8 @@ VOID RTMPIoctlGetSiteSurvey(
+ 		if (pBss->Channel == 0)
+ 			break;
+ 
+-		if ((strlen(msg) + max_len) >= BufLen)
++		/* get_site_survey cant get more scan result */
++		if ((strlen(msg) + max_len) >= TotalLen)
+ 			break;
+ 
+ 		/*No*/
+@@ -7018,53 +7059,53 @@ VOID RTMPIoctlGetSiteSurvey(
+ 
+ 		if (pBss->WscDPIDFromWpsAP == DEV_PASS_ID_PIN) {
+ 			LeftBufSize = TotalLen - strlen(msg);
+-			Status = snprintf(msg + strlen(msg), LeftBufSize, "%-5s", " PIN");
++			Status = snprintf(msg + strlen(msg) - 1, LeftBufSize, "%-5s", " PIN");
+ 			if (os_snprintf_error(LeftBufSize, Status)) {
+ 				MTWF_DBG(pAdapter, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
+ 				goto ERROR;
+ 			}
+ 		} else if (pBss->WscDPIDFromWpsAP == DEV_PASS_ID_PBC) {
+ 			LeftBufSize = TotalLen - strlen(msg);
+-			Status = snprintf(msg + strlen(msg), LeftBufSize, "%-5s", " PBC");
++			Status = snprintf(msg + strlen(msg) - 1, LeftBufSize, "%-5s", " PBC");
+ 			if (os_snprintf_error(LeftBufSize, Status)) {
+ 				MTWF_DBG(pAdapter, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
+ 				goto ERROR;
+ 			}
+ 		} else {
+ 			LeftBufSize = TotalLen - strlen(msg);
+-			Status = snprintf(msg + strlen(msg), LeftBufSize, "%-5s", " ");
++			Status = snprintf(msg + strlen(msg) - 1, LeftBufSize, "%-5s", " ***");
+ 			if (os_snprintf_error(LeftBufSize, Status)) {
+ 				MTWF_DBG(pAdapter, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
+ 				goto ERROR;
+ 			}
+ 		}
+ 
+ #endif /* WSC_INCLUDED */
+ #ifndef MWDS
+ 		LeftBufSize = TotalLen - strlen(msg);
+-		Status = snprintf(msg + strlen(msg), LeftBufSize, "%-7s\n", pBss->FromBcnReport ? " YES" : " NO");
++		Status = snprintf(msg + strlen(msg) - 1, LeftBufSize, "%-8s\n", pBss->FromBcnReport ? " YES" : " NO");
+ 		if (os_snprintf_error(LeftBufSize, Status)) {
+ 			MTWF_DBG(pAdapter, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
+ 			goto ERROR;
+ 		}
+ #else
+ 		LeftBufSize = TotalLen - strlen(msg);
+-		Status = snprintf(msg + strlen(msg), LeftBufSize, "%-7s", pBss->FromBcnReport ? " YES" : " NO");
++		Status = snprintf(msg + strlen(msg) - 1, LeftBufSize, "%-8s\n", pBss->FromBcnReport ? " YES" : " NO");
+ 		if (os_snprintf_error(LeftBufSize, Status)) {
+ 			MTWF_DBG(pAdapter, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
+ 			goto ERROR;
+ 		}
+ 
+ 		if (pBss->bSupportMWDS) {
+ 			LeftBufSize = TotalLen - strlen(msg);
+-			Status = snprintf(msg + strlen(msg), LeftBufSize, "%-4s\n", " YES");
++			Status = snprintf(msg + strlen(msg) - 1, LeftBufSize, "%-8s\n", " YES");
+ 			if (os_snprintf_error(LeftBufSize, Status)) {
+ 				MTWF_DBG(pAdapter, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
+ 				goto ERROR;
+ 			}
+ 		} else {
+ 			LeftBufSize = TotalLen - strlen(msg);
+-			Status = snprintf(msg + strlen(msg), LeftBufSize, "%-4s\n", " NO");
++			Status = snprintf(msg + strlen(msg) - 1, LeftBufSize, "%-8s\n", " NO");
+ 			if (os_snprintf_error(LeftBufSize, Status)) {
+ 				MTWF_DBG(pAdapter, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
+ 				goto ERROR;
+@@ -7085,30 +7126,30 @@ VOID RTMPIoctlGetSiteSurvey(
+ 
+ 			if (pBss->FT_MDIE.FtCapPlc.field.FtOverDs) {
+ 				LeftBufSize = TotalLen - strlen(msg);
+-				Status = snprintf(msg + strlen(msg), LeftBufSize, "%-9s", " TRUE");
++				Status = snprintf(msg + strlen(msg) - 1, LeftBufSize, "%-9s", " TRUE");
+ 				if (os_snprintf_error(LeftBufSize, Status)) {
+ 					MTWF_DBG(pAdapter, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
+ 					goto ERROR;
+ 				}
+ 			} else {
+ 				LeftBufSize = TotalLen - strlen(msg);
+-				Status = snprintf(msg + strlen(msg), LeftBufSize, "%-9s", " FALSE");
++				Status = snprintf(msg + strlen(msg) - 1, LeftBufSize, "%-9s", " FALSE");
+ 				if (os_snprintf_error(LeftBufSize, Status)) {
+ 					MTWF_DBG(pAdapter, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
+ 					goto ERROR;
+ 				}
+ 			}
+ 
+ 			if (pBss->FT_MDIE.FtCapPlc.field.RsrReqCap) {
+ 				LeftBufSize = TotalLen - strlen(msg);
+-				Status = snprintf(msg + strlen(msg), LeftBufSize, "%-10s\n", " TRUE");
++				Status = snprintf(msg + strlen(msg) - 1, LeftBufSize, "%-10s\n", " TRUE");
+ 				if (os_snprintf_error(LeftBufSize, Status)) {
+ 					MTWF_DBG(pAdapter, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
+ 					goto ERROR;
+ 				}
+ 			} else {
+ 				LeftBufSize = TotalLen - strlen(msg);
+-				Status = snprintf(msg + strlen(msg), LeftBufSize, "%-10s\n", " FALSE");
++				Status = snprintf(msg + strlen(msg) - 1, LeftBufSize, "%-10s\n", " FALSE");
+ 				if (os_snprintf_error(LeftBufSize, Status)) {
+ 					MTWF_DBG(pAdapter, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "Snprintf failed!\n");
+ 					goto ERROR;
