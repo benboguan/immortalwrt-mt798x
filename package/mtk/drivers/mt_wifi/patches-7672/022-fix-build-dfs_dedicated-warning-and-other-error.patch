@@ -1,6 +1,6 @@
 --- a/mt_wifi_ap/Kconfig
 +++ b/mt_wifi_ap/Kconfig
-@@ -282,7 +282,6 @@ #WDS STA
+@@ -287,7 +287,6 @@ #WDS STA
  config WDS_STA_SUPPORT
  	bool "WDS STA Support"
  	depends on APCLI_SUPPORT
@@ -10,7 +10,7 @@
  
 --- a/mt_wifi/os/linux/Kconfig.mt_wifi_ap
 +++ b/mt_wifi/os/linux/Kconfig.mt_wifi_ap
-@@ -282,7 +282,6 @@ #WDS STA
+@@ -287,7 +287,6 @@ #WDS STA
  config WDS_STA_SUPPORT
  	bool "WDS STA Support"
  	depends on APCLI_SUPPORT
