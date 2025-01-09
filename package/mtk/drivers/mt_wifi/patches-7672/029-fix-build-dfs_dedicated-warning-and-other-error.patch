@@ -18,21 +18,6 @@
          depends on ENTERPRISE_AP_SUPPORT
  	default n
  
---- a/mt_wifi/embedded/ap/ap.c
-+++ b/mt_wifi/embedded/ap/ap.c
-@@ -413,10 +413,11 @@ UCHAR ApAutoChannelAtBootUp(RTMP_
- 			MTWF_DBG(pAd, DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_INFO, "[ApAutoChannelAtBootUp] ACS of BandIdx = %d is already DONE, Channel = %d\n", BandIdx, NewChannel);
- 		}
- #if defined(DFS_MT7916_DEDICATED_ZW) || defined(DFS_MT7981_DEDICATED_ZW)
--		if (pAd->CommonCfg.DfsParameter.BW160DedicatedSup == TRUE)
-+		if (pAd->CommonCfg.DfsParameter.BW160DedicatedSup == TRUE) {
- 			DfsZeroWaitBW160StateUpdate(pAd, &vht_bw, NewChannel);
- 
- 			wlan_config_set_vht_bw(wdev, vht_bw);
-+		}
- #endif
- #ifdef DFS_VENDOR10_CUSTOM_FEATURE
- 		/* Update channel of wdev as new channel */
 --- a/mt_wifi/embedded/common/capi.c
 +++ b/mt_wifi/embedded/common/capi.c
 @@ -746,7 +746,7 @@ switch (mode) {
@@ -125,3 +110,16 @@
  	break;
  
  	case EVENT_PHY_PER_STA_TXRX_AIR_TIME:
+--- a/mt_wifi/embedded/sta/sta.c
++++ b/mt_wifi/embedded/sta/sta.c
+@@ -1638,8 +1638,10 @@ BOOLEAN apcli_fill_non_offload_tx_blk(RTMP_ADAPTER
+ #ifdef APCLI_AS_WDS_STA_SUPPORT
+ 					if (pAd->StaCfg[pMacEntry->func_tb_idx].wdev.wds_enable == 0 || pAd->CommonCfg.bApcliASWDSSTADisabled)
+ #endif /* APCLI_AS_WDS_STA_SUPPORT */
++					{
+ 						apCliPkt = (PNDIS_PACKET)MATEngineTxHandle(pAd, pPacket, pMacEntry->func_tb_idx, pMacEntry->EntryType);
+ 						pMacAddr = &pAd->StaCfg[pMacEntry->func_tb_idx].wdev.if_addr[0];
++					}
+ 					}
+ 
+ 					if (apCliPkt) {

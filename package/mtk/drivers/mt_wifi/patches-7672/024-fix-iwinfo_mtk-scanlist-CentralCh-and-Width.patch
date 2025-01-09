@@ -1,0 +1,55 @@
+--- a/mt_wifi/embedded/mgmt/bss_ops.c
++++ b/mt_wifi/embedded/mgmt/bss_ops.c
+@@ -705,7 +705,7 @@ VOID BssEntrySet(
+ 	pBss->ExtRateLen = rate->ext_rate_len;
+ 	pBss->Erp  = ie_list->Erp;
+ 	pBss->Channel = ie_list->Channel;
+-	pBss->CentralChannel = ie_list->Channel;
++	pBss->CentralChannel = ie_list->NewChannel;
+ 	pBss->Rssi = Rssi;
+ 	/* Update CkipFlag. if not exists, the value is 0x0*/
+ 	pBss->CkipFlag = ie_list->CkipFlag;
+@@ -775,15 +775,10 @@ VOID BssEntrySet(
+ 					/* 80M */
+ 						pBss->CentralChannel = vht_op->vht_op_info.ccfs_0;
+ 					else {
+-						if (((vht_op->vht_op_info.ccfs_1) - (vht_op->vht_op_info.ccfs_0)) == 8 ||
+-							((vht_op->vht_op_info.ccfs_1) - (vht_op->vht_op_info.ccfs_0)) == -8)
+-						/* 160M */
+-							pBss->CentralChannel = vht_op->vht_op_info.ccfs_1;
+-						else {
+-						/* 80M+80M */
+-							pBss->CentralChannel = vht_op->vht_op_info.ccfs_0;
+-							pBss->SecCentralChannel = vht_op->vht_op_info.ccfs_1;
+-						}
++						/* Ccfs_0 and ccfs_1 have already been converted in mgmt_vht.c,
++						so remove the above code directly! */
++						pBss->CentralChannel = vht_op->vht_op_info.ccfs_0;
++						pBss->SecCentralChannel = vht_op->vht_op_info.ccfs_1;
+ 					}
+ 				}
+ 			}
+--- a/mt_wifi/embedded/mgmt/mgmt_ht.c
++++ b/mt_wifi/embedded/mgmt/mgmt_ht.c
+@@ -245,7 +245,10 @@ UCHAR get_cent_ch_by_htinfo(
+ 	if ((ht_op->ControlChan > 2) &&
+ 		(ht_op->AddHtInfo.ExtChanOffset == EXTCHA_BELOW) &&
+ 		(ht_cap->HtCapInfo.ChannelWidth == BW_40))
++		if (ht_op->ControlChan == 14)
++			cent_ch = ht_op->ControlChan - 1;
++		else
++			cent_ch = ht_op->ControlChan - 2;
+-		cent_ch = ht_op->ControlChan - 2;
+ 	else if ((ht_op->AddHtInfo.ExtChanOffset == EXTCHA_ABOVE) &&
+ 			 (ht_cap->HtCapInfo.ChannelWidth == BW_40))
+ 		cent_ch = ht_op->ControlChan + 2;
+--- a/mt_wifi/embedded/mgmt/mgmt_vht.c
++++ b/mt_wifi/embedded/mgmt/mgmt_vht.c
+@@ -1190,6 +1190,7 @@ INT build_vht_oper_ie(RTMP_ADAPTER
+ 	cen_ch_2 = wlan_operate_get_cen_ch_2(wdev);
+ 
+ 	NdisZeroMemory((UCHAR *)&vht_op, sizeof(VHT_OP_IE));
++	Channel = wdev->channel;
+ #ifdef CONFIG_AP_SUPPORT
+ 	pDot11h = wdev->pDot11_H;
+ 	ch_band = wlan_config_get_ch_band(wdev);

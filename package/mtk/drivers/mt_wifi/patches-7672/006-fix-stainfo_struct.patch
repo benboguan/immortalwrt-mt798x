@@ -11,7 +11,7 @@
 +}
 +
 +// fix AvgRssi3 and HTTRANSMIT_SETTING.MODE
-+//#define MAX_NUMBER_OF_MAC               544
++
 +typedef union _HTTRANSMIT_SETTING_FIX {
 +#ifdef RT_BIG_ENDIAN
 +	struct {
@@ -63,7 +63,7 @@
 +
 +typedef struct _RT_802_11_MAC_TABLE_FIX {
 +	ULONG Num;
-+	RT_802_11_MAC_ENTRY_FIX Entry[MAX_NUMBER_OF_MAC]; //MAX_LEN_OF_MAC_TABLE
++	RT_802_11_MAC_ENTRY_FIX Entry[MAX_LEN_OF_MAC_TABLE];
 +} RT_802_11_MAC_TABLE_FIX, *PRT_802_11_MAC_TABLE_FIX;
 +
 +UINT32 RTMPGetLastTxRate_fix(PRTMP_ADAPTER pAd, MAC_TABLE_ENTRY *pEntry)

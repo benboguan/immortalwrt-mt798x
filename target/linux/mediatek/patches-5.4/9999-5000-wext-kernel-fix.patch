@@ -1,0 +1,29 @@
+--- a/include/uapi/linux/wireless.h
++++ b/include/uapi/linux/wireless.h
+@@ -428,7 +428,7 @@
+ /* ----------------------- OTHER CONSTANTS ----------------------- */
+ 
+ /* Maximum frequencies in the range struct */
+-#define IW_MAX_FREQUENCIES	32
++#define IW_MAX_FREQUENCIES	59
+ /* Note : if you have something like 80 frequencies,
+  * don't increase this constant and don't fill the frequency list.
+  * The user will be able to set by channel anyway... */
+@@ -446,7 +446,7 @@
+ 
+ /* Maximum of address that you may get in the
+    list of access points in range */
+-#define IW_MAX_AP		64
++#define IW_MAX_AP		128
+ 
+ /* Maximum size of the ESSID and NICKN strings */
+ #define IW_ESSID_MAX_SIZE	32
+@@ -544,7 +544,7 @@ /* Scanning request flags */
+ #define IW_SCAN_TYPE_ACTIVE 0
+ #define IW_SCAN_TYPE_PASSIVE 1
+ /* Maximum size of returned data */
+-#define IW_SCAN_MAX_DATA	4096	/* In bytes */
++#define IW_SCAN_MAX_DATA	16384	/* In bytes */
+ 
+ /* Max number of char in custom event - use multiple of them if needed */
+ #define IW_CUSTOM_MAX		256	/* In bytes */

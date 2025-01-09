@@ -20,9 +20,7 @@
  
  /* Reason code definitions */
  #define REASON_RESERVED                 0
---- a/mt_wifi/os/linux/ap_ioctl.c
-+++ b/mt_wifi/os/linux/ap_ioctl.c
-@@ -784,6 +784,12 @@ case SIOCGIWMODE:  /*get operation mode */
+@@ -786,6 +786,12 @@ case SIOCGIWMODE:  /*get operation mode */
  	case SIOCGIWMODE:  /*get operation mode */
  		if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_APCLI)
  			wrqin->u.mode = IW_MODE_INFRA;		/* ApCli Mode. */
