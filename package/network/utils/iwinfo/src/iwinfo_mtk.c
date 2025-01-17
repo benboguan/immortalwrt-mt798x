@@ -495,7 +495,7 @@ static int mtk_get_signal(const char *ifname, int *buf)
 
 		if (num > 0)
 			*buf = -(snr_sum / num);
-		else
+		else 
 			*buf = -127;
 
 		return 0;
@@ -806,7 +806,7 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 {
 	struct iwinfo_scanlist_entry *e = (struct iwinfo_scanlist_entry *)buf;
 	char *data = NULL;
-	unsigned int data_len = 8192;
+	unsigned int data_len = 16384;
 	int offsets[SCAN_DATA_MAX];
 	char cmd[128];
 	int index = 0;
