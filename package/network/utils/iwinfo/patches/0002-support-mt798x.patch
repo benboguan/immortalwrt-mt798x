@@ -46,9 +46,45 @@
  
  #define LUA_REG(type,op) \
  	{ #op, iwinfo_L_##type##_##op }
+--- a/iwinfo_cli.c
++++ b/iwinfo_cli.c
+@@ -799,14 +799,16 @@ static void print_assoclist(const
+ 			(e->signal - e->noise),
+ 			e->inactive);
+ 
+-		printf("	RX: %-38s  %8d Pkts.\n",
++		printf("	RX: %-38s  %8d Pkts  %8ld Byts.\n",
+ 			format_assocrate(&e->rx_rate),
+-			e->rx_packets
++			e->rx_packets,
++			e->rx_bytes
+ 		);
+ 
+-		printf("	TX: %-38s  %8d Pkts.\n",
++		printf("	TX: %-38s  %8d Pkts  %8ld Byts.\n",
+ 			format_assocrate(&e->tx_rate),
+-			e->tx_packets
++			e->tx_packets,
++			e->tx_bytes
+ 		);
+ 
+ 		printf("	expected throughput: %s\n\n",
 --- a/iwinfo_lua.c
 +++ b/iwinfo_lua.c
-@@ -777,6 +777,36 @@ LUA_WRAP_STRUCT_OP(nl80211,mbssid_suppor
+@@ -355,6 +355,12 @@ static int iwinfo_L_assoclist(lua_State *L
+ 			lua_pushnumber(L, e->tx_packets);
+ 			lua_setfield(L, -2, "tx_packets");
+ 
++			lua_pushnumber(L, e->rx_bytes);
++			lua_setfield(L, -2, "rx_bytes");
++
++			lua_pushnumber(L, e->tx_bytes);
++			lua_setfield(L, -2, "tx_bytes");
++
+ 			set_rateinfo(L, &e->rx_rate, true);
+ 			set_rateinfo(L, &e->tx_rate, false);
+ 
+@@ -777,6 +783,36 @@ LUA_WRAP_STRUCT_OP(nl80211,mbssid_suppor
  LUA_WRAP_STRUCT_OP(nl80211,hardware_id)
  #endif
  
@@ -85,7 +121,7 @@
  /* Wext */
  #ifdef USE_WEXT
  LUA_WRAP_INT_OP(wext,channel)
-@@ -906,6 +936,39 @@ static const luaL_reg R_nl80211[] = {
+@@ -906,6 +942,39 @@ static const luaL_reg R_nl80211[] = {
  };
  #endif
  
@@ -125,7 +161,7 @@
  /* Wext table */
  #ifdef USE_WEXT
  static const luaL_reg R_wext[] = {
-@@ -977,6 +1040,15 @@ LUALIB_API int luaopen_iwinfo(lua_State
+@@ -977,6 +1046,15 @@ LUALIB_API int luaopen_iwinfo(lua_State
  	lua_setfield(L, -2, "nl80211");
  #endif
  
