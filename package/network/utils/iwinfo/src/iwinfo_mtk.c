@@ -495,7 +495,7 @@ static int mtk_get_signal(const char *ifname, int *buf)
 
 		if (num > 0)
 			*buf = -(snr_sum / num);
-		else 
+		else
 			*buf = -127;
 
 		return 0;
@@ -545,25 +545,14 @@ static int mtk_get_quality(const char *ifname, int *buf)
 
 	if (!mtk_get_signal(ifname, &signal))
 	{
-		/* A positive signal level is usually just a quality
-		 * value, pass through as-is */
-		if (signal >= 0)
-		{
-			*buf = signal;
-		}
-
-		/* The mtk wext compat layer assumes a signal range
-		 * of -127 dBm to -27 dBm, the quality value is derived
-		 * by adding fix 127 to the mtk signal level */
+		if (signal >= -50)
+			*buf = 100;
+		else if (signal >= -80 && signal < -50)
+			*buf = (24 + ((signal + 80) * 26) / 10);
+		else if (signal >= -90 && signal < -80)
+			*buf = (((signal + 90) * 26) / 10);
 		else
-		{
-			if (signal < -127)
-				signal = -127;
-			else if (signal > -27)
-				signal = -27;
-
-			*buf = (signal + 127);
-		}
+			*buf = 0;
 
 		return 0;
 	}
