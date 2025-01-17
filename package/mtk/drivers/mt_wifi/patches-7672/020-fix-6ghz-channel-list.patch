@@ -13,7 +13,6 @@
 +			struct channel_list_basic *chn_list;
 +
 +			wdev = get_wdev_by_ioctl_idx_and_iftype(pAd, pObj->ioctl_if, pObj->ioctl_if_type);
-+
 +			if (wdev == NULL)
 +				break;
 +
@@ -28,13 +27,14 @@
 +			for (i = 0; i < pChCtrl->ChListNum && i < MAX_NUM_OF_CHANNELS; i++) {
 +				chn_list->ChList[i].channel_idx = i;
 +				chn_list->ChList[i].channel = pChCtrl->ChList[i].Channel;
++				pAd->ChannelList[i].DfsReq = pChCtrl->ChList[i].DfsReq;
 +			}
 +			chn_list->ChListNum = pChCtrl->ChListNum;
++			setChannelList(pAd, wdev, chn_list);
 +
 +			wrq->u.data.length = sizeof(struct channel_list_basic);
 +			Status = copy_to_user(wrq->u.data.pointer, chn_list, wrq->u.data.length);
 +			os_free_mem(chn_list);
-+
 +			break;
 +		}
  #ifdef MAP_6E_SUPPORT

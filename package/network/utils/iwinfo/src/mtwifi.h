@@ -65,13 +65,13 @@ typedef struct _RT_802_11_MAC_TABLE_FIX {
 } RT_802_11_MAC_TABLE;
 
 typedef struct _channel_info_basic {
-	UINT8 channel;
-	UINT8 channel_idx;
+	unsigned char channel;
+	unsigned char channel_idx;
 } CHANNEL_INFO_BASIC, *PCHANNEL_INFO_BASIC;
 
 struct channel_list_basic {
 	CHANNEL_INFO_BASIC ChList[MAX_NUM_OF_CHANNELS];
-	UINT8 ChListNum;
+	unsigned char ChListNum;
 };
 
 #define RT_PRIV_IOCTL				(SIOCIWFIRSTPRIV + 0x01)
