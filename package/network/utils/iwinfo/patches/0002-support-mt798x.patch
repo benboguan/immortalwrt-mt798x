@@ -48,6 +48,15 @@
  	{ #op, iwinfo_L_##type##_##op }
 --- a/iwinfo_cli.c
 +++ b/iwinfo_cli.c
+@@ -69,7 +69,7 @@
+ 
+ static char * format_frequency(int freq)
+ {
+-	static char buf[11];
++	static char buf[16];
+ 
+ 	if (freq <= 0)
+ 		snprintf(buf, sizeof(buf), "unknown");
 @@ -799,14 +799,16 @@ static void print_assoclist(const
  			(e->signal - e->noise),
  			e->inactive);
