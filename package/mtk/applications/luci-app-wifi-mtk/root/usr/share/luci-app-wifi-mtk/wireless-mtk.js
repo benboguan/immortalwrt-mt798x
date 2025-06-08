@@ -215,9 +215,7 @@ function format_wifirate(rate) {
 		s += ', HE-MCS\xa0%d'.format(mcs);
 		if (nss) s += ', HE-NSS\xa0%d'.format(nss);
 		if (he_gi) s += ', HE-GI\xa0%d'.format(he_gi);
-		else s += ', ' + _('HE-GI 0').replace(/ /g, '\xa0');
 		if (he_dcm) s += ', HE-DCM\xa0%d'.format(he_dcm);
-		else s += ', ' + _('HE-DCM 0').replace(/ /g, '\xa0');
 	}
 
 	return s;
@@ -381,7 +379,6 @@ var CBIWifiFrequencyValue = form.Value.extend({
 				'': [
 					'2g', '2.4 GHz', this.channels['2g'].length > 3,
 					'5g', '5 GHz', this.channels['5g'].length > 3,
-					'6g', '6 GHz', this.channels['6g'].length > 3,
 					'60g', '60 GHz', this.channels['60g'].length > 0
 				],
 				'n': [
