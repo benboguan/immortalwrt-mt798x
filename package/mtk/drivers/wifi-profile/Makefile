@@ -168,6 +168,7 @@ define Package/wifi-script/install
 	$(INSTALL_DIR) $(1)/lib/wifi/
 	$(INSTALL_DIR) $(1)/lib/netifd/wireless/
 	$(INSTALL_DIR) $(1)/etc/uci-defaults/
+	$(INSTALL_DIR) $(1)/sbin/
 	$(INSTALL_DIR) $(1)/etc/map/
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface/
 

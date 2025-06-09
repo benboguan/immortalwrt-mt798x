@@ -45,7 +45,6 @@ sed -i "s/map_agent_alid=.*/map_agent_alid=${agent_al_mac}/g" /etc/map/1905d.cfg
     if [ "$rax0_798x" -eq "1" ]; then
 	rax0=0
     fi
-     
 
     if [ "$rax0" -eq "1" ] && [ "$ra0" -eq "1" ]; then
 	wapp -d1 -v2 -cra0 -crax0 > /dev/null&
@@ -78,5 +77,4 @@ ra0_798x="$(uci get wireless.default_ra0.steeringbssid)"
 bash setbssid ra0 "$ra0_798x"
 if [ $ra0_798x ]; then
 	bash setbssid ra0 "$ra0_798x"
-
 fi

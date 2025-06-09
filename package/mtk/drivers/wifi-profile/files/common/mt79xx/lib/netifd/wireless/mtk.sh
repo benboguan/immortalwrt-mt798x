@@ -1730,7 +1730,7 @@ EOF
 #加锁
 	echo "MTK Interfaces Pending..."
 #停用wapp
-	# wapp_openwrt.sh stop
+	startwapp.sh stop
 	
 	if lock -n $WIFI_OP_LOCK; then
 		echo "reload wifi"
@@ -1771,7 +1771,7 @@ EOF
 	wireless_set_up
 
 #启动wapp
-	# wapp_openwrt.sh start
+	startwapp.sh start
 	
 #解锁
 	lock -u $WIFI_OP_LOCK
