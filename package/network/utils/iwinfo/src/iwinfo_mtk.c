@@ -476,7 +476,7 @@ static int mtk_get_signal(const char *ifname, int *buf)
 {
 //	return mtk_get_txpower(ifname, buf);
 	int snr_sum, num;
-	char tmp_buf[MAX_NUMBER_OF_MAC];
+	char tmp_buf[IWINFO_BUFSIZE];
 	struct iwinfo_assoclist_entry tmp;
 	int ret_len, i;
 
@@ -795,7 +795,7 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 {
 	struct iwinfo_scanlist_entry *e = (struct iwinfo_scanlist_entry *)buf;
 	char *data = NULL;
-	unsigned int data_len = 16384;
+	unsigned int data_len = 8192;
 	int offsets[SCAN_DATA_MAX];
 	char cmd[128];
 	int index = 0;
