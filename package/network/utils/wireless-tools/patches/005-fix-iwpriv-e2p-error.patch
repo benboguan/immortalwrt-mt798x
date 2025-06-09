@@ -15,20 +15,9 @@
        wrq.u.data.length = 0L;
 +      if(0 == strcmp("get_site_survey", cmdname))
 +      {
-+	      wrq.u.data.length =8192; // 120*128; // 120 is per entry size, 128 is counter of entry
++	      wrq.u.data.length = 120*128; // 120 is per entry size, 128 is counter of entry
 +	      fprintf(stderr, "(%d)cmdname %s\n",cmdname);
 +      }
      }
  
    strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
-@@ -457,6 +462,10 @@
- 	}
-     }
- 
-+#if 1
-+	if((priv[k].cmd == 0x8BED) && (wrq.u.data.pointer == (caddr_t) buffer))
-+	    wrq.u.data.length = sizeof(buffer);
-+#endif  
-   /* Perform the private ioctl */
-   if(ioctl(skfd, priv[k].cmd, &wrq) < 0)
-     {

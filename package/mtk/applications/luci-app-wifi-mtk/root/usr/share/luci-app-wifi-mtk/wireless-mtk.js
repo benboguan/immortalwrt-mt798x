@@ -1017,7 +1017,7 @@ return view.extend({
 
 					o = ss.taboption('advanced', form.Value, 'maxassoc', _('Connection Limit'), _('The default number of single frequency connections for drivers is 64'));
 					o.optional = true;
-					o.placeholder = 64;
+					o.placeholder = 128;
 					o.datatype = 'range(1,128)';
 
 					o = ss.taboption('advanced', form.Value, 'beacon_int', _('Beacon Interval'));
@@ -1328,6 +1328,18 @@ return view.extend({
 					o.optional    = true;
 					o.placeholder = 65535;
 					o.datatype    = 'uinteger';*/
+
+					o = ss.taboption('advanced', form.Value, 'steeringthresold', _('802.11V roam steering threshold'), _('dBm'));
+					o.optional    = true;
+					o.placeholder = 0;
+					o.datatype = 'range(-100,0)';
+					o.depends('mode', 'ap');
+
+					o = ss.taboption('advanced', form.DynamicList, 'steeringbssid',_('802.11V roam target bssid'), _('MAC-List'));
+					o.datatype = 'macaddr';
+					o.optional    = true;
+					o.placeholder = 0;
+					o.depends('mode', 'ap');
 
 					o = ss.taboption('advanced', form.Flag, 'disassoc_low_ack', _('Disassociate On Low Acknowledgement'), _('Allow AP mode to disconnect STAs based on low ACK condition'));
 					o.default = o.disabled;
@@ -1701,18 +1713,6 @@ return view.extend({
 					o.depends({ time_advertisement: '2' });
 					o.placeholder = 'UTC8';
 					o.rmempty = true; */
-
-					o = ss.taboption('advanced', form.Value, 'steeringthresold', _('802.11V roam steering threshold'), _('dBm'));
-					o.optional    = true;
-					o.placeholder = 0;
-					o.datatype = 'range(-100,0)';
-					o.depends('mode', 'ap');
-
-					o = ss.taboption('advanced', form.DynamicList, 'steeringbssid',_('802.11V roam target bssid'), _('MAC-List'));
-					o.datatype = 'macaddr';
-					o.optional    = true;
-					o.placeholder = 0;
-					o.depends('mode', 'ap');
 
 					o = ss.taboption('encryption', form.Flag, 'bss_transition', _('BSS Transition Management'), _('802.11v: Basic Service Set (BSS) transition management.'));
 					o.default = o.disabled;

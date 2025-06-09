@@ -1,6 +1,6 @@
 --- a/mt_wifi/embedded/mgmt/bss_ops.c
 +++ b/mt_wifi/embedded/mgmt/bss_ops.c
-@@ -705,7 +705,7 @@ VOID BssEntrySet(
+@@ -699,7 +699,7 @@ VOID BssEntrySet(
  	pBss->ExtRateLen = rate->ext_rate_len;
  	pBss->Erp  = ie_list->Erp;
  	pBss->Channel = ie_list->Channel;

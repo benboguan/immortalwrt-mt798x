@@ -5,7 +5,7 @@
  	maxpriv *= 2;
      }
 -  while(maxpriv < 1000);
-+  while(maxpriv <= 2048);
++  while(maxpriv <= 1024);
  
    /* Cleanup */
    if(priv)

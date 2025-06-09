@@ -1,6 +1,6 @@
 --- a/mt_wifi/embedded/ap/ap.c
 +++ b/mt_wifi/embedded/ap/ap.c
-@@ -2954,6 +2954,11 @@
+@@ -2955,6 +2955,11 @@
  VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
  {
  	int wcid, startWcid, i;
@@ -12,7 +12,7 @@
  #ifdef DOT11_N_SUPPORT
  	BOOLEAN	bRdgActive = FALSE;
  	BOOLEAN bRalinkBurstMode;
-@@ -4030,6 +4035,24 @@
+@@ -4029,6 +4034,24 @@
  		}
  
  		avgRssi = RTMPAvgRssi(pAd, &pEntry->RssiSample);
@@ -55,7 +55,7 @@
  #ifdef ZERO_LOSS_CSA_SUPPORT
  	{"KickOffSta",					Set_KickOffSta_Proc},
  	{"KickOffTime",					Set_KickOffTime_Proc},
-@@ -14991,6 +14993,16 @@
+@@ -15140,6 +15142,16 @@
  	TRUE if all parameters are OK, FALSE otherwise
      ==========================================================================
  */
@@ -72,7 +72,7 @@
  INT Set_AP_KickStaRssiLow_Proc(
  	IN  PRTMP_ADAPTER    pAd,
  	IN  RTMP_STRING *arg)
-@@ -15018,6 +15030,35 @@
+@@ -15167,6 +15179,35 @@
  
  	return TRUE;
  }

@@ -1,0 +1,34 @@
+--- a/mt_wifi/embedded/ap/ap_cfg.c
++++ b/mt_wifi/embedded/ap/ap_cfg.c
+@@ -12688,15 +12688,22 @@ case OID_GET_WIRELESS_BAND:
+ #endif
+ 	case OID_GET_WIRELESS_BAND:
+ 	{
++		struct wifi_dev *wdev = get_wdev_by_ioctl_idx_and_iftype(pAd, pObj->ioctl_if, pObj->ioctl_if_type);
+ 		UCHAR wireless_band;
+ 
+ 		if (wdev) {
+ 			wireless_band = wlan_operate_get_ch_band(wdev);
+ 			wrq->u.data.length = sizeof(wireless_band);
+ 			Status = copy_to_user(wrq->u.data.pointer, &wireless_band, wrq->u.data.length);
+ 			MTWF_DBG(pAd, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_INFO,
+ 				"OID_GET_WIRELESS_BAND, intf %s wireless_band=%d\n", wdev->if_dev->name, wireless_band);
+-		}
++		} else {
++			wireless_band = wlan_config_get_ch_band(wdev);
++			wrq->u.data.length = sizeof(wireless_band);
++			Status = copy_to_user(wrq->u.data.pointer, &wireless_band, wrq->u.data.length);
++			MTWF_DBG(pAd, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_INFO,
++				"OID_GET_WIRELESS_BAND, intf %s wireless_band=%d\n", wdev->if_dev->name, wireless_band);
++		}
+ 		break;
+ 	}
+ 
+@@ -12936,6 +12943,7 @@ case OID_802_11_BW:
+ 	case OID_802_11_BW:
+ 	{
+ 		UCHAR bw;
++		struct wifi_dev *wdev = get_wdev_by_ioctl_idx_and_iftype(pAd, pObj->ioctl_if, pObj->ioctl_if_type);
+ 
+ 		if (wdev) {
+ 			bw = wlan_operate_get_bw(wdev);

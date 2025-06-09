@@ -134,6 +134,10 @@ struct channel_list_basic {
 #define TMI_TX_RATE_CCK_5M_SP   6
 #define TMI_TX_RATE_CCK_11M_SP  7
 
+#define GI_HE_800		0
+#define GI_HE_1600		1
+#define GI_HE_3200		2
+
 /* Extension channel offset */
 #define EXTCHA_NONE			0
 #define EXTCHA_ABOVE		0x1

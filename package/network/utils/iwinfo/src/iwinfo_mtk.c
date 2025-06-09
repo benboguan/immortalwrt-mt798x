@@ -476,7 +476,7 @@ static int mtk_get_signal(const char *ifname, int *buf)
 {
 //	return mtk_get_txpower(ifname, buf);
 	int snr_sum, num;
-	char tmp_buf[IWINFO_BUFSIZE];
+	char tmp_buf[8192];
 	struct iwinfo_assoclist_entry tmp;
 	int ret_len, i;
 
@@ -695,10 +695,8 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 		noise = 0;
 
 	chband = mtk_get_band(ifname);
-	if (chband < 0) {
-		free(table);
+	if (chband < 0)
 		return -1;
-	}
 
 	for (i = 0; i < table->Num; i++) {
 		RT_802_11_MAC_ENTRY *pe = &(table->Entry[i]);
@@ -708,6 +706,7 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 
 		if (chband == MTK_CH_BAND_24G) {
 			e->signal = (pe->AvgRssi0 > pe->AvgRssi1) ? pe->AvgRssi0 : pe->AvgRssi1;
+			//e->signal = pe->AvgRssi0;
 		} else {
 			if (pe->AvgRssi0 > pe->AvgRssi1 && pe->AvgRssi1 > pe->AvgRssi2)
 				e->signal = pe->AvgRssi0;
@@ -795,7 +794,7 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 {
 	struct iwinfo_scanlist_entry *e = (struct iwinfo_scanlist_entry *)buf;
 	char *data = NULL;
-	unsigned int data_len = 8192;
+	unsigned int data_len = 15000;
 	int offsets[SCAN_DATA_MAX];
 	char cmd[128];
 	int index = 0;

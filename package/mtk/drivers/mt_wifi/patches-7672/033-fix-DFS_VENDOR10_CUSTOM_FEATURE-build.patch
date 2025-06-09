@@ -42,3 +42,14 @@
  	wdev_op_class_info op_class;
  	wdev_bss_info bss_info;
  	wdev_ap_metric ap_metrics;
+--- a/mt_wifi/embedded/common/he_cfg.c
++++ b/mt_wifi/embedded/common/he_cfg.c
+@@ -97,7 +97,7 @@ VOID  UniEventDisplayDbgStatus(struct
+ VOID  UniEventDisplayDbgStatus(struct TXCMD_DBG_CMD_STATUS *status)
+ {
+ 	MTWF_PRINT("debug mode: %s\n", (status->enable) ?
+-			 "enable" : "disable"));
++			 "enable" : "disable");
+ 	MTWF_PRINT("TXCMD TX statistics:\n"
+ 			 "total=%d, protect=%d, txdata=%d, trigdata=%d, sw_fid=%d\n",
+ 			 status->txcmd_tx_count, status->txcmd_protect_count,

@@ -118,6 +118,8 @@ detect_mtk() {
 					set wireless.${phyname}.txpower=100
 					set wireless.${phyname}.htmode=$htmode
 					set wireless.${phyname}.noscan=$noscan
+					set wireless.${phyname}.bandsteering=0
+					set wireless.${phyname}.serialize=1
 
 					set wireless.default_${phyname}=wifi-iface
 					set wireless.default_${phyname}.device=${phyname}
@@ -125,10 +127,12 @@ detect_mtk() {
 					set wireless.default_${phyname}.mode=ap
 					set wireless.default_${phyname}.ieee80211k=0
 					set wireless.default_${phyname}.ieee80211v=0
-					set wireless.default_${phyname}.ieee80211w=0
 					set wireless.default_${phyname}.ieee80211r=0
+					set wireless.default_${phyname}.ieee80211w=0
 					set wireless.default_${phyname}.ssid=${ssid}
 					set wireless.default_${phyname}.encryption=none
+					set wireless.default_${phyname}.steeringthresold=0
+					set wireless.default_${phyname}.disabled=0
 EOF
 				uci -q commit wireless
 			}

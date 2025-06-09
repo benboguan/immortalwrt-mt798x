@@ -945,12 +945,16 @@ drv_mtk_setup() {
 			HT_HTC=1
 			if [ "$htmode" == "HE160" -o "$htmode" == "HE80" -o "$htmode" == "HE40" -o "$htmode" == "HE20" ]; then
 				WirelessMode=17
+				HT_BAWinSize=256
 			elif [ "$htmode" == "VHT160" -o "$htmode" == "VHT80" -o "$htmode" == "VHT40" -o "$htmode" == "VHT20" ]; then
 				WirelessMode=14
+				HT_BAWinSize=64
 			elif [ "$htmode" == "HT40" -o "$htmode" == "HT20" ]; then
 				WirelessMode=8
+				HT_BAWinSize=64
 			else
 				WirelessMode=2
+				HT_BAWinSize=64
 			fi
 		;;
 		g)
@@ -958,10 +962,13 @@ drv_mtk_setup() {
 			HT_HTC=1
 			if [ "$htmode" == "HE40" -o "$htmode" == "HE20" ]; then
 				WirelessMode=16
+				HT_BAWinSize=256
 			elif [ "$htmode" == "HT40" -o "$htmode" == "HT20" ]; then
 				WirelessMode=9
+				HT_BAWinSize=64
 			else
 				WirelessMode=4
+				HT_BAWinSize=64
 			fi
 		;;
 		*)
@@ -1228,7 +1235,7 @@ BFBACKOFFenable=0
 BGMultiClient=${legacy_rates:-1}
 BgndScanSkipCh=
 BGProtection=${BGProtection:-0}
-BndStrgBssIdx=1
+BndStrgBssIdx=${bandsteering}
 BSSACM=0;0;0;0
 BSSAifsn=3;7;2;2
 BSSCwmax=10;10;4;3
@@ -1290,7 +1297,7 @@ HostapdDisabled=0
 HT_AMSDU=1
 HT_AutoBA=1
 HT_BADecline=0
-HT_BAWinSize=256
+HT_BAWinSize=${HT_BAWinSize:-256}
 HT_BSSCoexApCntThr=10
 HT_BSSCoexistence=${HT_CE:-1}
 HT_BW=${HT_BW:-1}
@@ -1477,7 +1484,7 @@ QoSR1Enable=1
 QoSMgmtCapa=0
 QuickChannelSwitch=1
 BcnProt=0
-ApCliWirelessMode=
+ApCliWirelessMode=${WirelessMode}
 ApCliBcnProt=0
 WEP1Type1=0
 WEP4Type1=0
@@ -1730,7 +1737,7 @@ EOF
 #加锁
 	echo "MTK Interfaces Pending..."
 #停用wapp
-	startwapp.sh stop
+	# startwapp.sh stop
 	
 	if lock -n $WIFI_OP_LOCK; then
 		echo "reload wifi"
@@ -1771,7 +1778,7 @@ EOF
 	wireless_set_up
 
 #启动wapp
-	startwapp.sh start
+	# startwapp.sh start
 	
 #解锁
 	lock -u $WIFI_OP_LOCK

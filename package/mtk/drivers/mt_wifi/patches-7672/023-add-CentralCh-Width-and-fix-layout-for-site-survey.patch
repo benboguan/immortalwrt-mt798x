@@ -105,7 +105,7 @@
  
 -		if ((strlen(msg) + max_len) >= BufLen)
 +		/* get_site_survey cant get more scan result */
-+		if ((strlen(msg) + max_len) >= (BufLen * 2)) // or >= TotalLen
++		if ((strlen(msg) + max_len) >= TotalLen) // or >= BufLen
  			break;
  
  		/*No*/
