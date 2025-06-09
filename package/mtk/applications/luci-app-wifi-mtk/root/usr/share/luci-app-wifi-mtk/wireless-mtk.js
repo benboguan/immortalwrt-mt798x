@@ -1012,6 +1012,9 @@ return view.extend({
 					o = ss.taboption('advanced', form.Flag, 'whnat', _('Wireless HWNAT'));
 					o.default = o.enabled;
 
+					o = ss.taboption('advanced', form.Flag, 'bandsteering', _('Band Steering'));
+					o.default = o.disabled;
+
 					o = ss.taboption('advanced', form.Value, 'maxassoc', _('Connection Limit'), _('The default number of single frequency connections for drivers is 64'));
 					o.optional = true;
 					o.placeholder = 64;
@@ -1698,6 +1701,18 @@ return view.extend({
 					o.depends({ time_advertisement: '2' });
 					o.placeholder = 'UTC8';
 					o.rmempty = true; */
+
+					o = ss.taboption('advanced', form.Value, 'steeringthresold', _('802.11V roam steering threshold'), _('dBm'));
+					o.optional    = true;
+					o.placeholder = 0;
+					o.datatype = 'range(-100,0)';
+					o.depends('mode', 'ap');
+
+					o = ss.taboption('advanced', form.DynamicList, 'steeringbssid',_('802.11V roam target bssid'), _('MAC-List'));
+					o.datatype = 'macaddr';
+					o.optional    = true;
+					o.placeholder = 0;
+					o.depends('mode', 'ap');
 
 					o = ss.taboption('encryption', form.Flag, 'bss_transition', _('BSS Transition Management'), _('802.11v: Basic Service Set (BSS) transition management.'));
 					o.default = o.disabled;

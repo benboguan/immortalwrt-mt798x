@@ -1,0 +1,17 @@
+ra0_798x_channel="$(uci get wireless.ra0.channel)"
+rax0_798x_channel="$(uci get wireless.rax0.channel)"
+if [ "$ra0_798x_channel" -gt "0" ];then 
+    wappctrl ra0 mbo nebor_op_ch $ra0_798x_channel
+fi
+if [ "$rax0_798x_channel" -gt "0" ];then
+    wappctrl rax0 mbo nebor_op_ch $rax0_798x_channel
+fi
+bssid=$2
+array=(${bssid//\/ })
+for var in ${array[@]}
+        do
+        echo $var
+        wappctrl $1 mbo nebor_bssid $var
+        wappctrl $1 mbo add_test_nr $var
+        done
+

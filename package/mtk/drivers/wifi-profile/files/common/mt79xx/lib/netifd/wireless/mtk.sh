@@ -48,7 +48,7 @@ drv_mtk_init_device_config() {
 	config_add_boolean greenap diversity noscan ht_coex acs_exclude_dfs background_radar
 	config_add_int powersave doth
 	config_add_int maxassoc
-	config_add_boolean hidessid bndstrg isolate dfs
+	config_add_boolean hidessid bndstrg isolate dfs bandsteering
 	config_add_array channels
 	config_add_array scan_list
 }
@@ -60,10 +60,10 @@ drv_mtk_init_iface_config() {
 	config_add_string auth_server auth_port auth_secret acct_secret own_ip_addr own_radius_port
 	config_add_boolean hidden isolate isolate_mb br_isolate_mode ieee80211k ieee80211v ieee80211r
 	config_add_boolean powersave enable coloring ldpc lofdm mesh_fwding
-	config_add_string key key1 key2 key3 key4
+	config_add_string key key1 key2 key3 key4 steeringthresold
 	config_add_string wds_bridge wps_pushbutton pin mesh_id mapmode mesh_rssi_threshold
 	config_add_string macfilter 'macfile:file' nasid mobility_domain r1_key_holder r0_key_lifetime reassociation_deadline ft_over_ds
-	config_add_array 'maclist:list(macaddr)' r0kh r1kh
+	config_add_array 'maclist:list(macaddr)' 'steeringbssid:list(macaddr)' r0kh r1kh
 
 	config_add_boolean wds wmm wnm_sleep_mode bss_transition proxy_arp mbo rrm_neighbor_report rrm_beacon_report ft_psk_generate_local pmk_r1_push
 	config_add_int frag rts dtim_period apclipe short_preamble wpa_group_rekey rsn_preauth ocv
@@ -92,7 +92,7 @@ mtk_ap_vif_pre_config() {
 		bssid ssid mode wps_pushbutton pin pbc isolate hidden disassoc_low_ack kicklow assocthres rsn_preauth \
 		ieee80211k ieee80211v ieee80211r ieee80211w macfilter nasid mobility_domain r1_key_holder r0_key_lifetime reassociation_deadline r0kh r1kh \
 		ft_over_ds ft_psk_generate_local pmk_r1_push rrm_neighbor_report rrm_beacon_report wnm_sleep_mode bss_transition proxy_arp \
-		frag rts dtim_period mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv wds
+		frag rts dtim_period mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv wds steeringthresold
 	json_get_values maclist maclist
 	set_default wmm 1
 	set_default isolate 0
@@ -104,6 +104,7 @@ mtk_ap_vif_pre_config() {
 	set_default ieee80211k 0
 	set_default ieee80211v 0
 	set_default ieee80211r 0
+	set_default steeringthresold 0
 	set_default mumimo_dl 0
 	set_default mumimo_ul 0
 	set_default ofdma_dl 0
@@ -275,6 +276,7 @@ mtk_ap_vif_pre_config() {
 	ApNoForwarding="${ApNoForwarding}${isolate};"
 	ApRekeyInterval="${ApRekeyInterval}${wpa_group_rekey};"
 	ApRRMEnable="${ApRRMEnable}${ieee80211k};"
+	Apsteeringthresold="${Apsteeringthresold}${steeringthresold};"
 	ApBSS="${ApBSS}${bss_transition:-0};"
 	ApARP="${ApARP}${proxy_arp:-0};"
 	ApFtSupport="${ApFtSupport}${ieee80211r};"
@@ -830,6 +832,7 @@ drv_mtk_setup() {
 			disabled:0 \
 			doth:0 \
 			whnat:1 \
+			bandsteering:0 \
 			legacy_rates:0 \
 			maxassoc:64 \
 			distance:0 \
@@ -1218,7 +1221,7 @@ APTxop=0;0;94;47
 AutoChannelSelect=${AutoChannelSelect:-0}
 AutoChannelSkipList=${ACSSKIP}
 AutoProvisionEn=0
-BandSteering=0
+BandSteering=${bandsteering}
 BasicRate=15
 BeaconPeriod=${beacon_int:-100}
 BFBACKOFFenable=0
@@ -1541,6 +1544,7 @@ EOF
 	ApHideESSID=""
 	ApWmmCapable=""
 	ApRRMEnable=""
+	Apsteeringthresold=""
 	ApFtSupport=""
 	ApNoForwarding=""
 	ApRekeyInterval=""
@@ -1593,6 +1597,7 @@ EOF
 	echo "WNMBTMEnable=${ApBSS%?}" >> $MTWIFI_PROFILE_PATH
 	echo "ProxyARPEnable=${ApARP%?}" >> $MTWIFI_PROFILE_PATH
 	echo "RRMEnable=${ApRRMEnable%?}" >> $MTWIFI_PROFILE_PATH
+	echo "Steeringthresold=${Apsteeringthresold%?}" >> $MTWIFI_PROFILE_PATH
 	echo "FtSupport=${ApFtSupport%?}" >> $MTWIFI_PROFILE_PATH
 	echo "FtOtd=${ApFtOtd%?}" >> $MTWIFI_PROFILE_PATH
 	echo "FtOnly=${ApFtOnly%?}" >> $MTWIFI_PROFILE_PATH

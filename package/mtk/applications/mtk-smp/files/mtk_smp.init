@@ -6,4 +6,6 @@ USE_PROCD=1
 start_service() {
 	echo "run smp.sh...."
 	/sbin/smp.sh
+	ifconfig eth0 down
+	ifconfig eth0 up
 }
