@@ -14,7 +14,7 @@
  	IWINFO_CLI_LDFLAGS += -lnl-tiny
 --- a/include/iwinfo.h
 +++ b/include/iwinfo.h
-@@ -412,6 +412,7 @@ extern const struct iwinfo_ops wext_ops;
+@@ -429,6 +429,7 @@ extern const struct iwinfo_ops wext_ops;
  extern const struct iwinfo_ops madwifi_ops;
  extern const struct iwinfo_ops nl80211_ops;
  extern const struct iwinfo_ops wl_ops;
@@ -24,7 +24,7 @@
  
 --- a/iwinfo_lib.c
 +++ b/iwinfo_lib.c
-@@ -394,6 +394,9 @@ static const struct iwinfo_ops *backends
+@@ -401,6 +401,9 @@ static const struct iwinfo_ops *backends
  #ifdef USE_WEXT
  	&wext_ops,
  #endif
@@ -48,7 +48,7 @@
  	{ #op, iwinfo_L_##type##_##op }
 --- a/iwinfo_cli.c
 +++ b/iwinfo_cli.c
-@@ -799,14 +799,16 @@ static void print_assoclist(const
+@@ -810,14 +810,16 @@ static void print_assoclist(const
  			(e->signal - e->noise),
  			e->inactive);
  
@@ -71,7 +71,7 @@
  		printf("	expected throughput: %s\n\n",
 --- a/iwinfo_lua.c
 +++ b/iwinfo_lua.c
-@@ -355,6 +355,12 @@ static int iwinfo_L_assoclist(lua_State *L
+@@ -363,6 +363,12 @@ static int iwinfo_L_assoclist(lua_State *L
  			lua_pushnumber(L, e->tx_packets);
  			lua_setfield(L, -2, "tx_packets");
  
@@ -84,7 +84,7 @@
  			set_rateinfo(L, &e->rx_rate, true);
  			set_rateinfo(L, &e->tx_rate, false);
  
-@@ -777,6 +783,36 @@ LUA_WRAP_STRUCT_OP(nl80211,mbssid_suppor
+@@ -788,6 +794,36 @@ LUA_WRAP_STRUCT_OP(nl80211,mbssid_suppor
  LUA_WRAP_STRUCT_OP(nl80211,hardware_id)
  #endif
  
@@ -121,7 +121,7 @@
  /* Wext */
  #ifdef USE_WEXT
  LUA_WRAP_INT_OP(wext,channel)
-@@ -906,6 +942,39 @@ static const luaL_reg R_nl80211[] = {
+@@ -917,6 +953,39 @@ static const luaL_reg R_nl80211[] = {
  };
  #endif
  
@@ -161,7 +161,7 @@
  /* Wext table */
  #ifdef USE_WEXT
  static const luaL_reg R_wext[] = {
-@@ -977,6 +1046,15 @@ LUALIB_API int luaopen_iwinfo(lua_State
+@@ -988,6 +1057,15 @@ LUALIB_API int luaopen_iwinfo(lua_State
  	lua_setfield(L, -2, "nl80211");
  #endif
  
@@ -179,19 +179,19 @@
  	luaL_register(L, NULL, R_common);
 --- a/devices.txt
 +++ b/devices.txt
-@@ -189,6 +189,9 @@
+@@ -188,6 +188,9 @@
+ 0x14c3 0x7628 0x14c3 0x0004    0      0  "MediaTek" "MT76x8"
+ 0x14c3 0x7650 0x14c3 0x7650    0      0  "MediaTek" "MT7610E"
  0x14c3 0x7662 0x14c3 0x7662    0      0  "MediaTek" "MT76x2E"
- 0x14c3 0x7915 0x14c3 0x7915    0      0  "MediaTek" "MT7915E"
- 0x14c3 0x7906 0x14c3 0x7906    0      0  "MediaTek" "MT7916AN"
-+0x14c3 0x7916 0x14c3 0x7916    0      0  "MediaTek" "MT7916"
 +0x14c3 0x7986 0x14c3 0x7986    0      0  "MediaTek" "MT7986"
 +0x14c3 0x7981 0x14c3 0x7981    0      0  "MediaTek" "MT7981"
- 0x14c3 0x7990 0x14C3 0x6639    0      0  "MediaTek" "MT7996E"
- 0x14e4 0xaa52 0x14e4 0xaa52    0      0  "Broadcom" "BCM43602"
- 0x02d0 0xa9a6 0x0000 0x0000    0      0  "Cypress"  "CYW43455"
++0x14c3 0x7916 0x14c3 0x7916    0      0  "MediaTek" "MT7916"
+ 0x14c3 0x7915 0x14c3 0x7915    0      0  "MediaTek" "MT7915E"
+ 0x14c3 0x7906 0x14c3 0x7906    0      0  "MediaTek" "MT7916AN"
+ 0x14c3 0x7925 0x1a3b 0x6002    0      0  "MediaTek" "MT7925E"
 --- a/iwinfo_utils.c
 +++ b/iwinfo_utils.c
-@@ -324,6 +324,7 @@ int iwinfo_hardware_id_from_mtd(struct i
+@@ -340,6 +340,7 @@ int iwinfo_hardware_id_from_mtd(struct i
  {
  	FILE *mtd;
  	uint16_t *bc;
@@ -199,7 +199,7 @@
  
  	int fd, off;
  	unsigned int len;
-@@ -336,7 +337,7 @@ int iwinfo_hardware_id_from_mtd(struct i
+@@ -352,7 +353,7 @@ int iwinfo_hardware_id_from_mtd(struct i
  	{
  		if (fscanf(mtd, "mtd%d: %x %*x %127s", &off, &len, buf) < 3 ||
  		    (strcmp(buf, "\"boardconfig\"") && strcmp(buf, "\"EEPROM\"") &&
@@ -208,7 +208,7 @@
  		{
  			off = -1;
  			continue;
-@@ -355,6 +356,38 @@ int iwinfo_hardware_id_from_mtd(struct i
+@@ -371,6 +372,38 @@ int iwinfo_hardware_id_from_mtd(struct i
  	if ((fd = open(buf, O_RDONLY)) < 0)
  		return -1;
  
