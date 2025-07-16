@@ -439,6 +439,8 @@ void getRate(HTTRANSMIT_SETTING HTSetting, ULONG *fLastTxRxRate)
 						 ((UCHAR)HTSetting.field.ShortGI * 160) +
 						 ((UCHAR)MCS);
 		}
+		if (MCS > MCS_9)
+			rate_index = rate_index - 2;
 	} else {
 		if (HTSetting.field.MODE >= MODE_HTMIX) {
 			MCS = HTSetting.field.MCS;
@@ -470,6 +472,9 @@ void getRate(HTTRANSMIT_SETTING HTSetting, ULONG *fLastTxRxRate)
 		value = (MCSMappingRateTable[rate_index] * 5) / 10;
 	else
 		value =  MCSMappingRateTable[rate_index];
+
+	if (MCS > MCS_9)
+		value = (value * 10) / 8;
 
 	if (HTSetting.field.MODE >= MODE_HTMIX && HTSetting.field.MODE < MODE_VHT)
 		value *= Antenna;
