@@ -134,6 +134,42 @@ struct channel_list_basic {
 #define TMI_TX_RATE_CCK_5M_SP   6
 #define TMI_TX_RATE_CCK_11M_SP  7
 
+/* HT */
+#define MCS_0          0       /* 1S */
+#define MCS_1          1
+#define MCS_2          2
+#define MCS_3          3
+#define MCS_4          4
+#define MCS_5          5
+#define MCS_6          6
+#define MCS_7          7
+#define MCS_8          8       /* 2S */
+#define MCS_9          9
+#define MCS_10         10
+#define MCS_11         11
+#define MCS_12         12
+#define MCS_13         13
+#define MCS_14         14
+#define MCS_15         15
+#define MCS_16         16      /* 3*3 */
+#define MCS_17         17
+#define MCS_18         18
+#define MCS_19         19
+#define MCS_20         20
+#define MCS_21         21
+#define MCS_22         22
+#define MCS_23         23
+#define MCS_24         24      /* 3*3 */
+#define MCS_25         25
+#define MCS_26         26
+#define MCS_27         27
+#define MCS_28         28
+#define MCS_29         29
+#define MCS_30         30
+#define MCS_31         31
+#define MCS_32         32
+#define MCS_AUTO	33
+
 #define GI_HE_800		0
 #define GI_HE_1600		1
 #define GI_HE_3200		2
