@@ -46,10 +46,16 @@ typedef struct _RT_802_11_MAC_ENTRY_FIX {
 	HTTRANSMIT_SETTING      LastRxRate;
 	short                   StreamSnr[3];
 	short                   SoundingRespSnr[3];
-	unsigned long long      TxPackets; //TxPackets.QuadPart
-	unsigned long long      RxPackets; //RxPackets.QuadPart
+	unsigned char           wme:1;
+	unsigned char           mfp:1;
+	unsigned char           authenticated:1;
+	unsigned char           preamble_short:1;
+	unsigned int            TxPackets; //TxPackets.QuadPart
+	unsigned int            RxPackets; //RxPackets.QuadPart
 	unsigned long long      TxBytes;
 	unsigned long long      RxBytes;
+	unsigned int            InactiveTime;
+	unsigned int            TxFailed;
 	unsigned int            TxRetried;
 	unsigned int            ExPected_throughput;
 	unsigned int            EncryMode;

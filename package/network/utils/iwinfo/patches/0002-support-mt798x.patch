@@ -46,29 +46,6 @@
  
  #define LUA_REG(type,op) \
  	{ #op, iwinfo_L_##type##_##op }
---- a/iwinfo_cli.c
-+++ b/iwinfo_cli.c
-@@ -810,14 +810,16 @@ static void print_assoclist(const
- 			(e->signal - e->noise),
- 			e->inactive);
- 
--		printf("	RX: %-38s  %8d Pkts.\n",
-+		printf("	RX: %-38s  %8d Pkts  %8lld Byts.\n",
- 			format_assocrate(&e->rx_rate),
--			e->rx_packets
-+			e->rx_packets,
-+			e->rx_bytes
- 		);
- 
--		printf("	TX: %-38s  %8d Pkts.\n",
-+		printf("	TX: %-38s  %8d Pkts  %8lld Byts.\n",
- 			format_assocrate(&e->tx_rate),
--			e->tx_packets
-+			e->tx_packets,
-+			e->tx_bytes
- 		);
- 
- 		printf("	expected throughput: %s\n\n",
 --- a/iwinfo_lua.c
 +++ b/iwinfo_lua.c
 @@ -363,6 +363,12 @@ static int iwinfo_L_assoclist(lua_State *L

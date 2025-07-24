@@ -1,19 +1,25 @@
 --- a/mt_wifi/embedded/common/cmm_info.c
 +++ b/mt_wifi/embedded/common/cmm_info.c
-@@ -7256,6 +7256,12 @@ typedef struct _RT_802_11_MAC_ENTRY_FIX
+@@ -7256,6 +7256,18 @@ typedef struct _RT_802_11_MAC_ENTRY_FIX
  	HTTRANSMIT_SETTING_FIX LastRxRate;
  	SHORT StreamSnr[3];				/* BF SNR from RXWI. Units=0.25 dB. 22 dB offset removed */
  	SHORT SoundingRespSnr[3];			/* SNR from Sounding Response. Units=0.25 dB. 22 dB offset removed */
-+	UINT64 TxPackets;  //TxPackets.QuadPart
-+	UINT64 RxPackets;  //RxPackets.QuadPart
++	UINT8 wme:1;
++	UINT8 mfp:1;
++	UINT8 authenticated:1;
++	UINT8 preamble_short:1;
++	UINT32 TxPackets;  //TxPackets.QuadPart
++	UINT32 RxPackets;  //RxPackets.QuadPart
 +	UINT64 TxBytes;
 +	UINT64 RxBytes;
++	UINT32 InactiveTime;
++	UINT32 TxFailed;
 +	UINT32 TxRetried;
 +	UINT32 ExPected_throughput;
  	UINT32 EncryMode;
  	UINT32 AuthMode;
  } RT_802_11_MAC_ENTRY_FIX, *PRT_802_11_MAC_ENTRY_FIX;
-@@ -7363,7 +7369,7 @@ VOID RTMPIoctlGetMacTableStaInfo(
+@@ -7363,7 +7375,7 @@ VOID RTMPIoctlGetMacTableStaInfo(
  			pDst = &pMacTab->Entry[pMacTab->Num];
  			pDst->ApIdx = pEntry->func_tb_idx;
  			COPY_MAC_ADDR(pDst->Addr, &pEntry->Addr);
@@ -22,16 +28,26 @@
  			pDst->Psm = pEntry->PsMode;
  #ifdef DOT11_N_SUPPORT
  			pDst->MimoPs = pEntry->MmpsMode;
-@@ -7380,6 +7386,12 @@ VOID RTMPIoctlGetMacTableStaInfo(
+@@ -7380,6 +7392,22 @@ VOID RTMPIoctlGetMacTableStaInfo(
  			pDst->LastRxRate.word = RTMPGetLastRxRate(pAd, pEntry);
  			pDst->EncryMode = pEntry->SecConfig.PairwiseCipher;
  			pDst->AuthMode = pEntry->SecConfig.AKMMap;
-+			pDst->TxPackets = (UINT64)pEntry->TxPackets.QuadPart;
-+			pDst->RxPackets = (UINT64)pEntry->RxPackets.QuadPart;
-+			pDst->TxBytes = (UINT64)pEntry->TxBytes;
-+			pDst->RxBytes = (UINT64)pEntry->RxBytes;
-+			pDst->TxRetried = (UINT32)pEntry->TxRetriedPktCount;
-+			pDst->ExPected_throughput = (UINT32)(pEntry->AvgTxBytes*100);
++			if (CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE))
++				pDst->wme = 1;
++			if (pEntry->SecConfig.PmfCfg.UsePMFConnect);
++				pDst->mfp = 1;
++			if (pEntry->Sst == SST_ASSOC || pEntry->Sst == SST_AUTH);
++				pDst->authenticated = 1;
++			if (CAP_IS_SHORT_PREAMBLE_ON(pEntry->CapabilityInfo));
++				pDst->preamble_short = 1;
++			pDst->TxPackets = (UINT32)pEntry->TxPackets.QuadPart;
++			pDst->RxPackets = (UINT32)pEntry->RxPackets.QuadPart;
++			pDst->TxBytes = pEntry->TxBytes;
++			pDst->RxBytes = pEntry->RxBytes;
++			pDst->InactiveTime = (UINT32)(pEntry->StaIdleTimeout - pEntry->NoDataIdleCount);
++			pDst->TxFailed = (UINT32)pEntry->TxFailCount;
++			pDst->TxRetried = (UINT32)pEntry->mpdu_retries.QuadPart;
++			pDst->ExPected_throughput = (UINT32)pEntry->AvgRxBytes >> 17;
  			pMacTab->Num += 1;
  			/* Add to avoid Array cross board */
  			if (pMacTab->Num >= MAX_LEN_OF_MAC_TABLE)

@@ -717,12 +717,22 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 		}
 		e->signal_avg = pe->AvgRssi1;
 		e->noise = noise;
+		e->inactive = pe->InactiveTime;
 		e->connected_time = pe->ConnectedTime;
 
+		if (pe->wme)
+			e->is_wme = 1;
+		if (pe->mfp)
+			e->is_mfp = 1;
+		if (pe->authenticated)
+			e->is_authenticated = 1;
+		if (pe->preamble_short)
+			e->is_preamble_short = 1;
 		e->rx_packets = pe->RxPackets;
 		e->tx_packets = pe->TxPackets;
 		e->rx_bytes = pe->RxBytes;
 		e->tx_bytes = pe->TxBytes;
+		e->tx_failed = pe->TxFailed;
 		e->tx_retries = pe->TxRetried;
 		e->thr = pe->ExPected_throughput;
 		mtk_parse_rateinfo(pe, &e->rx_rate, &e->tx_rate);
