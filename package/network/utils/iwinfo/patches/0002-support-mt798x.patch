@@ -53,7 +53,7 @@
  			e->inactive);
  
 -		printf("	RX: %-38s  %8d Pkts.\n",
-+		printf("	RX: %-38s  %8d Pkts  %8ld Byts.\n\n",
++		printf("	RX: %-38s  %8d Pkts  %8lld Byts.\n",
  			format_assocrate(&e->rx_rate),
 -			e->rx_packets
 +			e->rx_packets,
@@ -61,7 +61,7 @@
  		);
  
 -		printf("	TX: %-38s  %8d Pkts.\n",
-+		printf("	TX: %-38s  %8d Pkts  %8ld Byts.\n\n",
++		printf("	TX: %-38s  %8d Pkts  %8lld Byts.\n",
  			format_assocrate(&e->tx_rate),
 -			e->tx_packets
 +			e->tx_packets,
