@@ -34,11 +34,11 @@
  			pDst->AuthMode = pEntry->SecConfig.AKMMap;
 +			if (CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE))
 +				pDst->wme = 1;
-+			if (pEntry->SecConfig.PmfCfg.UsePMFConnect);
++			if (pEntry->SecConfig.PmfCfg.UsePMFConnect)
 +				pDst->mfp = 1;
-+			if (pEntry->Sst == SST_ASSOC || pEntry->Sst == SST_AUTH);
++			if (pEntry->Sst == SST_ASSOC || pEntry->Sst == SST_AUTH)
 +				pDst->authenticated = 1;
-+			if (CAP_IS_SHORT_PREAMBLE_ON(pEntry->CapabilityInfo));
++			if (CAP_IS_SHORT_PREAMBLE_ON(pEntry->CapabilityInfo))
 +				pDst->preamble_short = 1;
 +			pDst->TxPackets = (UINT32)pEntry->TxPackets.QuadPart;
 +			pDst->RxPackets = (UINT32)pEntry->RxPackets.QuadPart;
