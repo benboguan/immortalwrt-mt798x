@@ -62,8 +62,7 @@ typedef struct _RT_802_11_MAC_ENTRY_FIX {
 	unsigned int            AuthMode;
 } RT_802_11_MAC_ENTRY;
 
-//#define MAX_NUMBER_OF_MAC               554
-#define MAX_NUMBER_OF_MAC               128
+#define MAX_NUMBER_OF_MAC               554
 #define MAX_NUM_OF_CHANNELS				59
 
 typedef struct _RT_802_11_MAC_TABLE_FIX {
