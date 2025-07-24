@@ -18,21 +18,27 @@
  		USHORT STBC:1;
  		USHORT eTxBF:1;
  		USHORT iTxBF:1;
-@@ -7236,7 +7236,7 @@ UINT32 RTMPGetLastTxRate_fix(PRTMP_ADAPT
+@@ -7236,7 +7236,10 @@ UINT32 RTMPGetLastTxRate_fix(PRTMP_ADAPT
  	lastTxRate.field.MODE = phy_mode;
  	lastTxRate.field.BW = rTxStatResult.rEntryTxRate.BW;
  	lastTxRate.field.ldpc = rTxStatResult.rEntryTxRate.ldpc ? 1 : 0;
 -	lastTxRate.field.ShortGI = rTxStatResult.rEntryTxRate.ShortGI ? 1 : 0;
-+	lastTxRate.field.ShortGI = rTxStatResult.rEntryTxRate.ShortGI & 0x3;
++	if (lastTxRate.field.MODE >= MODE_HE)
++		lastTxRate.field.ShortGI = rTxStatResult.rEntryTxRate.ShortGI & 0x3;
++	else
++		lastTxRate.field.ShortGI = rTxStatResult.rEntryTxRate.ShortGI ? 1 : 0;
  	lastTxRate.field.STBC = rTxStatResult.rEntryTxRate.STBC;
  
  	if (lastTxRate.field.MODE >= MODE_VHT)
-@@ -7266,7 +7266,7 @@ UINT32 RTMPGetLastRxRate(PRTMP_ADAPTER p
+@@ -7266,7 +7269,10 @@ UINT32 RTMPGetLastRxRate(PRTMP_ADAPTER p
  	lastRxRate.field.MODE = rRxStatResult.u1RxMode;
  	lastRxRate.field.BW = rRxStatResult.u1BW;
  	lastRxRate.field.ldpc = rRxStatResult.u1Coding;
 -	lastRxRate.field.ShortGI = rRxStatResult.u1Gi ? 1 : 0;
-+	lastRxRate.field.ShortGI = rRxStatResult.u1Gi & 0x3;
++	if (lastRxRate.field.MODE >= MODE_HE)
++		lastRxRate.field.ShortGI = rRxStatResult.u1Gi & 0x3;
++	else
++		lastRxRate.field.ShortGI = rRxStatResult.u1Gi ? 1 : 0;
  	lastRxRate.field.STBC = rRxStatResult.u1Stbc;
  
  	if (lastRxRate.field.MODE >= MODE_VHT)
