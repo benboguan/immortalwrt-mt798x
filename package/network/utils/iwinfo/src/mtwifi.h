@@ -56,7 +56,8 @@ typedef struct _RT_802_11_MAC_ENTRY_FIX {
 	unsigned int            AuthMode;
 } RT_802_11_MAC_ENTRY;
 
-#define MAX_NUMBER_OF_MAC               544
+//#define MAX_NUMBER_OF_MAC               554
+#define MAX_NUMBER_OF_MAC               128
 #define MAX_NUM_OF_CHANNELS				59
 
 typedef struct _RT_802_11_MAC_TABLE_FIX {
@@ -97,8 +98,6 @@ struct channel_list_basic {
 #define OID_GET_WIRELESS_BAND				0x09B4
 #define OID_802_11_SECURITY_TYPE            0x093e
 #define RT_OID_802_11_PHY_MODE				0x050C
-#define OID_802_11_WIFISPECTRUM_GET_CAPTURE_BW			0x0973
-#define OID_802_11_WIFISPECTRUM_GET_CENTRAL_FREQ		0x0974
 #define OID_802_11_GET_CENTRAL_CHAN1					0x0978
 #define OID_802_11_GET_CENTRAL_CHAN2					0x0979
 #define GET_MAC_TABLE_STRUCT_FLAG_RAW_SSID	0x1
