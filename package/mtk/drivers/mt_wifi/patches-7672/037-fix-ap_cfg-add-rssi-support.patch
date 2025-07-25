@@ -1,0 +1,47 @@
+--- a/mt_wifi/embedded/ap/ap_cfg.c
++++ b/mt_wifi/embedded/ap/ap_cfg.c
+@@ -10306,23 +10306,34 @@ case OID_802_11_GET_SSID_BSSID: {
+ 	}
+ 		break;
+ 	case OID_802_11_RSSI: {
+-		CHAR rssi = -127;
+-		MAC_TABLE_ENTRY *entry = NULL;
++		UCHAR *AvgRssi;
++		CHAR rssi;
++		CHAR sta_rssi[4] = {-127};
++		UINT8 len = 0, path_idx = 0, rssi_sum = 0;
++		UINT8 ucBand = HcGetBandByWdev(wdev);
+ 
+ 		if (ifIndex >= MAX_MULTI_STA) {
+ 			MTWF_DBG(pAd, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "error station index\n");
+ 			return FALSE;
+ 		}
+ 
+ 		if (pObj->ioctl_if_type == INT_APCLI) {
++			MAC_TABLE_ENTRY *entry = GetAssociatedAPByWdev(pAd, wdev);
++			PSTA_ADMIN_CONFIG sta_cfg = GetStaCfgByWdev(pAd, wdev);
++			len = 4;
++			if (sta_cfg && entry) {
++				if (sta_cfg->ApcliInfStat.Enable)
++					rtmp_get_rssi(pAd, entry->wcid, sta_rssi, len);
++			}
++		} else {
++			PhyStatGetRssi(pAd, ucBand, sta_rssi, &len);
++		}
++
++		*AvgRssi = 0;
++		for (path_idx = 0; (path_idx < len) && (path_idx < ARRAY_SIZE(sta_rssi)); path_idx++)
++			rssi_sum += sta_rssi[path_idx];
++		*AvgRssi = (UCHAR)(rssi_sum / path_idx);
++		rssi = *AvgRssi;
+-			pApCliEntry = &pAd->StaCfg[ifIndex];
+-			entry = GetAssociatedAPByWdev(pAd, &pApCliEntry->wdev);
+-
+-			if (!pApCliEntry->ApcliInfStat.Enable)
+-				return FALSE;
+-
+-			rssi = entry->RssiSample.AvgRssi[0];
+-		}
+ 
+ 		wrq->u.data.length = sizeof(rssi);
+ 		Status = copy_to_user(wrq->u.data.pointer, &rssi, wrq->u.data.length);

@@ -110,55 +110,6 @@ static char * mtk_getval(const char *ifname, const char *buf, const char *key)
 	return NULL;
 }
 
-static const char *is_5g(const char *ifname)
-{
-	const char *phy = NULL;
-	struct uci_section *s;
-
-	if (strstr(ifname, "rax") || strstr(ifname, "wdsx") || strstr(ifname, "meshx") || strstr(ifname, "apclix"))
-		return ifname;
-
-	s = iwinfo_uci_get_radio(ifname, "mtk");
-	if (!s)
-		goto out;
-
-	phy = uci_lookup_option_string(uci_ctx, s, "phy");
-
-out:
-	iwinfo_uci_free();
-	return phy;
-}
-
-static const char *is_6g(const char *ifname)
-{
-	char buf[16] = {0};
-	const char *phy = NULL;
-	struct uci_section *s;
-
-	/* INDEX1 */
-	if (mtk_get_l1profile_attr("INDEX1", buf, sizeof(buf)) == 0) {
-		if (!strcmp(buf, "MT7916")) {
-			if (strstr(ifname, "raix") || strstr(ifname, "wdsix") || strstr(ifname, "meshix") || strstr(ifname, "apcliix"))
-				return ifname;
-		} else if (!strcmp(buf, "MT7915")) {
-			if (strstr(ifname, "rai") || strstr(ifname, "wdsi") || strstr(ifname, "meshi") || strstr(ifname, "apclii"))
-				return ifname;
-		}
-	} else {
-		return NULL;
-	}
-
-	s = iwinfo_uci_get_radio(ifname, "mtk");
-	if (!s)
-		goto out;
-
-	phy = uci_lookup_option_string(uci_ctx, s, "phy");
-
-out:
-	iwinfo_uci_free();
-	return phy;
-}
-
 static int mtk_probe(const char *ifname)
 {
 	char buf[16] = {0};
@@ -474,31 +425,25 @@ static int mtk_get_txpower(const char *ifname, int *buf)
 
 static int mtk_get_signal(const char *ifname, int *buf)
 {
-//	return mtk_get_txpower(ifname, buf);
-	int snr_sum, num;
-	char tmp_buf[8192];
-	struct iwinfo_assoclist_entry tmp;
-	int ret_len, i;
+	struct iwreq wrq;
+	int rssi, band;
 
-	if (mtk_get_assoclist(ifname, tmp_buf, &ret_len) == 0)
+	band = mtk_get_band(ifname);
+	if (band < 0)
+		return -1;
+
+	wrq.u.data.length = sizeof(rssi);
+	wrq.u.data.pointer = &rssi;
+	wrq.u.data.flags = OID_802_11_RSSI;
+
+	if (mtk_ioctl(ifname, RT_PRIV_IOCTL, &wrq) >= 0)
 	{
-		num = ret_len / sizeof(struct iwinfo_assoclist_entry);
-		snr_sum = 0;
-
-		for (i = 0; i < num; i++)
-		{
-			memset(&tmp, 0, sizeof(struct iwinfo_assoclist_entry));
-			memcpy(&tmp, tmp_buf + i * sizeof(struct iwinfo_assoclist_entry), sizeof(struct iwinfo_assoclist_entry));
-
-			snr_sum -= tmp.signal;
-		}
-
-		if (num > 0)
-			*buf = -(snr_sum / num);
-		else
-			*buf = -127;
-
+		*buf = rssi;
 		return 0;
+	}
+	else
+	{
+		*buf = -127;
 	}
 
 	return -1;
@@ -506,9 +451,13 @@ static int mtk_get_signal(const char *ifname, int *buf)
 
 static int mtk_get_noise(const char *ifname, int *buf)
 {
-	int nr;
+	int nr, band;
 	struct iwreq wrq;
 	struct iw_statistics stats;
+
+	band = mtk_get_band(ifname);
+	if (band < 0)
+		return -1;
 
 	wrq.u.data.pointer = (caddr_t) &stats;
 	wrq.u.data.length  = sizeof(struct iw_statistics);
@@ -525,12 +474,18 @@ static int mtk_get_noise(const char *ifname, int *buf)
 		}
 		else
 		{
-			if (is_6g(ifname))
-				*buf = nr - 10;
-			else if (is_5g(ifname))
-				*buf = nr - 5;
-			else
-				*buf = nr;
+			switch (band)
+			{
+				case MTK_CH_BAND_24G:
+					*buf = nr;
+					break;
+				case MTK_CH_BAND_5G:
+					*buf = nr - 5;
+					break;
+				case MTK_CH_BAND_6G:
+					*buf = nr - 10;
+					break;
+			}
 		}
 
 		return 0;
@@ -671,7 +626,7 @@ static void mtk_parse_rateinfo(RT_802_11_MAC_ENTRY *pe,
 	fill_rate_info(RxRate, rx_rate, mcs_r, nss_r);
 }
 
-int mtk_get_assoclist(const char *ifname, char *buf, int *len)
+static int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 {
 	struct iwreq wrq = {};
 	RT_802_11_MAC_TABLE *table;
