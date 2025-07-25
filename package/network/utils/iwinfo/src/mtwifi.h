@@ -99,7 +99,7 @@ struct channel_list_basic {
 #define OID_802_11_COUNTRYCODE				0x1907
 #define OID_802_11_BW						0x1903
 #define OID_GET_CHAN_LIST					0x0998
-#define	OID_802_11_RSSI						0x060D
+//#define	OID_802_11_RSSI						0x060D
 #define OID_GET_CHANNEL_LIST				0x09C0
 #define OID_GET_WIRELESS_BAND				0x09B4
 #define OID_802_11_SECURITY_TYPE			0x093e

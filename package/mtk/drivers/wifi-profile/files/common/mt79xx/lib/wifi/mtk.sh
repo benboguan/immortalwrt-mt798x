@@ -36,8 +36,8 @@ mtk_get_first_if_mac() {
 
 is_11ax_dbdc_dev()
 {
-  [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0 |grep MT7915D)" ] && echo yes;
-  [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0 |grep MT7916)" ] && echo yes;
+  [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX1 |grep MT7915)" ] && echo yes;
+  [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX1 |grep MT7916)" ] && echo yes;
   [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0 |grep MT7981)" ] && echo yes;
   [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0 |grep MT7986)" ] && echo yes;
 
@@ -53,7 +53,8 @@ is_11ac_dbdc_dev()
 
 is_support_11ax_ht160_dev()
 {
-  [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0 |grep MT7916)" ] && echo yes;
+  [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX1 |grep MT7915)" ] && echo yes;
+  [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX1 |grep MT7916)" ] && echo yes;
   [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0 |grep MT7981)" ] && echo yes;
   [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0 |grep MT7986)" ] && echo yes;
 

@@ -426,25 +426,21 @@ static int mtk_get_txpower(const char *ifname, int *buf)
 static int mtk_get_signal(const char *ifname, int *buf)
 {
 	struct iwreq wrq;
-	int rssi, band;
+	struct iw_statistics stats;
 
-	band = mtk_get_band(ifname);
-	if (band < 0)
-		return -1;
+	wrq.u.data.pointer = (caddr_t) &stats;
+	wrq.u.data.length  = sizeof(struct iw_statistics);
+	wrq.u.data.flags   = 1;
 
-	wrq.u.data.length = sizeof(rssi);
-	wrq.u.data.pointer = &rssi;
-	wrq.u.data.flags = OID_802_11_RSSI;
-
-	if (mtk_ioctl(ifname, RT_PRIV_IOCTL, &wrq) >= 0)
+	if (mtk_ioctl(ifname, SIOCGIWSTATS, &wrq) >= 0)
 	{
-		*buf = rssi;
+		*buf = (stats.qual.updated & IW_QUAL_DBM)
+			? (stats.qual.level - 0x100) : stats.qual.level;
+
 		return 0;
 	}
 	else
-	{
 		*buf = -127;
-	}
 
 	return -1;
 }
@@ -466,7 +462,7 @@ static int mtk_get_noise(const char *ifname, int *buf)
 	if (mtk_ioctl(ifname, SIOCGIWSTATS, &wrq) >= 0)
 	{
 		nr = (stats.qual.updated & IW_QUAL_DBM)
-			? (stats.qual.noise - 0x117) : stats.qual.noise;
+			? (stats.qual.noise - 0x100) : stats.qual.noise;
 
 		if (nr <= -127)
 		{
@@ -759,7 +755,7 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 {
 	struct iwinfo_scanlist_entry *e = (struct iwinfo_scanlist_entry *)buf;
 	char *data = NULL;
-	unsigned int data_len = 15000;
+	unsigned int data_len = 16000;
 	int offsets[SCAN_DATA_MAX];
 	char cmd[128];
 	int index = 0;
@@ -911,7 +907,7 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 				ht_chan_info->secondary_chan_off = EXTCHA_NOASSIGN;
 			sscanf(pos + offsets[SCAN_DATA_HT_WIDTH], "%"SCNu8, &ht_chan_info->chan_width);
 
-			if (e->band != IWINFO_BAND_24) {
+			if (ht_chan_info->chan_width > 0) {
 				sscanf(pos + offsets[SCAN_DATA_CCH], "%"SCNu8, &vht_chan_info->center_chan_1);
 				sscanf(pos + offsets[SCAN_DATA_SCCH], "%"SCNu8, &vht_chan_info->center_chan_2);
 				//sscanf(pos + offsets[SCAN_DATA_VHT_WIDTH], "%"SCNu8, &vht_chan_info->chan_width);

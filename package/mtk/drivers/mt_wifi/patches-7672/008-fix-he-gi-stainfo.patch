@@ -24,7 +24,7 @@
  	lastTxRate.field.ldpc = rTxStatResult.rEntryTxRate.ldpc ? 1 : 0;
 -	lastTxRate.field.ShortGI = rTxStatResult.rEntryTxRate.ShortGI ? 1 : 0;
 +	if (lastTxRate.field.MODE >= MODE_HE)
-+		lastTxRate.field.ShortGI = rTxStatResult.rEntryTxRate.ShortGI & 0x3;
++		lastTxRate.field.ShortGI = rTxStatResult.rEntryTxRate.ShortGI;
 +	else
 +		lastTxRate.field.ShortGI = rTxStatResult.rEntryTxRate.ShortGI ? 1 : 0;
  	lastTxRate.field.STBC = rTxStatResult.rEntryTxRate.STBC;
@@ -36,7 +36,7 @@
  	lastRxRate.field.ldpc = rRxStatResult.u1Coding;
 -	lastRxRate.field.ShortGI = rRxStatResult.u1Gi ? 1 : 0;
 +	if (lastRxRate.field.MODE >= MODE_HE)
-+		lastRxRate.field.ShortGI = rRxStatResult.u1Gi & 0x3;
++		lastRxRate.field.ShortGI = rRxStatResult.u1Gi;
 +	else
 +		lastRxRate.field.ShortGI = rRxStatResult.u1Gi ? 1 : 0;
  	lastRxRate.field.STBC = rRxStatResult.u1Stbc;
