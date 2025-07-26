@@ -42,7 +42,7 @@ drv_mtk_init_device_config() {
 	config_add_string path channel hwmode htmode country 'macaddr:macaddr' twt
 	config_add_string txburst cell_density
 	config_add_string distance
-	config_add_int beacon_int chanbw vendor_vht vht_1024 mu_beamformer whnat
+	config_add_int beacon_int chanbw vendor_vht vht_1024 mu_beamformer whnat mlr
 	config_add_int rxantenna txantenna antenna_gain txpower min_tx_power noscan
 	config_add_int num_global_macaddr multiple_bssid legacy_rates
 	config_add_boolean greenap diversity noscan ht_coex acs_exclude_dfs background_radar
@@ -369,7 +369,7 @@ mtk_wds_vif_pre_config() {
 	local name="$1"
 
 	json_select config
-	json_get_vars disabled encryption key key1 key2 key3 key4 mode bssid wdsen wdsenctype wdskey wdswepid wdsphymode wdstxmcs
+	json_get_vars disabled encryption key key1 key2 key3 key4 mode bssid wdsen wdsenctype wdskey wdswepid wdsphymode
 	set_default wdsen 0
 	set_default wdsphymode "HE"
 	json_select ..
@@ -832,6 +832,7 @@ drv_mtk_setup() {
 			disabled:0 \
 			doth:0 \
 			whnat:1 \
+			mlr:0 \
 			bandsteering:0 \
 			legacy_rates:0 \
 			maxassoc:64 \
@@ -1335,7 +1336,7 @@ MAP_Ext=0
 MboSupport=1
 MbssMaxStaNum=${maxassoc:-64}
 MlmeMultiQEnable=1
-MLREnable=0
+MLREnable=${mlr:-0}
 MultiIntr=1
 MUTxRxEnable=${mu_beamformer:-1}
 NoForwardingBTNBSSID=0
@@ -1648,7 +1649,6 @@ EOF
 	echo "WdsEncrypType=${WDSEncType%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsDefaultKeyID=${WDSDefKeyID%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsPhyMode=${WDSPhyMode%?}" >> $MTWIFI_PROFILE_PATH
-	echo "WdsTxMode=${WDSPhyMode%?}" >> $MTWIFI_PROFILE_PATH
 
 #STA模式
 	stacount=0
