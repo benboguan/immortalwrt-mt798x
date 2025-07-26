@@ -95,6 +95,9 @@ msgstr "仅支持MTK闭源驱动，漫游域相关参数自动生成无需设置
 msgid "Wireless HWNAT"
 msgstr "无线硬件加速"
 
+msgid "Wireless MLR"
+msgstr "无线 MLR"
+
 msgid "Enable for MTK Repeater mode"
 msgstr "MTK 无线中继时启用"
 
