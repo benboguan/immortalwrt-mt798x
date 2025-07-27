@@ -431,6 +431,12 @@ config MTK_WIFI_TWT_SUPPORT
 	depends on MTK_CHIP_AXE || MTK_CHIP_MT7915 || MTK_CHIP_MT7986 || MTK_CHIP_MT7916 || MTK_CHIP_MT7981
 	default y
 
+config MTK_PER_PKT_CTRL_FOR_CTMR
+	bool "802.11AX PER_PKT_CTRL_FOR_CTMR support"
+	depends on MTK_WIFI_DRIVER
+	depends on MTK_DOT11_HE_AX
+	default n
+
 config MTK_G_BAND_256QAM_SUPPORT
 	bool "2.4G 256QAM support"
 	depends on MTK_WIFI_DRIVER
