@@ -755,7 +755,7 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 {
 	struct iwinfo_scanlist_entry *e = (struct iwinfo_scanlist_entry *)buf;
 	char *data = NULL;
-	unsigned int data_len = 16000;
+	unsigned int data_len = 8000;
 	int offsets[SCAN_DATA_MAX];
 	char cmd[128];
 	int index = 0;
