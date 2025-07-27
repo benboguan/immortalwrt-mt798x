@@ -92,7 +92,7 @@ mtk_ap_vif_pre_config() {
 		bssid ssid mode wps_pushbutton pin pbc isolate hidden disassoc_low_ack kicklow assocthres rsn_preauth \
 		ieee80211k ieee80211v ieee80211r ieee80211w macfilter nasid mobility_domain r1_key_holder r0_key_lifetime reassociation_deadline r0kh r1kh \
 		ft_over_ds ft_psk_generate_local pmk_r1_push rrm_neighbor_report rrm_beacon_report wnm_sleep_mode bss_transition proxy_arp \
-		frag rts dtim_period mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv wds steeringthresold
+		frag rts dtim_period mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv steeringthresold
 	json_get_values maclist maclist
 	set_default wmm 1
 	set_default isolate 0
@@ -273,7 +273,7 @@ mtk_ap_vif_pre_config() {
 	ApRADIUSAcctPort="${ApRADIUSAcctPort}${acct_port};"
 	ApRADIUSAcctKey="${ApRADIUSAcctKey}${acct_secret:-0};"
 	ApPreAuth="${ApPreAuth}${rsn_preauth:-0};"
-	ApNoForwarding="${ApNoForwarding}${isolate};"
+	ApNoForwarding="${ApNoForwarding}${isolate:-0};"
 	ApRekeyInterval="${ApRekeyInterval}${wpa_group_rekey};"
 	ApRRMEnable="${ApRRMEnable}${ieee80211k};"
 	Apsteeringthresold="${Apsteeringthresold}${steeringthresold};"
@@ -299,15 +299,6 @@ mtk_ap_vif_pre_config() {
 	mt_cmd ifconfig $ifname up
 	mt_cmd echo "Interface $ifname now up."
 	# mt_cmd iwpriv ra${MTWIFI_IFPREFIX}0 set PartialScanNumOfCh=4
-	if [ "$wds" == "1" ]; then
-		ApWDSEnable="${wds:-1}"
-		ApWdsMac="${bssid}"
-		ApApMWDS="${wds:-1}"
-	else
-		ApWDSEnable="${wds:-0}"
-		ApWdsMac="${bssid}"
-		ApApMWDS="${wds:-0}"
-	fi
 	if [ "$ieee80211w" == "1" ] || [ "$encryption" == "sae-mixed" -o "$encryption" == "wpa3-mixed" ]; then
 		ApPMFMFPC="${ApPMFMFPC}${PMFMFPC:-1};"
 		ApPMFMFPR="${ApPMFMFPR}${PMFMFPR:-0};"
@@ -369,7 +360,7 @@ mtk_wds_vif_pre_config() {
 	local name="$1"
 
 	json_select config
-	json_get_vars disabled encryption key key1 key2 key3 key4 mode bssid wdsen wdsenctype wdskey wdswepid wdsphymode
+	json_get_vars disabled encryption key key1 key2 key3 key4 mode bssid wdsen wdsenctype wdskey wdswepid wdsphymode macaddr
 	set_default wdsen 0
 	set_default wdsphymode "HE"
 	json_select ..
@@ -442,14 +433,27 @@ mtk_wds_vif_pre_config() {
 		WDSDefKeyID="${WDSDefKeyID}1;"
 		;;
 	esac
-
 	if [ "$encryption" == "wep-open" -o "$encryption" == "wep-shared" ]; then
 		echo "Wds${WDSBssidNum}Key=${key1}" >> $MTWIFI_PROFILE_PATH #WDS Key
 	else
 		echo "Wds${WDSBssidNum}Key=${key}" >> $MTWIFI_PROFILE_PATH #WDS Key
 	fi
 
-	WDSEnable="${WDSEnable}${wdsen:-0};"
+	if [ "$wdsen" == "1" -0 "$wdsen" == "3" ]; then
+		WApCliMWDS="${WApCliMWDS}${wds:-1}"
+		WWDSEnable="${WWDSEnable}${wds:-1}"
+		WWdsMac="${WWdsMac}${macaddr}"
+	elif [ "$wdsen" == "2" -0 "$wdsen" == "4" ]; then
+		WApMWDS="${WApMWDS}${wds:-1}"
+		WWDSEnable="${WWDSEnable}${wds:-1}"
+		WWdsMac="${WWdsMac}${macaddr}"
+	else
+		WApCliMWDS="${WApCliMWDS}${wds:-0}"
+		WApMWDS="${WApMWDS}${wds:-0}"
+		WWDSEnable="${WWDSEnable}${wds:-0}"
+	fi
+
+	WDS_Enable="${WDS_Enable}${wdsen:-0};"
 	WDSPhyMode="${WDSPhyMode}${wdsphymode:-0};"
 	WDSList="${WDSList}$(echo $bssid | tr 'A-Z' 'a-z');"
 
@@ -463,7 +467,7 @@ mtk_sta_vif_pre_config() {
 
 	json_select config
 	json_get_vars disabled encryption key key1 key2 key3 key4 ssid mode bssid wps_pushbutton pin pbc ieee80211w macaddr \
-		apclipe mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv wds
+		apclipe mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv
 	json_select ..
 
 	[ $stacount -gt 1 ] && {
@@ -619,18 +623,16 @@ mtk_sta_vif_pre_config() {
 		ApCliPMFMFPR="${ApCliPMFMFPR:-0}"
 	fi
 
-	if [ "$wds" == "1" -a "$mode" == "sta" ]; then
-		ApCliMWDS="${wds:-1}"
+	if [ "$APCLI_IF" = "apcli0" ]; then
+		[ -n "$macaddr" ] && ApCliMacAddress="${macaddr}"
 	else
-		ApCliMWDS="${wds:-0}"
+		[ -n "$macaddr" ] && ApCliMacAddress1="${macaddr}"
 	fi
-
 	ApCliMuMimoDlEnable="${mumimo_dl:-0}"
 	ApCliMuMimoUlEnable="${mumimo_ul:-0}"
 	ApCliMuOfdmaDlEnable="${ofdma_dl:-0}"
 	ApCliMuOfdmaUlEnable="${ofdma_ul:-0}"
 	ApCliOCVSupport="${ocv:-0}"
-	# ApCliMacAddress="${macaddr}"
 	ApCliEnable="${ApCliEnable:-1}"
 	ApCliSsid="${ssid}"
 	ApCliBssid="$(echo $bssid | tr 'A-Z' 'a-z')"
@@ -1553,9 +1555,6 @@ EOF
 	ApFtSupport=""
 	ApNoForwarding=""
 	ApRekeyInterval=""
-	ApWDSEnable=""
-	ApWdsMac=""
-	ApApMWDS=""
 	ApPMFMFPC=""
 	ApPMFMFPR=""
 	ApBSS=""
@@ -1619,9 +1618,6 @@ EOF
 	echo "FragThreshold=${ApFrag%?}" >> $MTWIFI_PROFILE_PATH
 	echo "RTSThreshold=${ApRts%?}" >> $MTWIFI_PROFILE_PATH
 	echo "DtimPeriod=${ApDtim%?}" >> $MTWIFI_PROFILE_PATH
-	echo "WDSEnable=${ApWDSEnable}" >> $MTWIFI_PROFILE_PATH
-	echo "WdsMac=${ApWdsMac}" >> $MTWIFI_PROFILE_PATH
-	echo "ApMWDS=${ApApMWDS}" >> $MTWIFI_PROFILE_PATH
 	echo "TxPreamble=${short_preamble}" >> $MTWIFI_PROFILE_PATH
 	echo "KickStaRssiLow=${kicklow}" >> $MTWIFI_PROFILE_PATH
 	echo "AssocReqRssiThres=${assocthres}" >> $MTWIFI_PROFILE_PATH
@@ -1631,7 +1627,11 @@ EOF
 
 #WDS接口
 	WDSBssidNum=0
-	WDSEnable=""
+	WWDSEnable=""
+	WWdsMac=""
+	WApMWDS=""
+	WApCliMWDS=""
+	WDS_Enable=""
 	WDSList=""
 	WDSAuthMode=""
 	WDSEncType=""
@@ -1643,7 +1643,11 @@ EOF
 	WdsNum=${WDSBssidNum:-0}
 	sed -i "s/WdsNum=0/WdsNum=${WdsNum}/g" $MTWIFI_PROFILE_PATH
 	# echo "WdsNum=${WDSBssidNum:-0}" >> $MTWIFI_PROFILE_PATH
-	echo "WdsEnable=${WDSEnable%?}" >> $MTWIFI_PROFILE_PATH
+	echo "WDSEnable=${WWDSEnable%?}" >> $MTWIFI_PROFILE_PATH
+	echo "WdsEnable=${WDS_Enable%?}" >> $MTWIFI_PROFILE_PATH
+	echo "ApMWDS=${WApMWDS%?}" >> $MTWIFI_PROFILE_PATH
+	echo "WdsMac=${WWdsMac%?}" >> $MTWIFI_PROFILE_PATH
+	echo "ApCliMWDS=${WApCliMWDS%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsList=${WDSList%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsAuthMode=${WDSAuthMode%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsEncrypType=${WDSEncType%?}" >> $MTWIFI_PROFILE_PATH
@@ -1668,8 +1672,8 @@ EOF
 	ApCliK4Tp=""
 	ApCliPMFMFPC=""
 	ApCliPMFMFPC=""
-	ApCliMWDS=""
-	# ApCliMacAddress=""
+	ApCliMacAddress=""
+	ApCliMacAddress1=""
 	ApCliPESupport=""
 	ApCliMuMimoDlEnable=""
 	ApCliMuMimoUlEnable=""
@@ -1682,7 +1686,8 @@ EOF
 	echo "ApCliEnable=${ApCliEnable:-0}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliSsid=${ApCliSsid}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliBssid=${ApCliBssid}" >> $MTWIFI_PROFILE_PATH
-	# echo "ApCliMacAddress=${ApCliMacAddress}" >> $MTWIFI_PROFILE_PATH
+	echo "ApCliMacAddress=${ApCliMacAddress}" >> $MTWIFI_PROFILE_PATH
+	echo "ApCliMacAddress1=${ApCliMacAddress1}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliAuthMode=${ApCliAuthMode}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliEncrypType=${ApCliEncrypType}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliDefaultKeyID=${ApCliDefKId:-0}" >> $MTWIFI_PROFILE_PATH
@@ -1703,7 +1708,6 @@ EOF
 	echo "ApCliMuOfdmaDlEnable=${ApCliMuOfdmaDlEnable:-0}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliMuOfdmaUlEnable=${ApCliMuOfdmaUlEnable:-0}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliOCVSupport=${ApCliOCVSupport:-0}" >> $MTWIFI_PROFILE_PATH
-	echo "ApCliMWDS=${wds:-0}" >> $MTWIFI_PROFILE_PATH
 
 #MESH模式
 	meshcount=0

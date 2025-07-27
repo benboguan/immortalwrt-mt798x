@@ -1291,6 +1291,8 @@ return view.extend({
 					//o.value('random', _('randomly generated'), _('WFA 802.11v Spec'));
 					o.datatype = "or(macaddr)";
 					o.depends('mode', 'ap');
+					o.depends('mode', 'sta');
+					o.depends('mode', 'wds');
 
 					o = ss.taboption('advanced', form.Flag, 'short_preamble', _('Short Preamble'));
 					o.default = o.enabled;
