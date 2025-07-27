@@ -1,19 +1,45 @@
+--- a/mt_wifi/include/rate_ctrl/ra_ctrl.h
++++ b/mt_wifi/include/rate_ctrl/ra_ctrl.h
+@@ -336,7 +336,7 @@ typedef struct _RA_PHY_CFG_T {
+ 	UINT_8  MODE;
+ 	UINT_8  Flags;
+ 	UINT_8  STBC;
+-	UINT_8  ShortGI;
++	UINT_8  ShortGI:2;
+ 	UINT_8  BW;
+ 	UINT_8  ldpc;
+ 	UINT_8  MCS;
+--- a/mt_wifi/include/phystate/phystate.h
++++ b/mt_wifi/include/phystate/phystate.h
+@@ -138,7 +138,7 @@ typedef struct _EXT_EVENT_PHY_STATE_RX_RATE {
+ 	UINT8 u1RxRate;
+ 	UINT8 u1RxMode;
+ 	UINT8 u1RxNsts;
+-	UINT8 u1Gi;
++	UINT8 u1Gi:2;
+ 	UINT8 u1Coding;
+ 	UINT8 u1Stbc;
+ 	UINT8 u1BW;
 --- a/mt_wifi/embedded/common/cmm_info.c	2023-08-25 11:12:38.595484902 +0800
 +++ b/mt_wifi/embedded/common/cmm_info.c	2023-08-25 11:14:03.403925229 +0800
-@@ -7172,7 +7172,7 @@ typedef union _HTTRANSMIT_SETTING_FIX {
+@@ -7172,8 +7172,8 @@ typedef union _HTTRANSMIT_SETTING_FIX {
  		USHORT iTxBF:1;
  		USHORT eTxBF:1;
  		USHORT STBC:1;	/* only support in HT/VHT mode with MCS0~7 */
 -		USHORT ShortGI:1;	/* TBD: need to extend to 2 bits for HE GI */
-+		USHORT ShortGI:2;
- 		USHORT BW:2;	/* channel bandwidth 20MHz/40/80 MHz */
+-		USHORT BW:2;	/* channel bandwidth 20MHz/40/80 MHz */
++		USHORT ShortGI:2;	/* TBD: 2 bits for HE GI */
++		USHORT BW:3;	/* channel bandwidth 20MHz/40/80/160 MHz */
  		USHORT ldpc:1;
  		USHORT MCS:6;	/* MCS */
-@@ -7182,7 +7182,7 @@ typedef union _HTTRANSMIT_SETTING_FIX {
+ 	} field;
+@@ -7181,8 +7181,8 @@ typedef union _HTTRANSMIT_SETTING_FIX {
+ 	struct {
  		USHORT MCS:6;
  		USHORT ldpc:1;
- 		USHORT BW:2;
+-		USHORT BW:2;
 -		USHORT ShortGI:1;
++		USHORT BW:3;
 +		USHORT ShortGI:2;
  		USHORT STBC:1;
  		USHORT eTxBF:1;
