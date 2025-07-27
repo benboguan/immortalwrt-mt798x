@@ -20,7 +20,7 @@ typedef union _HTTRANSMIT_SETTING_FIX {
 	struct {
 		unsigned short MCS:6;
 		unsigned short ldpc:1;
-		unsigned short BW:3;
+		unsigned short BW:2;
 		unsigned short ShortGI:2;
 		unsigned short GILTF:2;
 		unsigned short STBC:1;
@@ -356,6 +356,6 @@ typedef enum _SEC_AKM_MODE {
 void getRate(HTTRANSMIT_SETTING HTSetting, ULONG *fLastTxRxRate);
 void get_rate_he(UINT8 mcs, UINT8 bw, UINT8 nss, UINT8 dcm, ULONG *last_tx_rate);
 UINT32 cck_to_mcs(UINT32 mcs);
-//int mtk_get_assoclist(const char *ifname, char *buf, int *len);
+int mtk_get_assoclist(const char *ifname, char *buf, int *len);
 
 #endif

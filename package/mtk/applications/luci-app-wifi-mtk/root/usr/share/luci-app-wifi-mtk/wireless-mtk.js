@@ -1020,7 +1020,7 @@ return view.extend({
 
 					o = ss.taboption('advanced', form.Value, 'maxassoc', _('Connection Limit'), _('The default number of single frequency connections for drivers is 64'));
 					o.optional = true;
-					o.placeholder = 128;
+					o.placeholder = 64;
 					o.datatype = 'range(1,128)';
 
 					o = ss.taboption('advanced', form.Value, 'beacon_int', _('Beacon Interval'));

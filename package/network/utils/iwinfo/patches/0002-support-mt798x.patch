@@ -46,6 +46,17 @@
  
  #define LUA_REG(type,op) \
  	{ #op, iwinfo_L_##type##_##op }
+--- a/iwinfo_cli.c
++++ b/iwinfo_cli.c
+@@ -709,7 +709,7 @@ static void print_scanlist(const
+ 			format_chan_width(false, e->ht_chan_info.chan_width));
+ 
+ 		if (e->vht_chan_info.center_chan_1) {
+-			printf("          VHT Operation:\n");
++			printf("          VHT/HE Operation:\n");
+ 			printf("                    Center Frequency 1: %d\n",
+ 				 e->vht_chan_info.center_chan_1);
+ 			printf("                    Center Frequency 2: %d\n",
 --- a/iwinfo_lua.c
 +++ b/iwinfo_lua.c
 @@ -363,6 +363,12 @@ static int iwinfo_L_assoclist(lua_State *L

@@ -425,22 +425,32 @@ static int mtk_get_txpower(const char *ifname, int *buf)
 
 static int mtk_get_signal(const char *ifname, int *buf)
 {
-	struct iwreq wrq;
-	struct iw_statistics stats;
+//	return mtk_get_txpower(ifname, buf);
+	int rssi_sum, num;
+	char tmp_buf[8192];
+	struct iwinfo_assoclist_entry tmp;
+	int ret_len, i;
 
-	wrq.u.data.pointer = (caddr_t) &stats;
-	wrq.u.data.length  = sizeof(struct iw_statistics);
-	wrq.u.data.flags   = 1;
-
-	if (mtk_ioctl(ifname, SIOCGIWSTATS, &wrq) >= 0)
+	if (mtk_get_assoclist(ifname, tmp_buf, &ret_len) == 0)
 	{
-		*buf = (stats.qual.updated & IW_QUAL_DBM)
-			? (stats.qual.level - 0x100) : stats.qual.level;
+		num = ret_len / sizeof(struct iwinfo_assoclist_entry);
+		rssi_sum = 0;
+
+		for (i = 0; i < num; i++)
+		{
+			memset(&tmp, 0, sizeof(struct iwinfo_assoclist_entry));
+			memcpy(&tmp, tmp_buf + i * sizeof(struct iwinfo_assoclist_entry), sizeof(struct iwinfo_assoclist_entry));
+
+			rssi_sum -= tmp.signal;
+		}
+
+		if (num > 0)
+			*buf = -(rssi_sum / num);
+		else
+			*buf = -127;
 
 		return 0;
 	}
-	else
-		*buf = -127;
 
 	return -1;
 }
@@ -622,7 +632,7 @@ static void mtk_parse_rateinfo(RT_802_11_MAC_ENTRY *pe,
 	fill_rate_info(RxRate, rx_rate, mcs_r, nss_r);
 }
 
-static int mtk_get_assoclist(const char *ifname, char *buf, int *len)
+int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 {
 	struct iwreq wrq = {};
 	RT_802_11_MAC_TABLE *table;
@@ -755,7 +765,7 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 {
 	struct iwinfo_scanlist_entry *e = (struct iwinfo_scanlist_entry *)buf;
 	char *data = NULL;
-	unsigned int data_len = 15000;
+	unsigned int data_len = 15500;
 	int offsets[SCAN_DATA_MAX];
 	char cmd[128];
 	int index = 0;
