@@ -472,7 +472,7 @@ static int mtk_get_noise(const char *ifname, int *buf)
 	if (mtk_ioctl(ifname, SIOCGIWSTATS, &wrq) >= 0)
 	{
 		nr = (stats.qual.updated & IW_QUAL_DBM)
-			? (stats.qual.noise - 0x100) : stats.qual.noise;
+			? (stats.qual.noise - 0x117) : stats.qual.noise;
 
 		if (nr <= -127)
 		{
@@ -765,7 +765,7 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 {
 	struct iwinfo_scanlist_entry *e = (struct iwinfo_scanlist_entry *)buf;
 	char *data = NULL;
-	unsigned int data_len = 15500;
+	unsigned int data_len = 15000;
 	int offsets[SCAN_DATA_MAX];
 	char cmd[128];
 	int index = 0;

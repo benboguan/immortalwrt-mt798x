@@ -440,21 +440,21 @@ mtk_wds_vif_pre_config() {
 	fi
 
 	if [ "$wdsen" == "1" -o "$wdsen" == "3" ]; then
-		WApCliMWDS="${WApCliMWDS}${wds:-1};"
+		WApCliMWDS="${WWDSEnable:-1}"
 		WWDSEnable="${WWDSEnable}${wds:-1};"
-		WApMWDS="${WApMWDS}0;"
+		WApMWDS="${WWDSEnable:-0}"
 	elif [ "$wdsen" == "2" -o "$wdsen" == "4" ]; then
-		WApMWDS="${WApCliMWDS}${wds:-1};"
+		WApMWDS="${WWDSEnable:-1}"
 		WWDSEnable="${WWDSEnable}${wds:-1};"
-		WApCliMWDS="${WApCliMWDS}0;"
+		WApCliMWDS="${WWDSEnable:-0}"
 	else
-		WApCliMWDS="${WApCliMWDS}0;"
-		WApMWDS="${WApMWDS}0;"
-		WWDSEnable="${WWDSEnable}0;"
+		WApCliMWDS="${WWDSEnable:-0}"
+		WApMWDS="${WWDSEnable:-0}"
+		WWDSEnable="${WWDSEnable:-0};"
 	fi
 
-	WDS_Enable="${WDS_Enable}${wdsen:-0};"
-	WDSPhyMode="${WDSPhyMode}${wdsphymode:-0};"
+	WDS_Enable="${WDS_Enable}${wdsen};"
+	WDSPhyMode="${WDSPhyMode}${wdsphymode};"
 	WDSList="${WDSList}$(echo $bssid | tr 'A-Z' 'a-z');"
 	WWdsMac="${WWdsMac}${macaddr};"
 
@@ -1642,9 +1642,9 @@ EOF
 	# echo "WdsNum=${WDSBssidNum:-0}" >> $MTWIFI_PROFILE_PATH
 	echo "WDSEnable=${WWDSEnable%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsEnable=${WDS_Enable%?}" >> $MTWIFI_PROFILE_PATH
-	echo "ApMWDS=${WApMWDS%?}" >> $MTWIFI_PROFILE_PATH
+	echo "ApMWDS=${WApMWDS:-0}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsMac=${WWdsMac%?}" >> $MTWIFI_PROFILE_PATH
-	echo "ApCliMWDS=${WApCliMWDS%?}" >> $MTWIFI_PROFILE_PATH
+	echo "ApCliMWDS=${WApCliMWDS:-0}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsList=${WDSList%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsAuthMode=${WDSAuthMode%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsEncrypType=${WDSEncType%?}" >> $MTWIFI_PROFILE_PATH

@@ -47,7 +47,7 @@
 +			pDst->InactiveTime = (UINT32)(pEntry->StaIdleTimeout - pEntry->NoDataIdleCount);
 +			pDst->TxFailed = (UINT32)pEntry->TxFailCount;
 +			pDst->TxRetried = (UINT32)pEntry->mpdu_retries.QuadPart;
-+			pDst->ExPected_throughput = (UINT32)(pEntry->AvgTxBytes + pEntry->AvgRxBytes) * 50;
++			pDst->ExPected_throughput = pEntry->AvgTxBytes * 70;
  			pMacTab->Num += 1;
  			/* Add to avoid Array cross board */
  			if (pMacTab->Num >= MAX_LEN_OF_MAC_TABLE)

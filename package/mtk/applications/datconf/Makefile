@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=datconf
-PKG_REVISION:=757f9679
+PKG_REVISION:=607478
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_REVISION).tar.bz2
 PKG_RELEASE:=1
 PKG_USE_NINJA:=0
@@ -55,7 +55,6 @@ TARGET_LDFLAGS += -L$(STAGING_DIR)/usr/lib
 
 CMAKE_OPTIONS = \
         -DLUAPATH=/usr/lib/lua
-
 
 define Package/libkvcutil/install
 	$(INSTALL_DIR) $(1)/lib

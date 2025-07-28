@@ -1,31 +1,3 @@
---- a/mt_wifi/include/rate_ctrl/ra_ctrl.h
-+++ b/mt_wifi/include/rate_ctrl/ra_ctrl.h
-@@ -336,8 +336,8 @@ typedef struct _RA_PHY_CFG_T {
- 	UINT_8  MODE;
- 	UINT_8  Flags;
- 	UINT_8  STBC;
--	UINT_8  ShortGI;
--	UINT_8  BW;
-+	UINT_8  ShortGI: 2;
-+	UINT_8  BW: 2;
- 	UINT_8  ldpc;
- 	UINT_8  MCS;
- 	UINT_8  VhtNss;
---- a/mt_wifi/include/phystate/phystate.h
-+++ b/mt_wifi/include/phystate/phystate.h
-@@ -138,10 +138,10 @@ typedef struct _EXT_EVENT_PHY_STATE_RX_RATE {
- 	UINT8 u1RxRate;
- 	UINT8 u1RxMode;
- 	UINT8 u1RxNsts;
--	UINT8 u1Gi;
-+	UINT8 u1Gi: 2;
- 	UINT8 u1Coding;
- 	UINT8 u1Stbc;
--	UINT8 u1BW;
-+	UINT8 u1BW: 2;
- 	UINT16 u2WlanIdx;
- 	UINT16 u2Reserved;
- } EXT_EVENT_PHY_STATE_RX_RATE, *P_EXT_EVENT_PHY_STATE_RX_RATE;
 --- a/mt_wifi/embedded/common/cmm_info.c	2023-08-25 11:12:38.595484902 +0800
 +++ b/mt_wifi/embedded/common/cmm_info.c	2023-08-25 11:14:03.403925229 +0800
 @@ -7172,7 +7172,7 @@ typedef union _HTTRANSMIT_SETTING_FIX {
@@ -52,7 +24,7 @@
  	lastTxRate.field.ldpc = rTxStatResult.rEntryTxRate.ldpc ? 1 : 0;
 -	lastTxRate.field.ShortGI = rTxStatResult.rEntryTxRate.ShortGI ? 1 : 0;
 +	if (lastTxRate.field.MODE >= MODE_HE)
-+		lastTxRate.field.ShortGI = rTxStatResult.rEntryTxRate.ShortGI;
++		lastTxRate.field.ShortGI = rTxStatResult.rEntryTxRate.ShortGI & 0x3;
 +	else
 +		lastTxRate.field.ShortGI = rTxStatResult.rEntryTxRate.ShortGI ? 1 : 0;
  	lastTxRate.field.STBC = rTxStatResult.rEntryTxRate.STBC;
@@ -64,7 +36,7 @@
  	lastRxRate.field.ldpc = rRxStatResult.u1Coding;
 -	lastRxRate.field.ShortGI = rRxStatResult.u1Gi ? 1 : 0;
 +	if (lastRxRate.field.MODE >= MODE_HE)
-+		lastRxRate.field.ShortGI = rRxStatResult.u1Gi;
++		lastRxRate.field.ShortGI = rRxStatResult.u1Gi & 0x3;
 +	else
 +		lastRxRate.field.ShortGI = rRxStatResult.u1Gi ? 1 : 0;
  	lastRxRate.field.STBC = rRxStatResult.u1Stbc;

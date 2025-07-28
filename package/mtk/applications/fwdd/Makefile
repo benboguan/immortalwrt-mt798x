@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fwdd
-PKG_REVISION:=a4613268
+PKG_REVISION:=1f6e18
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_REVISION).tar.bz2
 PKG_RELEASE:=1
 
@@ -29,7 +29,6 @@ endef
 define Package/fwdd/description
   forward daemon
 endef
-
 
 define Package/fwdd/install
 	$(INSTALL_DIR) $(1)/usr/bin
