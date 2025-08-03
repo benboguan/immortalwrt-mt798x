@@ -1,10 +1,9 @@
 --- a/mt_wifi/embedded/common/cmm_info.c
 +++ b/mt_wifi/embedded/common/cmm_info.c
-@@ -7256,6 +7256,19 @@ typedef struct _RT_802_11_MAC_ENTRY_FIX
+@@ -7256,6 +7256,18 @@ typedef struct _RT_802_11_MAC_ENTRY_FIX
  	HTTRANSMIT_SETTING_FIX LastRxRate;
  	SHORT StreamSnr[3];				/* BF SNR from RXWI. Units=0.25 dB. 22 dB offset removed */
  	SHORT SoundingRespSnr[3];			/* SNR from Sounding Response. Units=0.25 dB. 22 dB offset removed */
-+	UINT32 AvgSnr;
 +	UINT8 wme:1;
 +	UINT8 mfp:1;
 +	UINT8 authenticated:1;
@@ -29,16 +28,10 @@
  			pDst->Psm = pEntry->PsMode;
  #ifdef DOT11_N_SUPPORT
  			pDst->MimoPs = pEntry->MmpsMode;
-@@ -7380,6 +7393,28 @@ VOID RTMPIoctlGetMacTableStaInfo(
+@@ -7380,6 +7392,22 @@ VOID RTMPIoctlGetMacTableStaInfo(
  			pDst->LastRxRate.word = RTMPGetLastRxRate(pAd, pEntry);
  			pDst->EncryMode = pEntry->SecConfig.PairwiseCipher;
  			pDst->AuthMode = pEntry->SecConfig.AKMMap;
-+			/*FILL the AVG SNR */
-+			pDst->AvgSnr = ((pEntry->RssiSample.AvgSnr[0] +
-+					 pEntry->RssiSample.AvgSnr[1] +
-+					 pEntry->RssiSample.AvgSnr[2] +
-+					 pEntry->RssiSample.AvgSnr[3]) /
-+					pAd->Antenna.field.RxPath);
 +			if (CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE))
 +				pDst->wme = 1;
 +			if (pEntry->SecConfig.PmfCfg.UsePMFConnect)
