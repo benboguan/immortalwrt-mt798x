@@ -636,7 +636,8 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 {
 	struct iwreq wrq = {};
 	RT_802_11_MAC_TABLE *table;
-	int i, noise, chband;
+	//int noise;
+	int i, chband;
 
 	table = calloc(1, sizeof(RT_802_11_MAC_TABLE));
 	if (!table)
@@ -652,8 +653,8 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 
 	*len = 0;
 
-	if (mtk_get_noise(ifname, &noise))
-		noise = 0;
+	//if (mtk_get_noise(ifname, &noise))
+	//	noise = 0;
 
 	chband = mtk_get_band(ifname);
 	if (chband < 0)
@@ -677,7 +678,8 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 				e->signal = pe->AvgRssi2;
 		}
 		e->signal_avg = pe->AvgRssi1;
-		e->noise = noise;
+		//e->noise = noise;
+		e->noise = e->signal - pe->AvgSnr;
 		e->inactive = pe->InactiveTime;
 		e->connected_time = pe->ConnectedTime;
 
