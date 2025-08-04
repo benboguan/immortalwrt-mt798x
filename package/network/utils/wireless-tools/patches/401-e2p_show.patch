@@ -1,0 +1,100 @@
+--- old/iwpriv.c	2023-11-23 09:28:17.390703000 +0800
++++ new/iwpriv.c	2023-11-23 09:25:29.199704000 +0800
+@@ -243,6 +243,10 @@
+   fprintf(stderr, "Usage: iwpriv interface [private-command [private-arguments]]\n");
+ }
+ 
++#define IWPRIV_BUFFER_ZIZE 32768
++
++u_char	buffer[IWPRIV_BUFFER_ZIZE] = {0};	/* Only that big in v25 and later */
++
+ /************************* SETTING ROUTINES **************************/
+ 
+ /*------------------------------------------------------------------*/
+@@ -259,13 +263,15 @@
+ 		int		priv_num)	/* Number of descriptions */
+ {
+   struct iwreq	wrq;
+-  u_char	buffer[4096];	/* Only that big in v25 and later */
+   int		i = 0;		/* Start with first command arg */
+   int		k;		/* Index in private description table */
+   int		temp;
+   int		subcmd = 0;	/* sub-ioctl index */
+   int		offset = 0;	/* Space for sub-ioctl index */
+ 
++  u_char* m_buffer = NULL;
++
++  memset(buffer, 0x00, sizeof(buffer));
+   /* Check if we have a token index.
+    * Do it now so that sub-ioctl takes precedence, and so that we
+    * don't have to bother with it later on... */
+@@ -452,9 +458,26 @@
+       else
+ 	{
+ 	  /* Third case : args won't fit in wrq, or variable number of args */
++	  if((!strcmp(cmdname, "e2p")) && (0 == count))
++	  {
++		 m_buffer = (u_char*)(malloc(sizeof(u_char)*IWPRIV_BUFFER_ZIZE));
++		if (NULL == m_buffer)
++        {
++            printf("m_buffer is NULL!\n");
++            return -1;
++        }
++		
++		memset(m_buffer, 0x00, IWPRIV_BUFFER_ZIZE);
++		wrq.u.data.pointer = (caddr_t) m_buffer;
++		wrq.u.data.flags = subcmd;
++	  }
++	  else
++	  {
+ 	  wrq.u.data.pointer = (caddr_t) buffer;
+ 	  wrq.u.data.flags = subcmd;
+ 	}
++
++	}
+     }
+ 
+   /* Perform the private ioctl */
+@@ -462,6 +485,8 @@
+     {
+       fprintf(stderr, "Interface doesn't accept private ioctl...\n");
+       fprintf(stderr, "%s (%X): %s\n", cmdname, priv[k].cmd, strerror(errno));
++	  
++	  free(m_buffer);
+       return(-1);
+     }
+ 
+@@ -501,10 +526,20 @@
+ 	  break;
+ 
+ 	case IW_PRIV_TYPE_CHAR:
++	{
+ 	  /* Display args */
++	  if((!strcmp(cmdname, "e2p")) && (0 == count)&& (m_buffer))
++	  {	  	
++		m_buffer[n] = '\0';
++		printf("%s\n", m_buffer);
++	  }
++	  else
++	  {	  	
+ 	  buffer[n] = '\0';
+ 	  printf("%s\n", buffer);
++	  }
+ 	  break;
++	}
+ 
+ 	case IW_PRIV_TYPE_FLOAT:
+ 	  {
+@@ -543,10 +578,11 @@
+ 
+ 	default:
+ 	  fprintf(stderr, "Not yet implemented...\n");
++	  free(m_buffer);
+ 	  return(-1);
+ 	}
+     }	/* if args to set */
+-
++  free(m_buffer);
+   return(0);
+ }
+ 
