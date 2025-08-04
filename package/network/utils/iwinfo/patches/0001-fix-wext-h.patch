@@ -26,15 +26,6 @@
  
  /* Statistics flags (bitmask in updated) */
  #define IW_QUAL_QUAL_UPDATED	0x01	/* Value was updated since last read */
-@@ -543,7 +544,7 @@ /* Scanning request flags */
- #define IW_SCAN_TYPE_ACTIVE 0
- #define IW_SCAN_TYPE_PASSIVE 1
- /* Maximum size of returned data */
--#define IW_SCAN_MAX_DATA	4096	/* In bytes */
-+#define IW_SCAN_MAX_DATA	15360	/* In bytes or Modify to 15360 */
- 
- /* Max number of char in custom event - use multiple of them if needed */
- #define IW_CUSTOM_MAX		256	/* In bytes */
 @@ -677,7 +678,7 @@ /* --------------------------- SUBTYPES --------------------------- */
   */
  struct	iw_param
