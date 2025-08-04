@@ -457,6 +457,37 @@ static int mtk_get_signal(const char *ifname, int *buf)
 
 static int mtk_get_noise(const char *ifname, int *buf)
 {
+	int noise_sum, num;
+	char tmp_buf[8192];
+	struct iwinfo_assoclist_entry tmp;
+	int ret_len, i;
+
+	if (mtk_get_assoclist(ifname, tmp_buf, &ret_len) == 0)
+	{
+		num = ret_len / sizeof(struct iwinfo_assoclist_entry);
+		noise_sum = 0;
+
+		for (i = 0; i < num; i++)
+		{
+			memset(&tmp, 0, sizeof(struct iwinfo_assoclist_entry));
+			memcpy(&tmp, tmp_buf + i * sizeof(struct iwinfo_assoclist_entry), sizeof(struct iwinfo_assoclist_entry));
+
+			noise_sum -= tmp.noise;
+		}
+
+		if (num > 0)
+			*buf = -(noise_sum / num);
+		else
+			*buf = -127;
+
+		return 0;
+	}
+
+	return -1;
+}
+
+/* static int mtk_get_noise(const char *ifname, int *buf)
+{
 	int nr, band;
 	struct iwreq wrq;
 	struct iw_statistics stats;
@@ -499,7 +530,7 @@ static int mtk_get_noise(const char *ifname, int *buf)
 
 	return -1;
 }
-
+ */
 static int mtk_get_quality(const char *ifname, int *buf)
 {
 	int signal;
@@ -636,7 +667,8 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 {
 	struct iwreq wrq = {};
 	RT_802_11_MAC_TABLE *table;
-	int i, noise, chband;
+	//int noise;
+	int i, chband;
 
 	table = calloc(1, sizeof(RT_802_11_MAC_TABLE));
 	if (!table)
@@ -652,8 +684,8 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 
 	*len = 0;
 
-	if (mtk_get_noise(ifname, &noise))
-		noise = 0;
+	//if (mtk_get_noise(ifname, &noise))
+	//	noise = 0;
 
 	chband = mtk_get_band(ifname);
 	if (chband < 0)
@@ -677,7 +709,7 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 				e->signal = pe->AvgRssi2;
 		}
 		e->signal_avg = pe->AvgRssi1;
-		e->noise = noise;
+		e->noise = pe->AvgRssi1 - 16;
 		e->inactive = pe->InactiveTime;
 		e->connected_time = pe->ConnectedTime;
 
