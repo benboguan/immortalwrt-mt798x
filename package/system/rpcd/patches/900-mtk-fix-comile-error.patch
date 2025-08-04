@@ -1,0 +1,11 @@
+--- a/iwinfo.c
++++ b/iwinfo.c
+@@ -335,7 +335,7 @@ rpc_iwinfo_info(struct ubus_context *ctx
+ 	rpc_iwinfo_call_str("bssid", iw->bssid);
+ 	rpc_iwinfo_call_str("country", iw->country);
+ 
+-	rpc_iwinfo_call_int("mode", iw->mode, IWINFO_OPMODE_NAMES);
++	rpc_iwinfo_call_int("mode", iw->mode, (const char **)IWINFO_OPMODE_NAMES);
+ 	rpc_iwinfo_call_int("channel", iw->channel, NULL);
+ 	rpc_iwinfo_call_int("center_chan1", iw->center_chan1, NULL);
+ 	rpc_iwinfo_call_int("center_chan2", iw->center_chan2, NULL);
