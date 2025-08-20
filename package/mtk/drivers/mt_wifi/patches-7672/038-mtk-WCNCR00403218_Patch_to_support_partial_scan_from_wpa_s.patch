@@ -1,7 +1,5 @@
-Index: mt_wifi/embedded/common/scan.c
-===================================================================
---- mt_wifi.orig/embedded/common/scan.c
-+++ mt_wifi/embedded/common/scan.c
+--- a/mt_wifi/embedded/common/scan.c
++++ b/mt_wifi/embedded/common/scan.c
 @@ -602,7 +602,7 @@ static INT scan_active(RTMP_ADAPTER *pAd
  	/* There is no need to send broadcast probe request if active scan is in effect.*/
  	SsidLen = 0;
@@ -11,10 +9,8 @@ Index: mt_wifi/embedded/common/scan.c
  #ifdef WSC_STA_SUPPORT
  		|| ((ScanType == SCAN_WSC_ACTIVE) && (OpMode == OPMODE_STA))
  #endif /* WSC_STA_SUPPORT */
-Index: mt_wifi/embedded/common/scan_util.c
-===================================================================
---- mt_wifi.orig/embedded/common/scan_util.c
-+++ mt_wifi/embedded/common/scan_util.c
+--- a/mt_wifi/embedded/common/scan_util.c
++++ b/mt_wifi/embedded/common/scan_util.c
 @@ -34,6 +34,7 @@ VOID StaSiteSurvey(
  {
  	MLME_SCAN_REQ_STRUCT    ScanReq;

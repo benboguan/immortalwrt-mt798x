@@ -1,6 +1,6 @@
 --- a/mt_wifi/embedded/ap/ap_cfg.c
 +++ b/mt_wifi/embedded/ap/ap_cfg.c
-@@ -29906,6 +29906,46 @@ INT32 rtmp_get_macPower(IN VOID *pAdSrc)
+@@ -29898,6 +29898,46 @@ INT32 rtmp_get_macPower(IN VOID *pAdSrc)
  	return retPwr;
  }
  

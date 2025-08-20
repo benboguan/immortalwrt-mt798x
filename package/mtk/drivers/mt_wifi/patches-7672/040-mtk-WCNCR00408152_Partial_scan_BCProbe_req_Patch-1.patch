@@ -1,7 +1,5 @@
-Index: mt_wifi/embedded/common/scan.c
-===================================================================
---- mt_wifi/embedded/common/scan.c
-+++ mt_wifi/embedded/common/scan.c
+--- a/mt_wifi/embedded/common/scan.c
++++ b/mt_wifi/embedded/common/scan.c
 @@ -1385,7 +1385,7 @@
  
  #ifdef CONFIG_STA_SUPPORT

@@ -1,7 +1,5 @@
-Index: mt_wifi/embedded/common/scan.c
-===================================================================
---- mt_wifi/embedded/common/scan.c
-+++ mt_wifi/embedded/common/scan.c
+--- a/mt_wifi/embedded/common/scan.c
++++ b/mt_wifi/embedded/common/scan.c
 @@ -48,6 +48,7 @@
  
  	PartialScan = (PARTIAL_SCAN *) FunctionContext;
@@ -18,7 +16,7 @@ Index: mt_wifi/embedded/common/scan.c
  		return FALSE;
  	}
  #endif /* SCAN_RADAR_COEX_SUPPORT */
-@@ -1080,6 +1082,7 @@
+@@ -1079,6 +1081,7 @@
  #endif /* APCLI_CFG80211_SUPPORT */
  
  		ScanCtrl->PartialScan.bScanning = FALSE;
@@ -70,23 +68,18 @@ Index: mt_wifi/embedded/common/scan.c
  	PartialScanCtrl->NumOfChannels = DEFLAUT_PARTIAL_SCAN_CH_NUM;
  	PartialScanCtrl->LastScanChannel = 0;
  	PartialScanCtrl->BreakTime = 0;
-Index: mt_wifi/embedded/fsm/fsm_sync.c
-===================================================================
---- mt_wifi/embedded/fsm/fsm_sync.c
-+++ mt_wifi/embedded/fsm/fsm_sync.c
+--- a/mt_wifi/embedded/fsm/fsm_sync.c
++++ b/mt_wifi/embedded/fsm/fsm_sync.c
 @@ -1425,6 +1425,7 @@
- 		ScanInfo->LastScanChannel, ScanCtrl->BandIdx);
+ 			 ScanInfo->LastScanChannel, ScanCtrl->BandIdx);
  	/*ASSERT(wdev);*/
  
 +	ScanCtrl->PartialScan.bscanwait = FALSE;
  	if (!wdev)
  		return;
  #ifdef CONFIG_6G_SUPPORT
-
-Index: mt_wifi/embedded/fsm/fsm_cntl.c
-===================================================================
---- mt_wifi/embedded/fsm/fsm_cntl.c
-+++ mt_wifi/embedded/fsm/fsm_cntl.c
+--- a/mt_wifi/embedded/fsm/fsm_cntl.c
++++ b/mt_wifi/embedded/fsm/fsm_cntl.c
 @@ -653,6 +653,7 @@
  
  	ScanCtrl->Channel = 0;
@@ -95,10 +88,8 @@ Index: mt_wifi/embedded/fsm/fsm_cntl.c
  #ifdef OFFCHANNEL_SCAN_FEATURE
  	ScanCtrl->OffChScan_Ongoing = FALSE;
  	ScanCtrl->state = OFFCHANNEL_SCAN_INVALID;
-Index: mt_wifi7/mt_wifi/include/rtmp.h
-===================================================================
---- mt_wifi7/mt_wifi/include/rtmp.h
-+++ mt_wifi7/mt_wifi/include/rtmp.h
+--- a/mt_wifi/embedded/include/rtmp.h
++++ b/mt_wifi/embedded/include/rtmp.h
 @@ -6487,6 +6487,7 @@ #define DEFLAUT_PARTIAL_SCAN_CH_NUM
  #define DEFLAUT_PARTIAL_SCAN_BREAK_TIME	4  /* Period of partial scaning: unit: 100ms */
  typedef struct _PARTIAL_SCAN_ {

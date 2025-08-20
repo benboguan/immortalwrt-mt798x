@@ -139,7 +139,7 @@
  #ifdef WSC_AP_SUPPORT
  
  	case OID_802_11_CURRENT_CRED:
-@@ -30306,6 +30326,12 @@ BOOLEAN wdev_down_exec_ioctl(RTMP_IOCTL_
+@@ -30298,6 +30318,12 @@ BOOLEAN wdev_down_exec_ioctl(RTMP_IOCTL_
  		}
  	}
  

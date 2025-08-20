@@ -1,7 +1,5 @@
-Index: mt_wifi/embedded/common/scan.c
-===================================================================
---- mt_wifi.orig/embedded/common/scan_util.c
-+++ mt_wifi/embedded/common/scan_util.c
+--- a/mt_wifi/embedded/common/scan_util.c
++++ b/mt_wifi/embedded/common/scan_util.c
 @@ -97,6 +97,19 @@ VOID StaSiteSurvey(
  		ScanCtrl->PartialScan.pwdev = wdev;
  		wdev->ScanInfo.LastScanChannel = 0;
