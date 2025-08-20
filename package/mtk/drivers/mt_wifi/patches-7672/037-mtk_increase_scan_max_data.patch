@@ -1,0 +1,13 @@
+Index: mt_wifi/common/cmm_info.c
+===================================================================
+--- mt_wifi.orig/embedded/common/cmm_info.c
++++ mt_wifi/embedded/common/cmm_info.c
+@@ -6834,7 +6834,7 @@ VOID RTMPIoctlGetSiteSurvey(
+ 
+ 	MTWF_DBG(pAdapter, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_INFO, "After check, this_char = %s, out = %d\n", this_char, bss_start_idx);
+ 	TotalLen = sizeof(CHAR) * ((MAX_LEN_OF_BSS_TABLE) * max_len) + 100;
+-	BufLen = IW_SCAN_MAX_DATA;
++	BufLen = IW_SCAN_MAX_DATA*4 - 512; //mtk Bruce
+ 	os_alloc_mem(NULL, (PUCHAR *)&msg, TotalLen);
+ 
+ 	if (msg == NULL) {

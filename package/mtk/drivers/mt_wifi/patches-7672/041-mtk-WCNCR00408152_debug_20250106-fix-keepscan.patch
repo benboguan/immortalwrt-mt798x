@@ -1,0 +1,109 @@
+Index: mt_wifi/embedded/common/scan.c
+===================================================================
+--- mt_wifi/embedded/common/scan.c
++++ mt_wifi/embedded/common/scan.c
+@@ -48,6 +48,7 @@
+ 
+ 	PartialScan = (PARTIAL_SCAN *) FunctionContext;
+ 	PartialScan->bScanning = TRUE;
++	PartialScan->bscanwait = FALSE;
+ }
+ 
+ DECLARE_TIMER_FUNCTION(restart_partial_scan);
+@@ -1064,6 +1065,7 @@
+ 			RT_CFG80211_SCAN_END(pAd, TRUE);
+ #endif /* APCLI_CFG80211_SUPPORT */
+ 		ScanCtrl->PartialScan.bScanning = FALSE;
++		ScanCtrl->PartialScan.bscanwait = FALSE;
+ 		return FALSE;
+ 	}
+ #endif /* SCAN_RADAR_COEX_SUPPORT */
+@@ -1080,6 +1082,7 @@
+ #endif /* APCLI_CFG80211_SUPPORT */
+ 
+ 		ScanCtrl->PartialScan.bScanning = FALSE;
++		ScanCtrl->PartialScan.bscanwait = FALSE;
+ 		return FALSE;
+ 	}
+ 
+@@ -1245,10 +1248,12 @@
+ 		if (ScanType == SCAN_PARTIAL) {
+ 			if (ScanPending && ScanCtrl->PartialScan.TimerInterval > 0) {
+ 				ScanCtrl->PartialScan.bScanning = FALSE;
++				ScanCtrl->PartialScan.bscanwait = FALSE;
+ 				RTMPSetTimer(&ScanCtrl->PartialScan.PartialScanTimer,
+ 								ScanCtrl->PartialScan.TimerInterval);
+ 			} else if (!ScanPending) {
+ 				ScanCtrl->PartialScan.bScanning = FALSE;
++				ScanCtrl->PartialScan.bscanwait = FALSE;
+ 				ScanCtrl->PartialScan.pwdev = NULL;
+ 				ScanCtrl->ScanType = SCAN_ACTIVE;
+ 			}
+@@ -1595,7 +1600,8 @@
+ 					  ScanInfo->LastScanChannel,
+ 					  ScanCtrl->PartialScan.bScanning,
+ 					  ScanCtrl->PartialScan.BreakTime, scan_in_run_state(pAd, wdev));
+-			if (scan_in_run_state(pAd, wdev) == FALSE)
++			if ((scan_in_run_state(pAd, wdev) == FALSE)
++				&& (ScanCtrl->PartialScan.bscanwait == FALSE))
+ 				ScanCtrl->PartialScan.BreakTime++;
+ 			/* When partialscan is pending, count breaktime;
+ 			*  We should wait (BeaconPeriod + 100ms), then trigger next scan.*/
+@@ -1627,10 +1633,12 @@
+ 				}
+ 				NdisZeroMemory(&ScanReq, sizeof(MLME_SCAN_REQ_STRUCT));
+ 				ScanParmFill(pAd, &ScanReq, ScanCtrl->Ssid, ScanCtrl->SsidLen, BSS_ANY, SCAN_PARTIAL);
++				ScanCtrl->PartialScan.bscanwait = TRUE;
+ 				if (MlmeEnqueueWithWdev(pAd, SYNC_FSM, SYNC_FSM_SCAN_REQ,
+ 						sizeof(MLME_SCAN_REQ_STRUCT), &ScanReq, 0, wdev))
+ 					RTMP_MLME_HANDLER(pAd);
+ 				else {
++					ScanCtrl->PartialScan.bscanwait = FALSE;
+ 					ScanCtrl->PartialScan.bScanning = FALSE;
+ 					if (GetCurrentChannelOpOwner(pAd, wdev) == CH_OP_OWNER_PARTIAL_SCAN)
+ 						ReleaseChannelOpCharge(pAd, wdev, CH_OP_OWNER_PARTIAL_SCAN);
+@@ -1653,6 +1658,7 @@
+ 	for (BandIdx = 0; BandIdx < DBDC_BAND_NUM; BandIdx++) {
+ 		PartialScanCtrl = &pAd->ScanCtrl[BandIdx].PartialScan;
+ 	PartialScanCtrl->bScanning = FALSE;
++	PartialScanCtrl->bscanwait = FALSE;
+ 	PartialScanCtrl->NumOfChannels = DEFLAUT_PARTIAL_SCAN_CH_NUM;
+ 	PartialScanCtrl->LastScanChannel = 0;
+ 	PartialScanCtrl->BreakTime = 0;
+Index: mt_wifi/embedded/fsm/fsm_sync.c
+===================================================================
+--- mt_wifi/embedded/fsm/fsm_sync.c
++++ mt_wifi/embedded/fsm/fsm_sync.c
+@@ -1425,6 +1425,7 @@
+ 		ScanInfo->LastScanChannel, ScanCtrl->BandIdx);
+ 	/*ASSERT(wdev);*/
+ 
++	ScanCtrl->PartialScan.bscanwait = FALSE;
+ 	if (!wdev)
+ 		return;
+ #ifdef CONFIG_6G_SUPPORT
+
+Index: mt_wifi/embedded/fsm/fsm_cntl.c
+===================================================================
+--- mt_wifi/embedded/fsm/fsm_cntl.c
++++ mt_wifi/embedded/fsm/fsm_cntl.c
+@@ -653,6 +653,7 @@
+ 
+ 	ScanCtrl->Channel = 0;
+ 	ScanInfo->LastScanChannel = 0;
++	ScanCtrl->PartialScan.bscanwait = FALSE;
+ #ifdef OFFCHANNEL_SCAN_FEATURE
+ 	ScanCtrl->OffChScan_Ongoing = FALSE;
+ 	ScanCtrl->state = OFFCHANNEL_SCAN_INVALID;
+Index: mt_wifi7/mt_wifi/include/rtmp.h
+===================================================================
+--- mt_wifi7/mt_wifi/include/rtmp.h
++++ mt_wifi7/mt_wifi/include/rtmp.h
+@@ -6487,6 +6487,7 @@ #define DEFLAUT_PARTIAL_SCAN_CH_NUM
+ #define DEFLAUT_PARTIAL_SCAN_BREAK_TIME	4  /* Period of partial scaning: unit: 100ms */
+ typedef struct _PARTIAL_SCAN_ {
+ 	BOOLEAN bScanning;			/* Doing partial scan or not */
++	BOOLEAN	bscanwait;
+ 	UINT8	 NumOfChannels;			/* How many channels to scan each time */
+ 	UINT8	 LastScanChannel;		/* last scaned channel */
+ 	UINT32	 BreakTime;			/* Period of partial scanning: unit: 100ms */

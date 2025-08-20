@@ -1,0 +1,13 @@
+Index: mt_wifi/embedded/common/scan.c
+===================================================================
+--- mt_wifi/embedded/common/scan.c
++++ mt_wifi/embedded/common/scan.c
+@@ -1385,7 +1385,7 @@
+ 
+ #ifdef CONFIG_STA_SUPPORT
+ 			if ((wdev->wdev_type == WDEV_TYPE_STA) &&
+-				(ScanType == SCAN_ACTIVE) &&
++				((ScanType == SCAN_ACTIVE) || (ScanType == SCAN_PARTIAL)) &&
+ 				(ScanCtrl->SsidLen > 0)) {
+ 				/* Enhance Connectivity when Hidden Ssid Scanning */
+ 				CHAR desiredSsid[MAX_LEN_OF_SSID] = {0};

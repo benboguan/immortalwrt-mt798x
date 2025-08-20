@@ -1,0 +1,47 @@
+Index: mt_wifi/embedded/common/scan.c
+===================================================================
+--- mt_wifi.orig/embedded/common/scan.c
++++ mt_wifi/embedded/common/scan.c
+@@ -602,7 +602,7 @@ static INT scan_active(RTMP_ADAPTER *pAd
+ 	/* There is no need to send broadcast probe request if active scan is in effect.*/
+ 	SsidLen = 0;
+ 
+-	if ((ScanType == SCAN_ACTIVE) || (ScanType == FAST_SCAN_ACTIVE)
++	if ((ScanType == SCAN_ACTIVE) || (ScanType == FAST_SCAN_ACTIVE) || (ScanType == SCAN_PARTIAL)
+ #ifdef WSC_STA_SUPPORT
+ 		|| ((ScanType == SCAN_WSC_ACTIVE) && (OpMode == OPMODE_STA))
+ #endif /* WSC_STA_SUPPORT */
+Index: mt_wifi/embedded/common/scan_util.c
+===================================================================
+--- mt_wifi.orig/embedded/common/scan_util.c
++++ mt_wifi/embedded/common/scan_util.c
+@@ -34,6 +34,7 @@ VOID StaSiteSurvey(
+ {
+ 	MLME_SCAN_REQ_STRUCT    ScanReq;
+ 	PSTA_ADMIN_CONFIG pStaCfg = GetStaCfgByWdev(pAd, wdev);
++	SCAN_CTRL *ScanCtrl;
+ 
+ 	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS)) {
+ 		/*
+@@ -82,6 +83,21 @@ VOID StaSiteSurvey(
+ 		ScanReq.SsidLen = pSsid->SsidLength;
+ 		NdisMoveMemory(ScanReq.Ssid, pSsid->Ssid, pSsid->SsidLength);
+ 	}
++
++	if (ScanType == SCAN_PARTIAL) {
++		ScanCtrl = get_scan_ctrl_by_wdev(pAd, wdev);
++		MTWF_DBG(pAd, DBG_CAT_CHN, CATCHN_SCAN, DBG_LVL_ERROR,
++				"Trigger Partial scan(%d).\n", __LINE__);		
++		if (ScanCtrl->PartialScan.bScanning) {
++			MTWF_DBG(pAd, DBG_CAT_CHN, CATCHN_SCAN, DBG_LVL_ERROR,
++					"partial scan is under process is under process."
++					" cannot trigger new partial scan\n");
++			return;
++		}
++		ScanCtrl->PartialScan.pwdev = wdev;
++		wdev->ScanInfo.LastScanChannel = 0;
++		ScanCtrl->PartialScan.bScanning = TRUE;
++	}
+ 
+ 	ScanReq.BssType = BSS_ANY;
+ 	ScanReq.ScanType = ScanType;
