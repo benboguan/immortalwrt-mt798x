@@ -4,7 +4,7 @@
    fprintf(stderr, "Usage: iwpriv interface [private-command [private-arguments]]\n");
  }
  
-+#define IWPRIV_BUFFER_ZIZE 32768
++#define IWPRIV_BUFFER_ZIZE 15872 /* or 32768 */
 +
 +u_char	buffer[IWPRIV_BUFFER_ZIZE] = {0};	/* Only that big in v25 and later */
 +
