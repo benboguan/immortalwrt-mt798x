@@ -55,7 +55,7 @@ drv_mtk_init_device_config() {
 
 #读取iface相关设置项并写入json
 drv_mtk_init_iface_config() {
-	config_add_boolean disabled wds
+	config_add_boolean disabled wds band
 	config_add_string mode ifname 'macaddr:macaddr' bssid 'ssid:string' encryption
 	config_add_string auth_server auth_port auth_secret acct_secret own_ip_addr own_radius_port
 	config_add_boolean hidden isolate isolate_mb br_isolate_mode ieee80211k ieee80211v ieee80211r
@@ -179,7 +179,8 @@ mtk_ap_vif_pre_config() {
 				enc=WPA3
 			;;
 			8021x*|eap3-mixed|wpa3-mixed) #在mt_wifi驱动中，WPA3也就是SHA256的WPA2，所以选择WPA2MIX。
-				enc=WPA2MIX
+			#	enc=WPA2MIX
+				enc=WPA2WPA3
 			;;
 			8021x*|eap192*|wpa3-192)
 				enc=WPA3-192
@@ -465,10 +466,11 @@ mtk_wds_vif_pre_config() {
 
 mtk_sta_vif_pre_config() {
 	local name="$1"
+	hwmode=${hwmode##11}
 
 	json_select config
 	json_get_vars disabled encryption key key1 key2 key3 key4 ssid mode bssid wps_pushbutton pin pbc ieee80211w macaddr \
-		apclipe mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv
+		apclipe mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv band
 	json_select ..
 
 	[ $stacount -gt 1 ] && {
@@ -562,7 +564,7 @@ mtk_sta_vif_pre_config() {
 	ApCliK3Tp="${K3Tp:-0}"
 	ApCliK4Tp="${K4Tp:-0}"
 
-	[ -n "$macaddr" ] && ApCliMacAddress="${macaddr}"
+	# [ -n "$macaddr" ] && ApCliMacAddress="${macaddr}"
 	mt_cmd ifconfig $APCLI_IF up
 	mt_cmd echo "Interface $APCLI_IF now up."
 	mt_cmd iwpriv $APCLI_IF set ApCliEnable=1
@@ -623,6 +625,12 @@ mtk_sta_vif_pre_config() {
 	else
 		ApCliPMFMFPC="${ApCliPMFMFPC:-0}"
 		ApCliPMFMFPR="${ApCliPMFMFPR:-0}"
+	fi
+
+	if [ "$hwmode" == "a" -o "$band" == "5g" ]; then
+		echo "ApCliMacAddress1=${macaddr}" >> $MTWIFI_PROFILE_PATH
+	elif [ "$hwmode" == "g" -o "$band" == "2g" ]; then
+		echo "ApCliMacAddress=${macaddr} >> $MTWIFI_PROFILE_PATH
 	fi
 
 	ApCliMuMimoDlEnable="${mumimo_dl:-0}"
@@ -1669,8 +1677,6 @@ EOF
 	ApCliK4Tp=""
 	ApCliPMFMFPC=""
 	ApCliPMFMFPC=""
-	ApCliMacAddress=""
-	# ApCliMacAddress1=""
 	ApCliPESupport=""
 	ApCliMuMimoDlEnable=""
 	ApCliMuMimoUlEnable=""
@@ -1683,8 +1689,6 @@ EOF
 	echo "ApCliEnable=${ApCliEnable:-0}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliSsid=${ApCliSsid}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliBssid=${ApCliBssid}" >> $MTWIFI_PROFILE_PATH
-	echo "ApCliMacAddress=${ApCliMacAddress}" >> $MTWIFI_PROFILE_PATH
-	# echo "ApCliMacAddress1=${ApCliMacAddress1}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliAuthMode=${ApCliAuthMode}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliEncrypType=${ApCliEncrypType}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliDefaultKeyID=${ApCliDefKId:-0}" >> $MTWIFI_PROFILE_PATH
