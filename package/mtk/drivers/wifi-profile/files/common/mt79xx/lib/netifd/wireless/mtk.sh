@@ -48,14 +48,14 @@ drv_mtk_init_device_config() {
 	config_add_boolean greenap diversity noscan ht_coex acs_exclude_dfs background_radar
 	config_add_int powersave doth
 	config_add_int maxassoc
-	config_add_boolean hidessid bndstrg isolate dfs bandsteering
+	config_add_boolean hidessid bndstrg isolate dfs bandsteering band
 	config_add_array channels
 	config_add_array scan_list
 }
 
 #读取iface相关设置项并写入json
 drv_mtk_init_iface_config() {
-	config_add_boolean disabled wds band
+	config_add_boolean disabled wds
 	config_add_string mode ifname 'macaddr:macaddr' bssid 'ssid:string' encryption
 	config_add_string auth_server auth_port auth_secret acct_secret own_ip_addr own_radius_port
 	config_add_boolean hidden isolate isolate_mb br_isolate_mode ieee80211k ieee80211v ieee80211r
@@ -179,8 +179,7 @@ mtk_ap_vif_pre_config() {
 				enc=WPA3
 			;;
 			8021x*|eap3-mixed|wpa3-mixed) #在mt_wifi驱动中，WPA3也就是SHA256的WPA2，所以选择WPA2MIX。
-			#	enc=WPA2MIX
-				enc=WPA2WPA3
+				enc=WPA2MIX
 			;;
 			8021x*|eap192*|wpa3-192)
 				enc=WPA3-192
@@ -441,17 +440,17 @@ mtk_wds_vif_pre_config() {
 	fi
 
 	if [ "$wdsen" == "1" -o "$wdsen" == "3" ]; then
-		WApCliMWDS="${WWDSEnable:-1}"
+		WApCliMWDS="${WApCliMWDS}1"
 		WWDSEnable="${WWDSEnable}${wds:-1};"
-		WApMWDS="${WWDSEnable:-0}"
+		WApMWDS="${WApMWDS}0"
 	elif [ "$wdsen" == "2" -o "$wdsen" == "4" ]; then
-		WApMWDS="${WWDSEnable:-1}"
+		WApMWDS="${WApMWDS}1"
 		WWDSEnable="${WWDSEnable}${wds:-1};"
-		WApCliMWDS="${WWDSEnable:-0}"
+		WApCliMWDS="${WApCliMWDS}0"
 	else
-		WApCliMWDS="${WWDSEnable:-0}"
-		WApMWDS="${WWDSEnable:-0}"
-		WWDSEnable="${WWDSEnable:-0};"
+		WApCliMWDS="${WApCliMWDS}0"
+		WApMWDS="${WApMWDS}0"
+		WWDSEnable="${WWDSEnable}${wds:-0};"
 	fi
 
 	WDS_Enable="${WDS_Enable}${wdsen};"
@@ -629,8 +628,10 @@ mtk_sta_vif_pre_config() {
 
 	if [ "$hwmode" == "a" -o "$band" == "5g" ]; then
 		echo "ApCliMacAddress1=${macaddr}" >> $MTWIFI_PROFILE_PATH
+		mt_cmd iwpriv $APCLI_IF set ApCliMacAddress1=${macaddr}
 	elif [ "$hwmode" == "g" -o "$band" == "2g" ]; then
-		echo "ApCliMacAddress=${macaddr} >> $MTWIFI_PROFILE_PATH
+		echo "ApCliMacAddress=${macaddr}" >> $MTWIFI_PROFILE_PATH
+		mt_cmd iwpriv $APCLI_IF set ApCliMacAddress=${macaddr}
 	fi
 
 	ApCliMuMimoDlEnable="${mumimo_dl:-0}"
@@ -1650,9 +1651,9 @@ EOF
 	# echo "WdsNum=${WDSBssidNum:-0}" >> $MTWIFI_PROFILE_PATH
 	echo "WDSEnable=${WWDSEnable%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsEnable=${WDS_Enable%?}" >> $MTWIFI_PROFILE_PATH
-	echo "ApMWDS=${WApMWDS:-0}" >> $MTWIFI_PROFILE_PATH
+	echo "ApMWDS=${WApMWDS}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsMac=${WWdsMac%?}" >> $MTWIFI_PROFILE_PATH
-	echo "ApCliMWDS=${WApCliMWDS:-0}" >> $MTWIFI_PROFILE_PATH
+	echo "ApCliMWDS=${WApCliMWDS}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsList=${WDSList%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsAuthMode=${WDSAuthMode%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsEncrypType=${WDSEncType%?}" >> $MTWIFI_PROFILE_PATH
