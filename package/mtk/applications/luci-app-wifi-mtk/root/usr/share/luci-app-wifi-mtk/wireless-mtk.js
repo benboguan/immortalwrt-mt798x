@@ -379,7 +379,7 @@ var CBIWifiFrequencyValue = form.Value.extend({
 				'': [
 					'2g', '2.4 GHz', { available: this.channels['2g'].length > 3 },
 					'5g', '5 GHz', { available: this.channels['5g'].length > 3 },
-					'60g', '60 GHz', { available: this.channels['60g'].length > 0 }
+					'60g', '60 GHz', this.channels['60g'].length > 0
 				],
 				'n': [
 					'2g', '2.4 GHz', { available: this.channels['2g'].length > 3 },
@@ -391,7 +391,7 @@ var CBIWifiFrequencyValue = form.Value.extend({
 				'ax': [
 					'2g', '2.4 GHz', { available: this.channels['2g'].length > 3 },
 					'5g', '5 GHz', { available: this.channels['5g'].length > 3 },
-					'6g', '6 GHz', { available: this.channels['6g'].length > 3 }
+					'6g', '6 GHz', this.channels['6g'].length > 3
 				]
 			};
 		}, this));
@@ -1209,6 +1209,11 @@ return view.extend({
 					o.value('3', _('API Mode'));
 					o.value('4', _('Cert'));
 					o.default = '0';
+
+					o = ss.taboption('general', form.Flag, 'mwds', _('MWDS'));
+					o.depends('mode', 'ap');
+					o.depends('mode', 'sta');
+					o.default = o.disabled;
 
 					o = ss.taboption('general', form.Flag, 'apclipe', _('APCLI interface Random MAC'), _('When enabled, the ApCli interface Mac address changes randomly.'));
 					o.depends('mode', 'sta');
