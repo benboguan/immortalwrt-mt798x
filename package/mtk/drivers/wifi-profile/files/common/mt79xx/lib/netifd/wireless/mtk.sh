@@ -440,9 +440,7 @@ mtk_wds_vif_pre_config() {
 		echo "Wds${WDSBssidNum}Key=${key}" >> $MTWIFI_PROFILE_PATH #WDS Key
 	fi
 
-	if [ "$wdsen" == "1" -o "$wdsen" == "3" ]; then
-		WWDSEnable="${WWDSEnable}${wds:-1};"
-	elif [ "$wdsen" == "2" -o "$wdsen" == "4" ]; then
+	if [ "$wdsen" != "0" -o "$wds" == "1" ]; then
 		WWDSEnable="${WWDSEnable}${wds:-1};"
 	else
 		WWDSEnable="${WWDSEnable}${wds:-0};"
@@ -1633,8 +1631,6 @@ EOF
 	WDSBssidNum=0
 	WWDSEnable=""
 	WWdsMac=""
-	WApMWDS=""
-	WApCliMWDS=""
 	WDS_Enable=""
 	WDSList=""
 	WDSAuthMode=""
@@ -1649,9 +1645,7 @@ EOF
 	# echo "WdsNum=${WDSBssidNum:-0}" >> $MTWIFI_PROFILE_PATH
 	echo "WDSEnable=${WWDSEnable%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsEnable=${WDS_Enable%?}" >> $MTWIFI_PROFILE_PATH
-	echo "ApMWDS=${WApMWDS}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsMac=${WWdsMac%?}" >> $MTWIFI_PROFILE_PATH
-	echo "ApCliMWDS=${WApCliMWDS}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsList=${WDSList%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsAuthMode=${WDSAuthMode%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WdsEncrypType=${WDSEncType%?}" >> $MTWIFI_PROFILE_PATH
