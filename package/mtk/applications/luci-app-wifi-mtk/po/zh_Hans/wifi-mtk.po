@@ -138,7 +138,7 @@ msgid "driver default (%s)"
 msgstr "驱动默认（%s）"
 
 msgid "no override"
-msgstr "非绕过"
+msgstr "未覆盖"
 
 msgid "randomly generated"
 msgstr "随机生成"
@@ -165,7 +165,7 @@ msgid "WDS PHY Mode"
 msgstr "WDS PHY 模式"
 
 msgid "If GREENFIELD seems to be unstable,try to use OFDM instead.VHT/HE is only available for 11AC/11AX devices."
-msgstr "如果 GREENFIELD 看起来不稳定，请尝试改用 OFDM。VHT/HE 仅适用于 11AC/11AX 设备。"
+msgstr "如果 GREENFIELD 不稳定，请尝试改用 OFDM。VHT/HE 仅适用于 11AC/11AX 设备。"
 
 msgid "RSN Preauth"
 msgstr "RSN 预认证"
@@ -174,7 +174,7 @@ msgid "ProxyARP"
 msgstr "代理 ARP"
 
 msgid "APCLI interface Random MAC"
-msgstr "APCLI 接口随机MAC"
+msgstr "APCLI 接口随机 MAC"
 
 msgid "When enabled, the ApCli interface Mac address changes randomly."
 msgstr "当开启时，APCLI 接口 MAC 地址随机变更。"

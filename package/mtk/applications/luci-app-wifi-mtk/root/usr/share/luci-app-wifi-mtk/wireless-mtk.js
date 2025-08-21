@@ -377,21 +377,21 @@ var CBIWifiFrequencyValue = form.Value.extend({
 
 			this.bands = {
 				'': [
-					'2g', '2.4 GHz', this.channels['2g'].length > 3,
-					'5g', '5 GHz', this.channels['5g'].length > 3,
-					'60g', '60 GHz', this.channels['60g'].length > 0
+					'2g', '2.4 GHz', { available: this.channels['2g'].length > 3 },
+					'5g', '5 GHz', { available: this.channels['5g'].length > 3 },
+					'60g', '60 GHz', { available: this.channels['60g'].length > 0 }
 				],
 				'n': [
-					'2g', '2.4 GHz', this.channels['2g'].length > 3,
-					'5g', '5 GHz', this.channels['5g'].length > 3
+					'2g', '2.4 GHz', { available: this.channels['2g'].length > 3 },
+					'5g', '5 GHz', { available: this.channels['5g'].length > 3 }
 				],
 				'ac': [
-					'5g', '5 GHz', true
+					'5g', '5 GHz', { available: true }
 				],
 				'ax': [
-					'2g', '2.4 GHz', this.channels['2g'].length > 3,
-					'5g', '5 GHz', this.channels['5g'].length > 3,
-					'6g', '6 GHz', this.channels['6g'].length > 3
+					'2g', '2.4 GHz', { available: this.channels['2g'].length > 3 },
+					'5g', '5 GHz', { available: this.channels['5g'].length > 3 },
+					'6g', '6 GHz', { available: this.channels['6g'].length > 3 }
 				]
 			};
 		}, this));
@@ -470,10 +470,7 @@ var CBIWifiFrequencyValue = form.Value.extend({
 		if (hwval != null) {
 			this.useBandOption = false;
 
-			if (/a/.test(hwval))
-				band.value = '5g';
-			else
-				band.value = '2g';
+			band.value = /a/.test(hwval) ? '5g': '2g';
 		}
 		else {
 			this.useBandOption = true;
@@ -912,7 +909,7 @@ return view.extend({
 					E('button', {
 						'class': 'cbi-button cbi-button-negative remove',
 						'title': _('Delete this network'),
-						'click': ui.createHandlerFn(this, 'handleRemove', section_id)
+						'click': ui.createHandlerFn(this, 'handleRemove', section_id, inst)
 					}, _('Remove'))
 				];
 			}
