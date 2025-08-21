@@ -1,6 +1,39 @@
 --- a/mt_wifi/embedded/common/multi_profile.c
 +++ b/mt_wifi/embedded/common/multi_profile.c
-@@ -3747,6 +3747,14 @@ static INT multi_profile_merge_ft(
+@@ -1767,9 +1767,9 @@ static INT multi_profile_merge_mbss(
+ 	/*merge security*/
+ 	multi_profile_merge_security(ad, data, buf1, buf2, final);
+ 	/*merge WmmCapable*/
+-	multi_profile_merge_separate("WmmCapable", buf1, buf2, final);
++	multi_profile_merge_perbss(data, "WmmCapable", buf1, buf2, final, MPF_APPEND_BSS0);
+ 	/*merge NoForwarding*/
+-	multi_profile_merge_separate("NoForwarding", buf1, buf2, final);
++	multi_profile_merge_perbss(data, "NoForwarding", buf1, buf2, final, MPF_APPEND_BSS0);
+ 	/*merge StationKeepAlive*/
+ 	multi_profile_merge_perbss(data, "StationKeepAlive", buf1, buf2, final, MPF_APPEND_BSS0);
+ 	/*merge HideSSID*/
+@@ -3628,6 +3628,20 @@ #ifdef TXBF_SUPPORT
+ 
+ 	return NDIS_STATUS_SUCCESS;
+ }
++#ifdef MBSS_AS_WDS_AP_SUPPORT
++static INT multi_profile_merge_mbss_wds(
++	CHAR *buf1,
++	CHAR *buf2,
++	CHAR *final)
++{
++	/* merge WDSEnable*/
++	multi_profile_merge_separate("WDSEnable", buf1, buf2, final);
++	/* merge WdsMac */
++	multi_profile_merge_separate("WdsMac", buf1, buf2, final);
++
++	return NDIS_STATUS_SUCCESS;
++}
++#endif /* MBSS_AS_WDS_AP_SUPPORT */
+ #endif /* DOT11_HE_AX */
+ #endif /* TXBF_SUPPORT */
+ #endif /* n MBSS_SUPPORT */
+@@ -3747,6 +3761,14 @@ static INT multi_profile_merge_ft(
  {
  	/*merge FtMdId*/
  	multi_profile_merge_increase(data, 1, "FtMdId", buf1, buf2, final);
@@ -15,7 +48,7 @@
  	/*merge FtSupport */
  	multi_profile_merge_perbss(data, "FtSupport", buf1, buf2, final, MPF_APPEND_BSS0);
  	/*merge FtOnly */
-@@ -3766,12 +3774,26 @@ static INT multi_profile_merge_rrm(
+@@ -3766,12 +3788,27 @@ static INT multi_profile_merge_rrm(
  	CHAR *buf2,
  	CHAR *final)
  {
@@ -37,6 +70,7 @@
 +	/*merge WNMEnable */
 +	multi_profile_merge_perbss(data, "WNMEnable", buf1, buf2, final, MPF_APPEND_BSS0);
 +	multi_profile_merge_perbss(data, "ProxyARPEnable", buf1, buf2, final, MPF_APPEND_BSS0);
++	multi_profile_merge_perbss(data, "WNMNotifyEnable", buf1, buf2, final, MPF_APPEND_BSS0);
 +	return NDIS_STATUS_SUCCESS;
 +}
 +#endif
@@ -44,7 +78,19 @@
  #ifdef DSCP_PRI_SUPPORT
  INT multi_profile_merge_dscp_pri(
  	struct mpf_data *data,
-@@ -4147,6 +4169,11 @@ #ifdef DOT11K_RRM_SUPPORT
+@@ -4086,6 +4100,11 @@
+ 	if (multi_profile_merge_ersu(buf1, buf2, final) != NDIS_STATUS_SUCCESS)
+ 		return retval;
+ #endif /* DOT11_HE_AX */
++
++#ifdef MBSS_AS_WDS_AP_SUPPORT
++	if (multi_profile_merge_mbss_wds(buf1, buf2, final) != NDIS_STATUS_SUCCESS)
++		return retval;
++#endif /* MBSS_AS_WDS_AP_SUPPORT */
+ 
+ #ifdef DYNAMIC_WMM_SUPPORT
+ 	if multi_profile_merge_separate("DynWmmEnable", buf1, buf2, final) != NDIS_STATUS_SUCCESS)
+@@ -4147,6 +4189,11 @@ #ifdef DOT11K_RRM_SUPPORT
  		return retval;
  #endif
  
