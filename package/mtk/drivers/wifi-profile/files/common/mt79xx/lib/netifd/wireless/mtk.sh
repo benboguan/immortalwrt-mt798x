@@ -55,7 +55,7 @@ drv_mtk_init_device_config() {
 
 #读取iface相关设置项并写入json
 drv_mtk_init_iface_config() {
-	config_add_boolean disabled wds
+	config_add_boolean disabled wds mwds
 	config_add_string mode ifname 'macaddr:macaddr' bssid 'ssid:string' encryption
 	config_add_string auth_server auth_port auth_secret acct_secret own_ip_addr own_radius_port
 	config_add_boolean hidden isolate isolate_mb br_isolate_mode ieee80211k ieee80211v ieee80211r
@@ -92,7 +92,7 @@ mtk_ap_vif_pre_config() {
 		bssid ssid mode wps_pushbutton pin pbc isolate hidden disassoc_low_ack kicklow assocthres rsn_preauth \
 		ieee80211k ieee80211v ieee80211r ieee80211w macfilter nasid mobility_domain r1_key_holder r0_key_lifetime reassociation_deadline r0kh r1kh \
 		ft_over_ds ft_psk_generate_local pmk_r1_push rrm_neighbor_report rrm_beacon_report wnm_sleep_mode bss_transition proxy_arp \
-		frag rts dtim_period mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv steeringthresold
+		frag rts dtim_period mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv steeringthresold mwds
 	json_get_values maclist maclist
 	set_default wmm 1
 	set_default isolate 0
@@ -265,8 +265,9 @@ mtk_ap_vif_pre_config() {
 	ApK2Tp="${ApK2Tp}${K2Tp:-0};"
 	ApK3Tp="${ApK3Tp}${K3Tp:-0};"
 	ApK4Tp="${ApK4Tp}${K4Tp:-0};"
+	ApMWDS="${ApMWDS}${mwds:-0};"
 	ApHideESSID="${ApHideESSID}${hidden:-0};"
-	ApWmmCapable="${ApWmmCapable}${wmm};"
+	ApWmmCapable="${ApWmmCapable}${wmm:-1};"
 	ApRADIUSServer="${ApRADIUSServer}${auth_server:-0};"
 	ApRADIUSPort="${ApRADIUSPort}${auth_port};"
 	ApRADIUSAcctServer="${ApRADIUSAcctServer}${acct_server};"
@@ -440,16 +441,10 @@ mtk_wds_vif_pre_config() {
 	fi
 
 	if [ "$wdsen" == "1" -o "$wdsen" == "3" ]; then
-		WApCliMWDS="${WApCliMWDS}1"
 		WWDSEnable="${WWDSEnable}${wds:-1};"
-		WApMWDS="${WApMWDS}0"
 	elif [ "$wdsen" == "2" -o "$wdsen" == "4" ]; then
-		WApMWDS="${WApMWDS}1"
 		WWDSEnable="${WWDSEnable}${wds:-1};"
-		WApCliMWDS="${WApCliMWDS}0"
 	else
-		WApCliMWDS="${WApCliMWDS}0"
-		WApMWDS="${WApMWDS}0"
 		WWDSEnable="${WWDSEnable}${wds:-0};"
 	fi
 
@@ -469,7 +464,7 @@ mtk_sta_vif_pre_config() {
 
 	json_select config
 	json_get_vars disabled encryption key key1 key2 key3 key4 ssid mode bssid wps_pushbutton pin pbc ieee80211w macaddr \
-		apclipe mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv band
+		apclipe mumimo_dl mumimo_ul ofdma_dl ofdma_ul ocv band mwds
 	json_select ..
 
 	[ $stacount -gt 1 ] && {
@@ -634,6 +629,7 @@ mtk_sta_vif_pre_config() {
 		mt_cmd iwpriv $APCLI_IF set ApCliMacAddress=${macaddr}
 	fi
 
+	ApCliMWDS="${mwds:-0}"
 	ApCliMuMimoDlEnable="${mumimo_dl:-0}"
 	ApCliMuMimoUlEnable="${mumimo_ul:-0}"
 	ApCliMuOfdmaDlEnable="${ofdma_dl:-0}"
@@ -1554,6 +1550,7 @@ EOF
 	ApK2Tp=""
 	ApK3Tp=""
 	ApK4Tp=""
+	ApMWDS=""
 	ApHideESSID=""
 	ApWmmCapable=""
 	ApRRMEnable=""
@@ -1586,6 +1583,7 @@ EOF
 	sed -i "s/BssidNum=1/BssidNum=${BssidNum}/g" $MTWIFI_PROFILE_PATH
 	# eval sed -i 's/BssidNum=1/BssidNum=${BssidNum}/g' $MTWIFI_PROFILE_PATH
 	# echo "BssidNum=${ApBssidNum:-1}" >> $MTWIFI_PROFILE_PATH
+	echo "ApMWDS=${ApMWDS%?}" >> $MTWIFI_PROFILE_PATH
 	echo "HideSSID=${ApHideESSID%?}" >> $MTWIFI_PROFILE_PATH
 	echo "WmmCapable=${ApWmmCapable%?}" >> $MTWIFI_PROFILE_PATH
 	echo "AuthMode=${ApAuthMode%?}" >> $MTWIFI_PROFILE_PATH
@@ -1678,6 +1676,7 @@ EOF
 	ApCliK4Tp=""
 	ApCliPMFMFPC=""
 	ApCliPMFMFPC=""
+	ApCliMWDS=""
 	ApCliPESupport=""
 	ApCliMuMimoDlEnable=""
 	ApCliMuMimoUlEnable=""
@@ -1690,6 +1689,7 @@ EOF
 	echo "ApCliEnable=${ApCliEnable:-0}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliSsid=${ApCliSsid}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliBssid=${ApCliBssid}" >> $MTWIFI_PROFILE_PATH
+	echo "ApCliMWDS=${ApCliMWDS}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliAuthMode=${ApCliAuthMode}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliEncrypType=${ApCliEncrypType}" >> $MTWIFI_PROFILE_PATH
 	echo "ApCliDefaultKeyID=${ApCliDefKId:-0}" >> $MTWIFI_PROFILE_PATH
