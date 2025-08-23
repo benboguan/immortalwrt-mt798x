@@ -1443,11 +1443,6 @@ config MTK_CUSTOMER_VENDOR_IE_SUPPORT
 #	depends on CHIP_MT7663E
 	default y
 
-config MTK_WIFI_UNIFIED_COMMAND
-	bool "WIFI_UNIFIED_COMMAND"
-	depends on MTK_MT_AP_SUPPORT
-	default n
-
 config MTK_INTERWORKING
         bool "802.11u Interworking"
         depends on MTK_MT_AP_SUPPORT
