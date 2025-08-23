@@ -90,7 +90,7 @@
  	ScanCtrl->state = OFFCHANNEL_SCAN_INVALID;
 --- a/mt_wifi/embedded/include/rtmp.h
 +++ b/mt_wifi/embedded/include/rtmp.h
-@@ -6487,6 +6487,7 @@ #define DEFLAUT_PARTIAL_SCAN_CH_NUM
+@@ -6489,6 +6489,7 @@ #define DEFLAUT_PARTIAL_SCAN_CH_NUM
  #define DEFLAUT_PARTIAL_SCAN_BREAK_TIME	4  /* Period of partial scaning: unit: 100ms */
  typedef struct _PARTIAL_SCAN_ {
  	BOOLEAN bScanning;			/* Doing partial scan or not */
