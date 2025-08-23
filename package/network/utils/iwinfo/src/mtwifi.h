@@ -41,6 +41,7 @@ typedef struct _RT_802_11_MAC_ENTRY_FIX {
 	signed char             AvgRssi1;
 	signed char             AvgRssi2;
 	signed char             AvgRssi3;
+	signed char             AvgSnr;
 	unsigned int            ConnectedTime;
 	HTTRANSMIT_SETTING      TxRate;
 	HTTRANSMIT_SETTING      LastRxRate;
