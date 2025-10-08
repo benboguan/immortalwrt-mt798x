@@ -232,6 +232,30 @@
  
  /* Here is related to Unsolicit Event */
  VOID UniEventFwLog2HostHandler(struct _RTMP_ADAPTER *pAd, UINT8 *pData, UINT32 Length, EVENT_RXD *event_rxd);
+--- a/mt_wifi/chips/mt7981.c
++++ b/mt_wifi/chips/mt7981.c
+@@ -10615,6 +10615,9 @@ static VOID check_muru_glo(struct
+ 	P_DRV_MURU_GLO pDrvGlo = &pAd->CommonCfg.rGloInfo;
+ 	P_EVENT_MURU_GLO pFwGlo = (P_EVENT_MURU_GLO)pData;
+ 	UINT_32 DriverSize = 0;
++#ifdef WIFI_UNIFIED_COMMAND
++	RTMP_CHIP_CAP *cap = hc_get_chip_cap(pAd->hdev_ctrl);
++#endif /* WIFI_UNIFIED_COMMAND */
+ 
+ 	pDrvGlo->rLocalData.u4Addr = pFwGlo->rLocalData.u4Addr;
+ 	pDrvGlo->rLocalData.fgError = (pFwGlo->rLocalData.u4Size != sizeof(MURU_LOCAL_DATA_T))?1:0;
+--- a/mt_wifi/chips/mt7916.c
++++ b/mt_wifi/chips/mt7916.c
+@@ -10740,6 +10740,9 @@ static VOID check_muru_glo(struct
+ 	P_DRV_MURU_GLO pDrvGlo = &pAd->CommonCfg.rGloInfo;
+ 	P_EVENT_MURU_GLO pFwGlo = (P_EVENT_MURU_GLO)pData;
+ 	UINT_32 DriverSize = 0;
++#ifdef WIFI_UNIFIED_COMMAND
++	RTMP_CHIP_CAP *cap = hc_get_chip_cap(pAd->hdev_ctrl);
++#endif /* WIFI_UNIFIED_COMMAND */
+ 
+ 	pDrvGlo->rLocalData.u4Addr = pFwGlo->rLocalData.u4Addr;
+ 	pDrvGlo->rLocalData.fgError = (pFwGlo->rLocalData.u4Size != sizeof(MURU_LOCAL_DATA_T))?1:0;
 --- a/mt_wifi/embedded/common/cmm_info.c
 +++ b/mt_wifi/embedded/common/cmm_info.c
 @@ -7259,6 +7259,7 @@ typedef struct _RT_802_11_MAC_ENTRY_FIX
@@ -242,7 +266,7 @@
  	UINT8 wme:1;
  	UINT8 mfp:1;
  	UINT8 authenticated:1;
-@@ -7359,6 +7360,7 @@ VOID RTMPIoctlGetMacTableStaInfo(
+@@ -7357,6 +7358,7 @@ VOID RTMPIoctlGetMacTableStaInfo(
  	RT_802_11_MAC_TABLE_FIX *pMacTab = NULL;
  	PRT_802_11_MAC_ENTRY_FIX pDst;
  	MAC_TABLE_ENTRY *pEntry;
@@ -260,3 +284,47 @@
  			if (CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE))
  				pDst->wme = 1;
  			if (pEntry->SecConfig.PmfCfg.UsePMFConnect)
+--- a/mt_wifi/os/linux/Makefile.mt_wifi_ap
++++ b/mt_wifi/os/linux/Makefile.mt_wifi_ap
+@@ -268,6 +268,10 @@ #ifeq ($(CONFIG_TR181_SUPPORT),y)
+ EXTRA_CFLAGS += -DTR181_SUPPORT
+ EXTRA_CFLAGS += -DSTAT_ENHANCE_SUPPORT
+ #endif
++
++ifeq ($(CONFIG_WIFI_UNIFIED_COMMAND), y)
++EXTRA_CFLAGS += -DWIFI_UNIFIED_COMMAND
++endif
+ 
+ ifeq ($(CONFIG_ZERO_LOSS_CSA_SUPPORT),y)
+ EXTRA_CFLAGS += -DZERO_LOSS_CSA_SUPPORT -DOFFCHANNEL_ZERO_LOSS -DNF_SUPPORT_V2
+--- a/mt_wifi_ap/Makefile
++++ b/mt_wifi_ap/Makefile
+@@ -268,6 +268,10 @@ #ifeq ($(CONFIG_TR181_SUPPORT),y)
+ EXTRA_CFLAGS += -DTR181_SUPPORT
+ EXTRA_CFLAGS += -DSTAT_ENHANCE_SUPPORT
+ #endif
++
++ifeq ($(CONFIG_WIFI_UNIFIED_COMMAND), y)
++EXTRA_CFLAGS += -DWIFI_UNIFIED_COMMAND
++endif
+ 
+ ifeq ($(CONFIG_ZERO_LOSS_CSA_SUPPORT),y)
+ EXTRA_CFLAGS += -DZERO_LOSS_CSA_SUPPORT -DOFFCHANNEL_ZERO_LOSS -DNF_SUPPORT_V2
+--- a/mt_wifi/embedded/common/capi.c
++++ b/mt_wifi/embedded/common/capi.c
+@@ -1402,10 +1402,15 @@ static VOID ap_set_rfeature_ap_wmm_pe_txop(
+ 		"%s: APTxop[%d]=%d\n",
+ 		__func__, q_idx, adapt->CommonCfg.APEdcaParm[wdev->EdcaIdx].Txop[q_idx]);
+ 
++#ifdef WIFI_UNIFIED_COMMAND
++	if (AsicSetWmmParam(adapt, wdev, wmm_idx, ac_queue[q_idx], WMM_PARAM_TXOP, value) == NDIS_STATUS_FAILURE)
++		MTWF_DBG(NULL, DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "fails to set APTxop[%d]\n", q_idx);
++#else
+ 	if (AsicSetWmmParam(adapt, wmm_idx, ac_queue[q_idx], WMM_PARAM_TXOP, value) == NDIS_STATUS_FAILURE) {
+ 		MTWF_DBG(NULL, DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+ 			"fails to set APTxop[%d]\n", q_idx);
+ 	}
++#endif /* WIFI_UNIFIED_COMMAND */
+ 
+ }
+ #endif

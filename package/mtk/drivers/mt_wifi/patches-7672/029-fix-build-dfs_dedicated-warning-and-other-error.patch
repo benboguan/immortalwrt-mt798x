@@ -31,7 +31,7 @@
  			if (!wdev) {
 --- a/mt_wifi/embedded/include/rtmp.h
 +++ b/mt_wifi/embedded/include/rtmp.h
-@@ -3612,25 +3612,25 @@ typedef struct _COMMON_CONFIG {
+@@ -3613,25 +3613,25 @@ typedef struct _COMMON_CONFIG {
  #ifdef HOSTAPD_MAP_SUPPORT
  	BOOLEAN bHostapdMapDisabled;
  #endif

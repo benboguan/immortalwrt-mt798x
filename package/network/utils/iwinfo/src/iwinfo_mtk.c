@@ -622,7 +622,7 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 
 		e->signal = pe->AvgRssi1;
 		e->signal_avg = pe->AvgRssi0;
-		e->noise = pe->AvgRssi1 - pe->AvgSnr1;
+		e->noise = pe->AvgRssi1 - pe->AvgSnr;
 		e->inactive = pe->InactiveTime;
 		e->connected_time = pe->ConnectedTime;
 

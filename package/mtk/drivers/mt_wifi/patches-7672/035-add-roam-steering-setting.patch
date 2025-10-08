@@ -110,7 +110,7 @@
      ==========================================================================
 --- a/mt_wifi/embedded/include/rtmp.h	2022-11-27 21:58:55.000000000 +0800
 +++ b/mt_wifi/embedded/include/rtmp.h	2024-01-01 01:04:57.047724405 +0800
-@@ -2979,6 +2979,7 @@
+@@ -2980,6 +2980,7 @@
  	/* YF@20120417: Avoid connecting to AP in Poor Env, value 0 fOr disable. */
  	CHAR AssocReqRssiThreshold;
  	CHAR RssiLowForStaKickOut;

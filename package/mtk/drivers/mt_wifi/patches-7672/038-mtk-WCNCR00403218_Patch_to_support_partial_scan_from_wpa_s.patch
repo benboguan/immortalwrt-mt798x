@@ -1,6 +1,6 @@
 --- a/mt_wifi/embedded/common/scan.c
 +++ b/mt_wifi/embedded/common/scan.c
-@@ -602,7 +602,7 @@ static INT scan_active(RTMP_ADAPTER *pAd
+@@ -601,7 +601,7 @@ static INT scan_active(RTMP_ADAPTER *pAd
  	/* There is no need to send broadcast probe request if active scan is in effect.*/
  	SsidLen = 0;
  
