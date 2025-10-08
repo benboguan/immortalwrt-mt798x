@@ -423,114 +423,41 @@ static int mtk_get_txpower(const char *ifname, int *buf)
 	return -1;
 }
 
-static int mtk_get_signal(const char *ifname, int *buf)
+static int mtk_get_avg_value(const char *ifname, int *buf, bool is_signal)
 {
-//	return mtk_get_txpower(ifname, buf);
-	int rssi_sum, num;
 	char tmp_buf[8192];
-	struct iwinfo_assoclist_entry tmp;
-	int ret_len, i;
+	int ret_len, num, sum = 0;
+	int i;
 
-	if (mtk_get_assoclist(ifname, tmp_buf, &ret_len) == 0)
-	{
-		num = ret_len / sizeof(struct iwinfo_assoclist_entry);
-		rssi_sum = 0;
+	if (mtk_get_assoclist(ifname, tmp_buf, &ret_len) != 0)
+		return -1;
 
-		for (i = 0; i < num; i++)
-		{
-			memset(&tmp, 0, sizeof(struct iwinfo_assoclist_entry));
-			memcpy(&tmp, tmp_buf + i * sizeof(struct iwinfo_assoclist_entry), sizeof(struct iwinfo_assoclist_entry));
-
-			rssi_sum -= tmp.signal;
-		}
-
-		if (num > 0)
-			*buf = -(rssi_sum / num);
-		else
-			*buf = -127;
-
+	num = ret_len / sizeof(struct iwinfo_assoclist_entry);
+	if (num <= 0) {
+		*buf = -127;
 		return 0;
 	}
 
-	return -1;
+	struct iwinfo_assoclist_entry *entries = (struct iwinfo_assoclist_entry *)tmp_buf;
+	for (i = 0; i < num; i++) {
+		sum -= is_signal ? entries[i].signal : entries[i].noise;
+	}
+
+	*buf = -(sum / num);
+	return 0;
+}
+
+static int mtk_get_signal(const char *ifname, int *buf)
+{
+//	return mtk_get_txpower(ifname, buf);
+	return mtk_get_avg_value(ifname, buf, true);
 }
 
 static int mtk_get_noise(const char *ifname, int *buf)
 {
-	int noise_sum, num;
-	char tmp_buf[8192];
-	struct iwinfo_assoclist_entry tmp;
-	int ret_len, i;
-
-	if (mtk_get_assoclist(ifname, tmp_buf, &ret_len) == 0)
-	{
-		num = ret_len / sizeof(struct iwinfo_assoclist_entry);
-		noise_sum = 0;
-
-		for (i = 0; i < num; i++)
-		{
-			memset(&tmp, 0, sizeof(struct iwinfo_assoclist_entry));
-			memcpy(&tmp, tmp_buf + i * sizeof(struct iwinfo_assoclist_entry), sizeof(struct iwinfo_assoclist_entry));
-
-			noise_sum -= tmp.noise;
-		}
-
-		if (num > 0)
-			*buf = -(noise_sum / num);
-		else
-			*buf = -127;
-
-		return 0;
-	}
-
-	return -1;
+	return mtk_get_avg_value(ifname, buf, false);
 }
 
-/* static int mtk_get_noise(const char *ifname, int *buf)
-{
-	int nr, band;
-	struct iwreq wrq;
-	struct iw_statistics stats;
-
-	band = mtk_get_band(ifname);
-	if (band < 0)
-		return -1;
-
-	wrq.u.data.pointer = (caddr_t) &stats;
-	wrq.u.data.length  = sizeof(struct iw_statistics);
-	wrq.u.data.flags   = 1;
-
-	if (mtk_ioctl(ifname, SIOCGIWSTATS, &wrq) >= 0)
-	{
-		nr = (stats.qual.updated & IW_QUAL_DBM)
-			? (stats.qual.noise - 0x117) : stats.qual.noise;
-
-		if (nr <= -127)
-		{
-			*buf = -127;
-		}
-		else
-		{
-			switch (band)
-			{
-				case MTK_CH_BAND_24G:
-					*buf = nr;
-					break;
-				case MTK_CH_BAND_5G:
-					*buf = nr - 5;
-					break;
-				case MTK_CH_BAND_6G:
-					*buf = nr - 10;
-					break;
-			}
-		}
-
-		return 0;
-	}
-
-	return -1;
-}
- */
 static int mtk_get_quality(const char *ifname, int *buf)
 {
 	int signal;
@@ -539,10 +466,10 @@ static int mtk_get_quality(const char *ifname, int *buf)
 	{
 		if (signal >= -50)
 			*buf = 100;
-		else if (signal >= -80 && signal < -50)
-			*buf = (24 + ((signal + 80) * 26) / 10);
-		else if (signal >= -90 && signal < -80)
-			*buf = (((signal + 90) * 26) / 10);
+		else if (signal >= -80)
+			*buf = 24 + ((signal + 80) * 26) / 10;
+		else if (signal >= -90)
+			*buf = ((signal + 90) * 26) / 10;
 		else
 			*buf = 0;
 
@@ -668,7 +595,7 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 	struct iwreq wrq = {};
 	RT_802_11_MAC_TABLE *table;
 	//int noise;
-	int i, chband;
+	int i;
 
 	table = calloc(1, sizeof(RT_802_11_MAC_TABLE));
 	if (!table)
@@ -687,29 +614,15 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 	//if (mtk_get_noise(ifname, &noise))
 	//	noise = 0;
 
-	chband = mtk_get_band(ifname);
-	if (chband < 0)
-		return -1;
-
 	for (i = 0; i < table->Num; i++) {
 		RT_802_11_MAC_ENTRY *pe = &(table->Entry[i]);
 		struct iwinfo_assoclist_entry *e = (struct iwinfo_assoclist_entry *)buf + i;
 
 		memcpy(e->mac, pe->Addr, 6);
 
-		if (chband == MTK_CH_BAND_24G) {
-			e->signal = (pe->AvgRssi0 > pe->AvgRssi1) ? pe->AvgRssi0 : pe->AvgRssi1;
-			//e->signal = pe->AvgRssi0;
-		} else {
-			if (pe->AvgRssi0 > pe->AvgRssi1 && pe->AvgRssi1 > pe->AvgRssi2)
-				e->signal = pe->AvgRssi0;
-			else if (pe->AvgRssi1 > pe->AvgRssi0 && pe->AvgRssi0 > pe->AvgRssi2)
-				e->signal = pe->AvgRssi1;
-			else
-				e->signal = pe->AvgRssi2;
-		}
-		e->signal_avg = pe->AvgRssi1;
-		e->noise = pe->AvgRssi1 - 19;
+		e->signal = pe->AvgRssi1;
+		e->signal_avg = pe->AvgRssi0;
+		e->noise = pe->AvgRssi1 - pe->AvgSnr1;
 		e->inactive = pe->InactiveTime;
 		e->connected_time = pe->ConnectedTime;
 

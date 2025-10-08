@@ -41,6 +41,10 @@ typedef struct _RT_802_11_MAC_ENTRY_FIX {
 	signed char             AvgRssi1;
 	signed char             AvgRssi2;
 	signed char             AvgRssi3;
+	signed char             AvgSnr0;
+	signed char             AvgSnr1;
+	signed char             AvgSnr2;
+	signed char             AvgSnr3;
 	unsigned int            ConnectedTime;
 	HTTRANSMIT_SETTING      TxRate;
 	HTTRANSMIT_SETTING      LastRxRate;
@@ -173,10 +177,6 @@ struct channel_list_basic {
 #define MCS_31         31
 #define MCS_32         32
 #define MCS_AUTO	33
-
-#define GI_HE_800		0
-#define GI_HE_1600		1
-#define GI_HE_3200		2
 
 /* Extension channel offset */
 #define EXTCHA_NONE			0
