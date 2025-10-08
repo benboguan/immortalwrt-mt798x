@@ -1,0 +1,262 @@
+--- a/mt_wifi/hw_ctrl/cmm_fw_uni_cmd.c
++++ b/mt_wifi/hw_ctrl/cmm_fw_uni_cmd.c
+@@ -13198,4 +13198,84 @@ INT32 UniCmdVOWUpdate(
+ 
+ }
+ 
++INT32 UniCmdPerStaGetSNR(
++	RTMP_ADAPTER * pAd,
++	UINT16 u2WlanIdx,
++	UINT8 *u1SNR
++)
++{
++	struct cmd_msg *msg;
++	INT32 Ret;
++	struct _CMD_ATTRIBUTE attr = {0};
++	UINT32 u4CmdNeedMaxBufSize = 0;
++	UINT32 u4ComCmdSize = 0;
++	UINT8 *pTempBuf = NULL;
++	UINT8 *pNextHeadBuf = NULL;
++	struct UNI_CMD_PER_STA_INFO_COMMON_T *prTagParams;
++
++	/* Step 1: Count maximum buffer size from per TLV */
++	u4ComCmdSize = sizeof(struct UNI_CMD_PER_STA_INFO_T);
++	u4CmdNeedMaxBufSize = u4ComCmdSize + sizeof(*prTagParams);
++
++	MTWF_DBG(pAd, DBG_CAT_FW, DBG_SUBCAT_ALL, DBG_LVL_DEBUG,
++			"%s: u2WlanIdx:%u\n", __func__, u2WlanIdx);
++
++	/* Step 2: Allocate tempotary memory space for use later */
++	os_alloc_mem(pAd, (UCHAR **)&pTempBuf, u4CmdNeedMaxBufSize);
++	if (!pTempBuf) {
++		Ret = FALSE;
++		goto error;
++	}
++	os_zero_mem(pTempBuf, u4CmdNeedMaxBufSize);
++	pNextHeadBuf = pTempBuf;
++	pNextHeadBuf += u4ComCmdSize;
++
++	/* Step 3: Filled in parameters of UNI_CMD_PER_STA_INFO_COMMON_T */
++	prTagParams = (struct UNI_CMD_PER_STA_INFO_COMMON_T *) pNextHeadBuf;
++
++	prTagParams->u2Tag = UNI_CMD_PER_STA_SNR;
++	prTagParams->u2Length = sizeof(*prTagParams);
++#ifdef RT_BIG_ENDIAN
++	prTagParams->u2Tag = cpu2le16(prTagParams->u2Tag);
++	prTagParams->u2Length = cpu2le16(prTagParams->u2Length);
++#endif /* RT_BIG_ENDIAN */
++
++	prTagParams->u2StaNum = 1;
++	prTagParams->au2StaList[0] = u2WlanIdx;
++#ifdef RT_BIG_ENDIAN
++	prTagParams->au2StaList[0] = cpu2le16(prTagParams->au2StaList[0]);
++#endif
++
++	/* Step 4: Send data packet */
++	msg = AndesAllocUniCmdMsg(pAd, u4CmdNeedMaxBufSize);
++	if (!msg) {
++		Ret = FALSE;
++		goto error;
++	}
++
++	SET_CMD_ATTR_MCU_DEST(attr, HOST2CR4N9);
++	SET_CMD_ATTR_TYPE(attr, UNI_CMD_ID_PER_STA_INFO);
++	SET_CMD_ATTR_RSP_WAIT_MS_TIME(attr, 0);
++	SET_CMD_ATTR_RSP_WB_BUF_IN_CALBK(attr, u1SNR);
++	SET_CMD_ATTR_CTRL_FLAGS(attr, INIT_LEN_VAR_UNI_CMD_QUERY_AND_WAIT_RETRY_RSP);
++	SET_CMD_ATTR_RSP_EXPECT_SIZE(attr, sizeof(struct UNI_EVENT_PER_STA_INFO_COMMON_T) + (sizeof(struct UNI_EVENT_PER_STA_SNR_T) * prTagParams->u2StaNum));
++	SET_CMD_ATTR_RSP_HANDLER(attr, uni_event_per_sta_snr_handler);
++
++	AndesInitCmdMsg(msg, attr);
++	msg->seq = AndesGetCmdMsgSeq(pAd);
++
++	/* Append this feature */
++	AndesAppendCmdMsg(msg, (char *)pTempBuf, u4CmdNeedMaxBufSize);
++
++	Ret = chip_cmd_tx(pAd, msg);
++
++error:
++	if (pTempBuf)
++		os_free_mem(pTempBuf);
++
++	MTWF_DBG(pAd, DBG_CAT_FW, DBG_SUBCAT_ALL, DBG_LVL_DEBUG,
++			"%s:(ret = %d)\n", __func__, Ret);
++	return Ret;
++}
++
+ #endif /* WIFI_UNIFIED_COMMAND */
+--- a/mt_wifi/hw_ctrl/cmm_fw_uni_event.c
++++ b/mt_wifi/hw_ctrl/cmm_fw_uni_event.c
+@@ -964,6 +964,24 @@ VOID UniEventTPCHandler(struct cmd_msg
+ 	}	
+ }
+ 
++VOID uni_event_per_sta_snr_handler(struct cmd_msg *msg, char *rsp_payload,
++					UINT16 rsp_payload_len)
++{
++	PUINT8 pu1SNR = (PUINT8) msg->attr.rsp.wb_buf_in_calbk;
++	struct UNI_EVENT_PER_STA_INFO_T *event = (struct UNI_EVENT_PER_STA_INFO_T *)rsp_payload;
++	struct UNI_EVENT_PER_STA_INFO_COMMON_T *tlv = (struct UNI_EVENT_PER_STA_INFO_COMMON_T *) &(event->au1TlvBuffer[0]);
++	struct UNI_EVENT_PER_STA_SNR_T *ptr = (struct UNI_EVENT_PER_STA_SNR_T *) &(tlv->au1PerStaContent[0]);
++
++	pu1SNR[0] = ptr->au1Snr[0];
++	pu1SNR[1] = ptr->au1Snr[1];
++	pu1SNR[2] = ptr->au1Snr[2];
++	pu1SNR[3] = ptr->au1Snr[3];
++
++	MTWF_DBG(NULL, DBG_CAT_FW, CATFW_DBGINFO, DBG_LVL_DEBUG,
++		"SNR:%d-%d-%d-%d\n",
++		pu1SNR[0], pu1SNR[1], pu1SNR[2], pu1SNR[3]);
++}
++
+ static PROCESS_RX_UNSOLICIT_EVENT_FUNCTION arEventTable[UNI_EVENT_ID_MAX_NUM] = {
+ 	[0 ... UNI_EVENT_ID_MAX_NUM - 1] = NULL,
+ 	[UNI_EVENT_ID_FW_LOG_2_HOST] = UniEventFwLog2HostHandler, /* 0x04 */
+--- a/mt_wifi/include/hw_ctrl/cmm_fw_uni_cmd.h
++++ b/mt_wifi/include/hw_ctrl/cmm_fw_uni_cmd.h
+@@ -138,6 +138,7 @@ enum UNI_CMD_TYPE {
+ 	UNI_CMD_ID_VOW                = 0x37, /* VOW */
+ 	UNI_CMD_ID_PP                 = 0x38, /* PP */
+ 	UNI_CMD_ID_TPC                = 0x39, /* TPC */
++	UNI_CMD_ID_PER_STA_INFO       = 0x6D, /* per STA info */
+ };
+ 
+ /* ============== Common Structure Part ============== */
+@@ -3012,6 +3013,41 @@
+ /* =================== UNI_CMD_ID_VOW End ==================== */
+ 
+ 
++/* ============== UNI_CMD_ID_PER_STA_INFO Begin ============== */
++
++struct GNU_PACKED UNI_CMD_PER_STA_INFO_T {
++	/* fixed field */
++	UINT_8 u1Reserved;
++	UINT_8 u1Unsolicit;
++	UINT_8 au1Reserved[2];
++
++	/* tlv */
++	UINT_8 au1TlvBuffer[0];
++};
++
++/* PER_STA_INFO command Tag */
++enum UNI_CMD_PER_STA_INFO_TAG_T {
++	UNI_CMD_PER_STA_RSSI = 0,
++	UNI_CMD_PER_STA_CONTENTION_RX_PHYRATE = 1,
++	UNI_CMD_PER_STA_PER = 2,
++	UNI_CMD_PER_STA_SNR = 3,
++	UNI_CMD_PER_STA_TX_RATE = 4,
++	UNI_CMD_PER_STA_TX_CNT = 5,
++	UNI_CMD_PER_STA_TID_SN = 6,
++	UNI_CMD_PER_STA_TID_SN_SET = 7,
++	UNI_CMD_PER_STA_MAX_NUM
++};
++
++struct GNU_PACKED UNI_CMD_PER_STA_INFO_COMMON_T {
++	UINT_16 u2Tag;    // Tag = 0x00, 0x01, 0x02, 0x03, 0x04, 0x05
++	UINT_16 u2Length;
++	UINT_16 u2StaNum;
++	UINT_8  au1Reserved[2];
++	UINT_16 au2StaList[90];
++};
++
++
++/* ============== UNI_CMD_ID_PER_STA_INFO End ============== */
+ 
+ BOOLEAN UniCmdCheckInitReady(struct _RTMP_ADAPTER *pAd);
+ 
+@@ -3261,6 +3297,12 @@
+ INT32 UniCmdSetRedEnable(RTMP_ADAPTER *pAd, UINT8 McuDest, UINT32 en);
+ 
+ VOID UniCmdExtEventRedTxReportHandler(RTMP_ADAPTER *pAd, UINT8 *Data, UINT32 Length);
++
++INT32 UniCmdPerStaGetSNR(
++	RTMP_ADAPTER *pAd,
++	UINT16 u2WlanIdx,
++	UINT8 *u1PER
++);
+ 
+ #endif /* WIFI_UNIFIED_COMMAND */
+ #endif /* _CMM_FW_UNI_CMD_H */
+--- a/mt_wifi/include/hw_ctrl/cmm_fw_uni_event.h
++++ b/mt_wifi/include/hw_ctrl/cmm_fw_uni_event.h
+@@ -860,6 +860,42 @@
+ 
+ /* =================== UNI_CMD_ID_VOW End ==================== */
+ 
++/* ============== UNI_EVENT_ID_TESTMODE_RX_STAT_INFO Begin ============== */
++/* ============== UNI_EVENT_ID_PER_STA_INFO Start ============ */
++
++struct GNU_PACKED UNI_EVENT_PER_STA_INFO_T {
++	/* fixed field */
++	UINT_8 au1Reserved[4];
++
++	/* tlv */
++	UINT_8 au1TlvBuffer[0];
++};
++
++enum UNI_EVENT_PER_STA_INFO_TAG_T {
++	UNI_EVENT_PER_STA_RSSI = 0,
++	UNI_EVENT_PER_STA_CONTENTION_RX_PHYRATE = 1,
++	UNI_EVENT_PER_STA_PER = 2,
++	UNI_EVENT_PER_STA_SNR = 3,
++	UNI_EVENT_PER_STA_TX_RATE = 4,
++	UNI_EVENT_PER_STA_TX_CNT = 5,
++	UNI_EVENT_PER_STA_TID_SN = 6,
++	UNI_EVENT_PER_STA_MAX_NUM
++};
++
++struct GNU_PACKED UNI_EVENT_PER_STA_INFO_COMMON_T {
++	UINT_16 u2Tag;    // Tag = 0x00, 0x01, 0x02, 0x03, 0x04, 0x05
++	UINT_16 u2Length;
++	UINT_8  au1PerStaContent[0];
++};
++
++struct GNU_PACKED UNI_EVENT_PER_STA_SNR_T {
++	UINT_16 u2WlanIdx;
++	UINT_8  au1Reserved[2];
++	UINT_8  au1Snr[4];
++};
++
++/* ============== UNI_EVENT_ID_PER_STA_INFO End ============ */
++
+ VOID UniCmdResultRsp(struct cmd_msg *msg, char *payload, UINT16 payload_len);
+ 
+ VOID UniEventAccessRegHandler(struct cmd_msg *msg, char *payload, UINT16 payload_len);
+@@ -887,6 +923,9 @@
+ VOID UniEventTPCHandler(struct cmd_msg *msg, char *payload, UINT16 payload_len);
+ 
+ VOID UniEventUnsolicitMainHandler(struct _RTMP_ADAPTER *pAd, PNDIS_PACKET net_pkt);
++
++VOID uni_event_per_sta_snr_handler(struct cmd_msg *msg, char *rsp_payload,
++					UINT16 rsp_payload_len);
+ 
+ /* Here is related to Unsolicit Event */
+ VOID UniEventFwLog2HostHandler(struct _RTMP_ADAPTER *pAd, UINT8 *pData, UINT32 Length, EVENT_RXD *event_rxd);
+--- a/mt_wifi/embedded/common/cmm_info.c
++++ b/mt_wifi/embedded/common/cmm_info.c
+@@ -7259,6 +7259,7 @@ typedef struct _RT_802_11_MAC_ENTRY_FIX
+ 	HTTRANSMIT_SETTING_FIX LastRxRate;
+ 	SHORT StreamSnr[3];				/* BF SNR from RXWI. Units=0.25 dB. 22 dB offset removed */
+ 	SHORT SoundingRespSnr[3];			/* SNR from Sounding Response. Units=0.25 dB. 22 dB offset removed */
++	UINT8 AvgSnr;
+ 	UINT8 wme:1;
+ 	UINT8 mfp:1;
+ 	UINT8 authenticated:1;
+@@ -7359,6 +7360,7 @@ VOID RTMPIoctlGetMacTableStaInfo(
+ 	RT_802_11_MAC_TABLE_FIX *pMacTab = NULL;
+ 	PRT_802_11_MAC_ENTRY_FIX pDst;
+ 	MAC_TABLE_ENTRY *pEntry;
++	UINT8 u1Snr = 0;
+ 	CHAR rssi[4] = {-127, -127, -127, -127};
+ 	/* allocate memory */
+ 	os_alloc_mem(NULL, (UCHAR **)&pMacTab, sizeof(RT_802_11_MAC_TABLE_FIX));
+@@ -7401,6 +7403,9 @@ VOID RTMPIoctlGetMacTableStaInfo(
+ 			pDst->LastRxRate.word = RTMPGetLastRxRate(pAd, pEntry);
+ 			pDst->EncryMode = pEntry->SecConfig.PairwiseCipher;
+ 			pDst->AuthMode = pEntry->SecConfig.AKMMap;
++			/* Fill in SNR per entry*/
++			UniCmdPerStaGetSNR(pAd, pEntry->wcid, &u1Snr);
++			pDst->AvgSnr = u1Snr;
+ 			if (CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE))
+ 				pDst->wme = 1;
+ 			if (pEntry->SecConfig.PmfCfg.UsePMFConnect)
