@@ -20,9 +20,9 @@ config MTK_WIFI_DRIVER
 
 if MTK_WIFI_DRIVER
 
-config MTK_WIFI_UNIFIED_COMMAND
-	bool
-	default n
+#config MTK_WIFI_UNIFIED_COMMAND
+#	bool
+#	default n
 
 choice
 	prompt "Choose First WiFi Interface"
@@ -63,7 +63,7 @@ choice
         bool "MT7986"
         select MTK_WIFI_MT_MAC
         select MTK_MT_MAC
-	select MTK_WIFI_UNIFIED_COMMAND
+#	select MTK_WIFI_UNIFIED_COMMAND
         select MTK_CHIP_MT7986
 	
 	config MTK_FIRST_IF_MT7916
@@ -76,7 +76,7 @@ choice
         bool "MT7981"
         select MTK_WIFI_MT_MAC
         select MTK_MT_MAC
-	select MTK_WIFI_UNIFIED_COMMAND
+#	select MTK_WIFI_UNIFIED_COMMAND
         select MTK_CHIP_MT7981
 
 endchoice
