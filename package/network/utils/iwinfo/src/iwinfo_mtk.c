@@ -595,7 +595,7 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 	struct iwreq wrq = {};
 	RT_802_11_MAC_TABLE *table;
 	//int noise;
-	int i;
+	int i, chband;
 
 	table = calloc(1, sizeof(RT_802_11_MAC_TABLE));
 	if (!table)
@@ -611,8 +611,9 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 
 	*len = 0;
 
-	//if (mtk_get_noise(ifname, &noise))
-	//	noise = 0;
+	chband = mtk_get_band(ifname);
+	if (chband < 0)
+		return -1;
 
 	for (i = 0; i < table->Num; i++) {
 		RT_802_11_MAC_ENTRY *pe = &(table->Entry[i]);
@@ -620,9 +621,19 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 
 		memcpy(e->mac, pe->Addr, 6);
 
-		e->signal = pe->AvgRssi1;
-		e->signal_avg = pe->AvgRssi0;
-		e->noise = pe->AvgRssi1 - pe->AvgSnr;
+		if (chband == MTK_CH_BAND_24G) {
+			e->signal = (pe->AvgRssi0 > pe->AvgRssi1) ? pe->AvgRssi0 : pe->AvgRssi1;
+			//e->signal = pe->AvgRssi0;
+		} else {
+			if (pe->AvgRssi0 > pe->AvgRssi1 && pe->AvgRssi1 > pe->AvgRssi2)
+				e->signal = pe->AvgRssi0;
+			else if (pe->AvgRssi1 > pe->AvgRssi0 && pe->AvgRssi0 > pe->AvgRssi2)
+				e->signal = pe->AvgRssi1;
+			else
+				e->signal = pe->AvgRssi2;
+		}
+		e->signal_avg = pe->AvgRssi1;
+		e->noise = pe->AvgRssi1 - 19;
 		e->inactive = pe->InactiveTime;
 		e->connected_time = pe->ConnectedTime;
 
