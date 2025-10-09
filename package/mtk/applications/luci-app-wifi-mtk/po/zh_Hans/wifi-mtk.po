@@ -4,8 +4,8 @@ msgstr "Content-Type: text/plain; charset=UTF-8\n"
 msgid "Enable 1024-QAM"
 msgstr "启用 1024-QAM"
 
-msgid "802.11ac/ax 5Ghz Only"
-msgstr "只适合 802.11ac/ax 5Ghz"
+msgid "802.11ax WiFi6 Only"
+msgstr "只适合 802.11ax WiFi6"
 
 msgid "Target Wake Time"
 msgstr "目标唤醒时间（TWT）"
@@ -84,13 +84,13 @@ msgid "Station associate threshold"
 msgstr "弱信号接入阈值"
 
 msgid "802.11V roam steering threshold"
-msgstr "802.11V漫游引导阈值"
+msgstr "802.11V 漫游引导阈值"
 
 msgid "802.11V roam target bssid"
-msgstr "802.11V漫游引导目标BSSID"
+msgstr "802.11V 漫游引导目标 BSSID"
 
 msgid "only supports mt_wifi driver"
-msgstr "仅支持MTK闭源驱动，漫游域相关参数自动生成无需设置.确认路由器自身lan ip均在同一网段"
+msgstr "仅支持MTK闭源驱动（漫游域相关参数自动生成无需设置，确认路由器自身lan ip均在同一网段。）"
 
 msgid "Wireless HWNAT"
 msgstr "无线硬件加速"
@@ -102,25 +102,25 @@ msgid "Enable for MTK Repeater mode"
 msgstr "MTK 无线中继时启用"
 
 msgid "Band Steering"
-msgstr "引导已连接的强信号双频2.4G设备至5G频段"
+msgstr "频段引导"
 
 msgid "Wireless configuration error"
 msgstr "无线网络设置错误"
 
 msgid "At least one MBSSID needs to be reserved"
-msgstr "至少需要保留1个MBSSID"
+msgstr "至少需要保留1个 MBSSID"
 
 msgid "Configure AP its own IP address"
-msgstr "配置 AP 自己的IP地址"
+msgstr "配置 AP 自身的 IP 地址"
 
 msgid "Configure AP its own Port"
-msgstr "配置 AP 自己的端口"
+msgstr "配置 AP 自身的端口"
 
-msgid "own_ip_addr is global setting ,in this point, let all mbss set the same own_ip_addr for safe."
-msgstr "own_ip_addr是全局设置，基于这一点，为了安全起见，所有的MBSS都设置相同的own_ip_addr。"
+msgid "own_ip_addr is global setting ,in this point, let all mbss set the same ip addr for safe."
+msgstr "own_ip_addr 是全局设置，基于这一点，为了安全起见，所有 MBSS 都应设置为相同的 IP 地址。"
 
-msgid "own_radius_port is global setting , let all mbss set the same own_radius_port."
-msgstr "own_radius_port是全局设置，所有的MBSS设置相同的own_radius _port。"
+msgid "own_radius_port is also global setting , let all mbss set the same port."
+msgstr "own_radius_port 同是全局设置，所有 MBSS 也应设置为相同的端口。"
 
 msgid "Connection Limit"
 msgstr "连接数限制"
@@ -156,13 +156,13 @@ msgid "WDS Mode"
 msgstr "WDS 模式"
 
 msgid "Repeater Mode"
-msgstr "中继模式（WDS)"
+msgstr "中继模式（WDS）"
 
 msgid "Bridge Mode"
-msgstr "桥接模式（WDS)"
+msgstr "桥接模式（WDS）"
 
 msgid "Lazy Mode"
-msgstr "懒惰模式（WDS)"
+msgstr "懒人模式（WDS）"
 
 msgid "WDS mode is only available between MTK devices."
 msgstr "WDS 模式仅在 MTK 设备之间可用。"
@@ -187,6 +187,12 @@ msgstr "当开启时，APCLI 接口 MAC 地址随机变更。"
 
 msgid "802.11v: Basic Service Set (BSS) transition management."
 msgstr "802.11v: 基础服务集合（BSS）过渡管理。"
+
+msgid "WNMNotify"
+msgstr "WNM 通知"
+
+msgid "802.11v: Enable WNM notification."
+msgstr "802.11v: 启用 WNM 通知。"
 
 msgid ""
 "802.11v: Proxy ARP enables non-AP STA to remain in power-save for longer."

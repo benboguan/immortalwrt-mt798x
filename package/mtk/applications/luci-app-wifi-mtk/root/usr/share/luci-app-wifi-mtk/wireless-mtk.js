@@ -71,8 +71,8 @@ function render_signal_badge(signalPercent, signalValue, noiseValue, wrap, mode)
 				break;
 
 			case 'sta':
-			//case 'adhoc':
-			case 'mesh':
+			/*case 'adhoc':
+			case 'mesh':*/
 				title = _('Not associated');
 				break;
 
@@ -356,22 +356,22 @@ var CBIWifiFrequencyValue = form.Value.extend({
 			this.htmodes = {
 				'': [ '', '-', true ],
 				'n': [
-					'HT20', '20 MHz', htmodelist.HT20,
-					'HT40', '40 MHz', htmodelist.HT40
+					'HT40', '40 MHz', htmodelist.HT40,
+					'HT20', '20 MHz', htmodelist.HT20
 				],
 				'ac': [
-					'VHT20', '20 MHz', htmodelist.VHT20,
-					'VHT40', '40 MHz', htmodelist.VHT40,
-					'VHT80', '80 MHz', htmodelist.VHT80,
+					'VHT160', '160 MHz', htmodelist.VHT160,
 					'VHT80_80', '80+80 MHz', htmodelist.VHT80_80,
-					'VHT160', '160 MHz', htmodelist.VHT160
+					'VHT80', '80 MHz', htmodelist.VHT80,
+					'VHT40', '40 MHz', htmodelist.VHT40,
+					'VHT20', '20 MHz', htmodelist.VHT20
 				],
 				'ax': [
-					'HE20', '20 MHz', htmodelist.HE20,
-					'HE40', '40 MHz', htmodelist.HE40,
-					'HE80', '80 MHz', htmodelist.HE80,
+					'HE160', '160 MHz', htmodelist.HE160,
 					'HE80_80', '80+80 MHz', htmodelist.HE80_80,
-					'HE160', '160 MHz', htmodelist.HE160
+					'HE80', '80 MHz', htmodelist.HE80,
+					'HE40', '40 MHz', htmodelist.HE40,
+					'HE20', '20 MHz', htmodelist.HE20
 				]
 			};
 
@@ -1127,8 +1127,8 @@ return view.extend({
 					    bssid = ss.children[5],
 					    encr;
 
-					mode.value('mesh', '802.11s');
-					/* mode.value('ahdemo', _('Pseudo Ad-Hoc (ahdemo)'));
+					/*mode.value('mesh', '802.11s');
+					mode.value('ahdemo', _('Pseudo Ad-Hoc (ahdemo)'));
 					mode.value('monitor', _('Monitor'));
 
 					bssid.depends('mode', 'adhoc'); */
@@ -1229,7 +1229,7 @@ return view.extend({
 					o.depends('mode', 'wds');
 					o.default = o.enabled;
 
-					o = ss.taboption('general', form.ListValue, 'wdsen', _('WDS Mode'), _('WDS mode is only available between MTK devices.'));
+					o = ss.taboption('general', form.ListValue, 'wdsmode', _('WDS Mode'), _('WDS mode is only available between MTK devices.'));
 					o.depends('mode', 'ap-wds');
 					o.depends('mode', 'sta-wds');
 					o.depends('mode', 'wds');
@@ -1255,26 +1255,6 @@ return view.extend({
 					/* multicast_to_unicast https://github.com/openwrt/openwrt/commit/7babb978ad9d7fc29acb1ff86afb1eb343af303a */
 					/* o = ss.taboption('advanced', form.Flag, 'multicast_to_unicast', _('Multi To Unicast'), _('ARP, IPv4 and IPv6 (even 802.1Q) with multicast destination MACs are unicast to the STA MAC address. Note: This is not Directed Multicast Service (DMS) in 802.11v. Note: might break receiver STA multicast expectations.'));
 					o.rmempty = true; */
-
-					o = ss.taboption('advanced', form.Flag, 'mumimo_dl', _('MU-MIMO DL'));
-					o.depends('mode', 'ap');
-					o.depends('mode', 'sta');
-					o.default = o.disabled;
-
-					o = ss.taboption('advanced', form.Flag, 'mumimo_ul', _('MU-MIMO UL'));
-					o.depends('mode', 'ap');
-					o.depends('mode', 'sta');
-					o.default = o.disabled;
-
-					o = ss.taboption('advanced', form.Flag, 'ofdma_dl', _('OFDMA DL'));
-					o.depends('mode', 'ap');
-					o.depends('mode', 'sta');
-					o.default = o.disabled;
-
-					o = ss.taboption('advanced', form.Flag, 'ofdma_ul', _('OFDMA UL'));
-					o.depends('mode', 'ap');
-					o.depends('mode', 'sta');
-					o.default = o.disabled;
 
 					o = ss.taboption('advanced', form.Flag, 'isolate', _('Isolate Clients'), _('Prevents client-to-client communication'));
 					o.depends('mode', 'ap');
@@ -1348,6 +1328,38 @@ return view.extend({
 					o.placeholder = 0;
 					o.depends('mode', 'ap');
 
+					o = ss.taboption('advanced', form.Flag, 'mumimo_dl', _('MU-MIMO DL'));
+					o.depends('mode', 'ap');
+					o.depends('mode', 'sta');
+					o.default = o.disabled;
+
+					o = ss.taboption('advanced', form.Flag, 'mumimo_ul', _('MU-MIMO UL'));
+					o.depends('mode', 'ap');
+					o.depends('mode', 'sta');
+					o.default = o.disabled;
+
+					o = ss.taboption('advanced', form.Flag, 'ofdma_dl', _('OFDMA DL'));
+					o.depends('mode', 'ap');
+					o.depends('mode', 'sta');
+					o.default = o.enabled;
+
+					o = ss.taboption('advanced', form.Flag, 'ofdma_ul', _('OFDMA UL'));
+					o.depends('mode', 'ap');
+					o.depends('mode', 'sta');
+					o.default = o.enabled;
+
+					o = ss.taboption('advanced', form.Flag, 'amsdu', _('A-MSDU'));
+					o.depends('mode', 'ap');
+					o.default = o.enabled;
+
+					o = ss.taboption('advanced', form.Flag, 'autoba', _('Auto Block ACK'));
+					o.depends('mode', 'ap');
+					o.default = o.enabled;
+
+					o = ss.taboption('advanced', form.Flag, 'uapsd', _('U-APSD'));
+					o.depends('mode', 'ap');
+					o.default = o.enabled;
+
 					o = ss.taboption('advanced', form.Flag, 'disassoc_low_ack', _('Disassociate On Low Acknowledgement'), _('Allow AP mode to disconnect STAs based on low ACK condition'));
 					o.default = o.disabled;
 					o.depends('mode', 'ap');
@@ -1360,7 +1372,7 @@ return view.extend({
 
 					o = ss.taboption('advanced', form.Value, 'assocthres', _('Station associate threshold'), _('dBm'));
 					o.optional    = true;
-					o.placeholder = -60;
+					o.placeholder = -70;
 					o.datatype    = 'range(-100,0)';
 					o.depends('disassoc_low_ack', '1');
 				}
@@ -1374,7 +1386,7 @@ return view.extend({
 				o.depends('mode', 'ap-wds');
 				o.depends('mode', 'sta-wds');
 				o.depends('mode', 'wds');
-				o.depends('mode', 'mesh');
+				//o.depends('mode', 'mesh');
 
 				o.cfgvalue = function(section_id) {
 					var v = String(uci.get('wireless', section_id, 'encryption'));
@@ -1491,7 +1503,7 @@ return view.extend({
 							'psk2': true,
 							'psk-mixed': true
 						},*/
-						'mesh': {
+						/*'mesh': {
 							'wep-open': true,
 							'wep-shared': true,
 							'psk2': true,
@@ -1499,7 +1511,7 @@ return view.extend({
 							'sae': true,
 							'sae-mixed': true
 						},
-						/*'ahdemo': {
+						'ahdemo': {
 							'wep-open': true,
 							'wep-shared': true
 						},*/
@@ -1544,12 +1556,12 @@ return view.extend({
 				}
 
 
-				o = ss.taboption('encryption', form.Value, 'own_ip_addr', _('Configure AP its own IP address'), _('own_ip_addr is global setting ,in this point, let all mbss set the same own_ip_addr for safe.'));
+				o = ss.taboption('encryption', form.Value, 'own_ip_addr', _('Configure AP its own IP address'), _('own_ip_addr is global setting ,in this point, let all mbss set the same ip addr for safe.'));
 				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa-mixed', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 				o.rmempty = true;
 				o.datatype = 'host(0)';
 
-				o = ss.taboption('encryption', form.Value, 'own_radius_port', _('Configure AP its own Port'), _('own_radius_port is global setting , let all mbss set the same own_radius_port.'));
+				o = ss.taboption('encryption', form.Value, 'own_radius_port', _('Configure AP its own Port'), _('own_radius_port is also global setting , let all mbss set the same port.'));
 				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa-mixed', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 				o.rmempty = true;
 				o.datatype = 'host(0)';
@@ -1687,12 +1699,12 @@ return view.extend({
 					o.depends('mode', 'ap');
 					o.rmempty = true;
 
-					/*o = ss.taboption('encryption', form.Flag, 'rrm_neighbor_report', _('Enable neighbor report via radio measurements'));
-					o.default = o.enabled;
+					o = ss.taboption('encryption', form.Flag, 'rrm_neighbor_report', _('Enable neighbor report via radio measurements'));
+					o.default = o.disabled;
 					o.depends({ ieee80211k: '1' });
 					o.rmempty = true;
 
-					o = ss.taboption('encryption', form.Flag, 'rrm_beacon_report', _('Enable beacon report via radio measurements'));
+					/*o = ss.taboption('encryption', form.Flag, 'rrm_beacon_report', _('Enable beacon report via radio measurements'));
 					o.default = o.enabled;
 					o.depends({ ieee80211k: '1' });
 					o.rmempty = true;
@@ -1724,13 +1736,16 @@ return view.extend({
 					o = ss.taboption('encryption', form.Flag, 'bss_transition', _('BSS Transition Management'), _('802.11v: Basic Service Set (BSS) transition management.'));
 					o.default = o.disabled;
 					//o.depends({ ieee80211v: '1' });
-					o.depends('mode', 'ap');
+					o.rmempty = true;
+
+					o = ss.taboption('encryption', form.Flag, 'wnm_notify', _('WNMNotify'), _('802.11v: Enable WNM notification.'));
+					add_dependency_permutations(o, { bss_transition: ['1'], mode: ['ap'] });
+					o.default = o.disabled;
 					o.rmempty = true;
 
 					o = ss.taboption('encryption', form.Flag, 'proxy_arp', _('ProxyARP'), _('802.11v: Proxy ARP enables non-AP STA to remain in power-save for longer.'));
+					add_dependency_permutations(o, { bss_transition: ['1'], mode: ['ap'] });
 					o.default = o.disabled;
-					//o.depends({ ieee80211v: '1' });
-					o.depends('mode', 'ap');
 					o.rmempty = true;
 					// End of 802.11v options*/
 
@@ -1784,18 +1799,18 @@ return view.extend({
 					o.datatype = 'and(hexstring,length(12))';
 					o.rmempty = true;
 
-					o = ss.taboption('encryption', form.Flag, 'pmk_r1_push', _('PMK R1 Push'));
+					/*o = ss.taboption('encryption', form.Flag, 'pmk_r1_push', _('PMK R1 Push'));
 					o.depends({ ieee80211r: '1' });
 					o.placeholder = '0';
-					o.rmempty = true;
+					o.rmempty = true;*/
 
-					/* o = ss.taboption('encryption', form.DynamicList, 'r0kh', _('External R0 Key Holder List'), _('List of R0KHs in the same Mobility Domain. <br />Format: MAC-address,NAS-Identifier,128-bit key as hex string. <br />This list is used to map R0KH-ID (NAS Identifier) to a destination MAC address when requesting PMK-R1 key from the R0KH that the STA used during the Initial Mobility Domain Association.'));
+					o = ss.taboption('encryption', form.DynamicList, 'r0kh', _('External R0 Key Holder List'), _('List of R0KHs in the same Mobility Domain. <br />Format: MAC-address,NAS-Identifier,128-bit key as hex string. <br />This list is used to map R0KH-ID (NAS Identifier) to a destination MAC address when requesting PMK-R1 key from the R0KH that the STA used during the Initial Mobility Domain Association.'));
 					o.depends({ ieee80211r: '1' });
 					o.rmempty = true;
 
 					o = ss.taboption('encryption', form.DynamicList, 'r1kh', _('External R1 Key Holder List'), _ ('List of R1KHs in the same Mobility Domain. <br />Format: MAC-address,R1KH-ID as 6 octets with colons,128-bit key as hex string. <br />This list is used to map R1KH-ID to a destination MAC address when sending PMK-R1 key from the R0KH. This is also the list of authorized R1KHs in the MD that can request PMK-R1 keys.'));
 					o.depends({ ieee80211r: '1' });
-					o.rmempty = true; */
+					o.rmempty = true;
 					// End of 802.11r options
 
 					if (hwtype == 'mtk') {
@@ -1841,7 +1856,7 @@ return view.extend({
 						o.depends('ieee80211w', '1');
 						o.depends('ieee80211w', '2');
 
-						/* o.validate = function(section_id, value) {
+						o.validate = function(section_id, value) {
 							var modeopt = this.section.children.filter(function(o) { return o.option == 'mode' })[0],
 							modeval = modeopt.formvalue(section_id);
 
@@ -1850,7 +1865,7 @@ return view.extend({
 							}
 
 							return true;
-						} */
+						}
 
 						/* o = ss.taboption('encryption', form.Flag, 'wpa_disable_eapol_key_retries', _('Enable key reinstallation (KRACK) countermeasures'), _('Complicates key reinstallation attacks on the client side by disabling retransmission of EAPOL-Key frames that are used to install keys. This workaround might cause interoperability issues and reduced robustness of key negotiation especially in environments with heavy traffic load.'));
 						add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['psk2', 'psk-mixed', 'sae', 'sae-mixed', 'wpa-mixed', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });*/
@@ -1868,7 +1883,7 @@ return view.extend({
 						o = ss.taboption('encryption', form.Value, 'pin', _('WPS PIN'));
 						o.depends('wps_pushbutton', '1');
 						o.datatype = 'uinteger';
-						o.placeholder = '123456';
+						o.placeholder = '1234 or 12345678';
 						o.rmempty = true;
 					}
 				}
