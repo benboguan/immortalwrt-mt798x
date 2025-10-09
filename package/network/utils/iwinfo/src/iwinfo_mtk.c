@@ -492,47 +492,55 @@ static void fill_rate_info(HTTRANSMIT_SETTING HTSetting, struct iwinfo_rate_entr
 	unsigned int mcs, unsigned int nss)
 {
 	unsigned long DataRate = 0;
+	uint8_t mode = HTSetting.field.MODE;
+	uint8_t bw = HTSetting.field.BW;
+	uint8_t short_gi = HTSetting.field.ShortGI;
 
-	if (HTSetting.field.MODE >= MODE_HTMIX && HTSetting.field.MODE <= MODE_VHT)
+	re->is_he = 0;
+	re->is_vht = 0;
+	re->is_ht = 0;
+
+	if (mode >= MODE_HTMIX && mode <= MODE_VHT)
 	{
-		if (HTSetting.field.ShortGI)
+		if (short_gi)
 			re->is_short_gi = 1;
 	}
 
-	if (HTSetting.field.MODE >= MODE_HTMIX && HTSetting.field.MODE <= MODE_HTGREENFIELD) {
-		re->is_ht = 1;
-		re->is_he = 0;
-	} else if (HTSetting.field.MODE == MODE_VHT) {
-		re->is_vht = 1;
-		re->is_he = 0;
-		re->is_ht = 0;
-	} else if (HTSetting.field.MODE >= MODE_HE) {
+	if (mode >= MODE_HE) {
 		re->is_he = 1;
-		re->is_vht = 0;
-		re->is_ht = 0;
-	}
-
-	if (HTSetting.field.MODE >= MODE_HE) {
-		re->he_gi = HTSetting.field.ShortGI;
+		re->he_gi = short_gi;
 		re->he_dcm = !(HTSetting.field.MCS & 0x10);
+	} else if (mode == MODE_VHT) {
+		re->is_vht = 1;
+	} else if (mode >= MODE_HTMIX && mode <= MODE_HTGREENFIELD) {
+		re->is_ht = 1;
 	}
 
-	if (HTSetting.field.BW == BW_20)
-		re->mhz = 20;
-	else if (HTSetting.field.BW == BW_40)
-		re->mhz = 40;
-	else if (HTSetting.field.BW == BW_80)
-		re->mhz = 80;
-	else if (HTSetting.field.BW == BW_160)
-		re->mhz = 160;
+	switch (bw) {
+		case BW_20:
+			re->mhz = 20;
+			break;
+		case BW_40:
+			re->mhz = 40;
+			break;
+		case BW_80:
+			re->mhz = 80;
+			break;
+		case BW_160:
+			re->mhz = 160;
+			break;
+		default:
+			re->mhz = 20;
+			break;
+	}
 
 	re->is_40mhz = (re->mhz == 40);
 
-	if (HTSetting.field.MODE >= MODE_HE) {
-		get_rate_he((mcs & 0xf), HTSetting.field.BW, nss, 0, &DataRate);
-		if (HTSetting.field.ShortGI == 1)
+	if (mode >= MODE_HE) {
+		get_rate_he((mcs & 0xf), bw, nss, 0, &DataRate);
+		if (short_gi == 1)
 			DataRate = (DataRate * 967) >> 10;
-		else if (HTSetting.field.ShortGI == 2)
+		else if (short_gi == 2)
 			DataRate = (DataRate * 870) >> 10;
 	} else {
 		getRate(HTSetting, &DataRate);
@@ -546,11 +554,11 @@ static void mtk_parse_rateinfo(RT_802_11_MAC_ENTRY *pe,
 	HTTRANSMIT_SETTING TxRate;
 	HTTRANSMIT_SETTING RxRate;
 
-	unsigned int mcs = 0;
-	unsigned int nss = 0;
+	unsigned int mcs = 0, mcs_r = 0;
+	unsigned int nss = 0, nss_r = 0;
 
-	unsigned int mcs_r = 0;
-	unsigned int nss_r = 0;
+	memset(rx_rate, 0, sizeof(struct iwinfo_rate_entry));
+	memset(tx_rate, 0, sizeof(struct iwinfo_rate_entry));
 
 	TxRate.word = pe->TxRate.word;
 	RxRate.word = pe->LastRxRate.word;
@@ -594,7 +602,6 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 {
 	struct iwreq wrq = {};
 	RT_802_11_MAC_TABLE *table;
-	//int noise;
 	int i, chband;
 
 	table = calloc(1, sizeof(RT_802_11_MAC_TABLE));
@@ -681,10 +688,7 @@ static int mtk_get_txpwrlist(const char *ifname, char *buf, int *len)
 
 static unsigned char ch_offset_abs(unsigned char x, unsigned char y)
 {
-	if (x > y)
-		return x - y;
-	else
-		return y - x;
+	return (x > y) ? (x - y) : (y - x);
 }
 
 static int mtk_get_scanlist_dump(const char *ifname, int index, char *data, size_t len)
