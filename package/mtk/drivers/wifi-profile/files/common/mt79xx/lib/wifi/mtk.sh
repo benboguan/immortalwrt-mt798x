@@ -5,9 +5,9 @@
 # Copyright (c) 2005-2015, lintel <lintel.huang@gmail.com>
 # Copyright (c) 2013, Hoowa <hoowa.sun@gmail.com>
 # Copyright (c) 2015-2017, GuoGuo <gch981213@gmail.com>
-# Copyright (c) 2022-2024, nanchuci <nanchuci023@gmail.com>
+# Copyright (c) 2022-2025, nanchuci <nanchuci023@gmail.com>
 #
-# 	Detect script for MT7615/MT7915/MT798X DBDC mode
+# 	Detect script for MT7615/MT7915/MT798X/MT799X DBDC mode
 #
 # 	嘿，对着屏幕的哥们,为了表示对原作者辛苦工作的尊重，任何引用跟借用都不允许你抹去所有作者的信息,请保留这段话。
 #
@@ -20,18 +20,24 @@ append DRIVERS "mtk"
 board=$(board_name)
 
 mtk_get_first_if_mac() {
-	local wlan_mac=""
+	local wlan_mac="" factory_part mac_offset=4
+	
 	case $board in
 	*)
-		mac_offset="0x4"
 		factory_part=$(find_mtd_part factory)
 		[ -z "$factory_part" ] && factory_part=$(find_mtd_part Factory)
-		wlan_mac=$(dd bs=1 skip=$mac_offset count=6 if=$factory_part 2>/dev/null | /usr/sbin/maccalc bin2mac)
-		[ "$wlan_mac" == "ff:ff:ff:ff:ff:ff" -o "$wlan_mac" == "00:00:00:00:00:00" ] && wlan_mac=
+		
+		[ -n "$factory_part" ] && {
+			wlan_mac=$(dd bs=1 skip=$mac_offset count=6 if=$factory_part 2>/dev/null | \
+				hexdump -v -e '/1 "%02x"' 2>/dev/null | \
+				sed 's/\(..\)\(..\)\(..\)\(..\)\(..\)\(..\)/\1:\2:\3:\4:\5:\6/')
+			
+			[ "$wlan_mac" = "ff:ff:ff:ff:ff:ff" -o "$wlan_mac" = "00:00:00:00:00:00" ] && wlan_mac=""
+		}
 		;;
 	esac
 
-	echo ${wlan_mac}
+	echo "$wlan_mac"
 }
 
 is_11ax_dbdc_dev()
@@ -41,14 +47,14 @@ is_11ax_dbdc_dev()
   [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0 |grep MT7981)" ] && echo yes;
   [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0 |grep MT7986)" ] && echo yes;
 
-  return 0;
+  return 0
 }
 
 is_11ac_dbdc_dev()
 {
   [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0 |grep MT7615D)" ] && echo yes;
 
-  return 0;
+  return 0
 }
 
 is_support_11ax_ht160_dev()
@@ -58,7 +64,7 @@ is_support_11ax_ht160_dev()
   [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0 |grep MT7981)" ] && echo yes;
   [ -n "$(cat /etc/wireless/l1profile.dat |grep INDEX0 |grep MT7986)" ] && echo yes;
 
-  return 0;
+  return 0
 }
 
 detect_mtk() {
@@ -140,5 +146,5 @@ EOF
 		done
 	}
 
-	return 0;
+	return 0
 }
