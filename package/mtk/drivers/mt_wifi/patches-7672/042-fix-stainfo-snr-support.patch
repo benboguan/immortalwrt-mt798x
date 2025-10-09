@@ -104,7 +104,7 @@
 +	pu1SNR[2] = ptr->au1Snr[2];
 +	pu1SNR[3] = ptr->au1Snr[3];
 +
-+	MTWF_DBG(NULL, DBG_CAT_FW, CATFW_DBGINFO, DBG_LVL_DEBUG,
++	MTWF_DBG(NULL, DBG_CAT_FW, DBG_SUBCAT_ALL, DBG_LVL_DEBUG,
 +		"SNR:%d-%d-%d-%d\n",
 +		pu1SNR[0], pu1SNR[1], pu1SNR[2], pu1SNR[3]);
 +}
