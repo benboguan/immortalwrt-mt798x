@@ -8,7 +8,7 @@
  		UCHAR *temp_wmode = NULL;
  
  		if (wdev) {
-@@ -10552,7 +10553,24 @@ #if defined(VENDOR_FEATURE6_SUPPORT) || defined(TR181_SUPPORT)
+@@ -10552,7 +10553,25 @@ #if defined(VENDOR_FEATURE6_SUPPORT) || defined(TR181_SUPPORT)
  			} else
  				MTWF_DBG(pAd, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_INFO,
  					"Query::RT_OID_802_11_PHY_MODE (=%lu), Null\n", ulInfo);
@@ -30,11 +30,12 @@
 +				} else
 +					MTWF_DBG(pAd, DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_INFO,
 +						"Query::RT_OID_802_11_PHY_MODE (=%lu), Null\n", ulInfo);
++			}
 +		}
  	}
  	break;
  #endif
-@@ -12688,15 +12706,22 @@ case OID_GET_WIRELESS_BAND:
+@@ -12688,15 +12707,22 @@ case OID_GET_WIRELESS_BAND:
  #endif
  	case OID_GET_WIRELESS_BAND:
  	{
@@ -58,7 +59,7 @@
  		break;
  	}
  
-@@ -12936,6 +12954,7 @@ case OID_802_11_BW:
+@@ -12936,6 +12955,7 @@ case OID_802_11_BW:
  	case OID_802_11_BW:
  	{
  		UCHAR bw;
