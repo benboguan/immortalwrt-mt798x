@@ -1,0 +1,25 @@
+#!/bin/sh
+# Copyright (C) 2024 YumesomeZakura <1552037053@qq.com>
+# Modify by nanchuci
+
+cpu=$(top -b -n1 2>/dev/null | awk 'NR==2{gsub(/%/,"",$2);print $2+0}')
+cpu=${cpu:-0}
+
+fastpath=$(uci get turboacc.config.fastpath 2>/dev/null)
+[ "$fastpath" != "mediatek_hnat" ] && { echo -n "CPU: ${cpu}% HNAT: OFF"; exit; }
+
+stats_file="/sys/kernel/debug/hnat/hnat_stats"
+[ ! -f "$stats_file" ] && { echo -n "CPU: ${cpu}% HNAT: ERROR"; exit; }
+
+ppe_num=$(awk -F= '/PPE_NUM/{print $2}' "$stats_file")
+ppe0=$(awk -F= '/BIND_PPE0/{print $2}' "$stats_file")
+ppe1=$(awk -F= '/BIND_PPE1/{print $2}' "$stats_file" 2>/dev/null)
+ppe2=$(awk -F= '/BIND_PPE2/{print $2}' "$stats_file" 2>/dev/null)
+
+case $ppe_num in
+    3) hnat="PPE0: $ppe0, PPE1: $ppe1, PPE2: $ppe2" ;;
+    2) hnat="PPE0: $ppe0, PPE1: $ppe1" ;;
+    *) hnat="PPE0: $ppe0" ;;
+esac
+
+echo -n "CPU: ${cpu}%. HNAT: ON. $hnat"

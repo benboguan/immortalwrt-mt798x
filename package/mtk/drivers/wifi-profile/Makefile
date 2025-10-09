@@ -172,20 +172,20 @@ define Package/wifi-script/install
 	# $(INSTALL_DIR) $(1)/etc/map/
 	# $(INSTALL_DIR) $(1)/etc/hotplug.d/iface/
 
-	$(INSTALL_DATA) ./files/common/mt79xx/lib/wifi/mtk.sh $(1)/lib/wifi/; \
-	$(INSTALL_BIN) ./files/common/mt79xx/lib/netifd/wireless/mtk.sh $(1)/lib/netifd/wireless/; \
-	$(INSTALL_DATA) ./files/common/mt79xx/etc/uci-defaults/10_mt798x_dbdc $(1)/etc/uci-defaults/10_mt798x_dbdc ; \
-	# $(INSTALL_BIN) ./files/common/wapp/100-startwapp $(1)/etc/hotplug.d/iface/; \
-	# $(INSTALL_BIN) ./files/common/wapp/startwapp.sh $(1)/sbin/; \
-	# $(INSTALL_BIN) ./files/common/wapp/bs20 $(1)/sbin/; \
-	# $(INSTALL_BIN) ./files/common/wapp/wapp $(1)/sbin/; \
-	# $(INSTALL_BIN) ./files/common/wapp/wappctrl $(1)/sbin/; \
-	# $(INSTALL_BIN) ./files/common/wapp/setbssid $(1)/sbin/; \
-	# $(INSTALL_BIN) ./files/common/wapp/steeringsta $(1)/sbin/; \
-	# $(INSTALL_DATA) ./files/common/wapp/mapd_cfg $(1)/etc/map/; \
-	# $(INSTALL_DATA) ./files/common/wapp/wapp_ap.conf $(1)/etc/; \
-	# $(INSTALL_DATA) ./files/common/wapp/wapp_ap_ra0.conf $(1)/etc/; \
-	# $(INSTALL_DATA) ./files/common/wapp/1905d.cfg $(1)/etc/map/; \
+	$(INSTALL_DATA) ./files/common/mt79xx/lib/wifi/mtk.sh $(1)/lib/wifi/
+	$(INSTALL_BIN) ./files/common/mt79xx/lib/netifd/wireless/mtk.sh $(1)/lib/netifd/wireless/
+	$(INSTALL_DATA) ./files/common/mt79xx/etc/uci-defaults/10_mt798x_dbdc $(1)/etc/uci-defaults/10_mt798x_dbdc
+	# $(INSTALL_BIN) ./files/common/wapp/100-startwapp $(1)/etc/hotplug.d/iface/
+	# $(INSTALL_BIN) ./files/common/wapp/startwapp.sh $(1)/sbin/
+	# $(INSTALL_BIN) ./files/common/wapp/bs20 $(1)/sbin/
+	# $(INSTALL_BIN) ./files/common/wapp/wapp $(1)/sbin/
+	# $(INSTALL_BIN) ./files/common/wapp/wappctrl $(1)/sbin/
+	# $(INSTALL_BIN) ./files/common/wapp/setbssid $(1)/sbin/
+	# $(INSTALL_BIN) ./files/common/wapp/steeringsta $(1)/sbin/
+	# $(INSTALL_DATA) ./files/common/wapp/mapd_cfg $(1)/etc/map/
+	# $(INSTALL_DATA) ./files/common/wapp/wapp_ap.conf $(1)/etc/
+	# $(INSTALL_DATA) ./files/common/wapp/wapp_ap_ra0.conf $(1)/etc/
+	# $(INSTALL_DATA) ./files/common/wapp/1905d.cfg $(1)/etc/map/
 	# if [ "$$(CONFIG_first_card_name)" = "MT7981" -o "$$(CONFIG_second_card_name)" = "MT7981" ] ; then \
 		# $(INSTALL_DATA) ./files/common/mt7981/lib/wifi/mtk.sh $(1)/lib/wifi/; \
 		# $(INSTALL_BIN) ./files/common/mt7981/lib/netifd/wireless/mtk.sh $(1)/lib/netifd/wireless/; \
@@ -194,7 +194,9 @@ define Package/wifi-script/install
 endef
 
 define Package/wifi-dats/install
+	$(INSTALL_DIR) $(1)/sbin/
 	$(INSTALL_DIR) $(1)/etc/wireless/mediatek/
+	$(INSTALL_BIN) ./files/common/mt79xx/sbin/cpuusage $(1)/sbin/
 	if [ "$$(CONFIG_first_card_name)" = "MT7986" -o "$$(CONFIG_second_card_name)" = "MT7986" ] ; then \
 		if [ "$$(CONFIG_MTK_WIFI_SKU_TYPE)" = "AX4200" ] ; then \
 			$(INSTALL_DATA) ./files/mt7986-ax4200/* $(1)/etc/wireless/mediatek/; \
