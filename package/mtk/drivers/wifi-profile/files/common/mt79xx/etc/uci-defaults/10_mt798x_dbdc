@@ -4,7 +4,7 @@
 sed -i 's/multicast_to_unicast:-1/multicast_to_unicast:-0/g' /lib/netifd/netifd-wireless.sh
 
 #add HNAT display
-sed -i "s#local cpuusage = sys.exec("top.*")#local cpuusage = sys.exec("/sbin/cpuusage")#g" /usr/libexec/rpcd/luci
+sed -i 's#local cpuusage = sys.exec("top.*")#local cpuusage = sys.exec("/sbin/cpuusage")#g' /usr/libexec/rpcd/luci
 
 # generate default wireless config
 [ ! -f /etc/config/wireless ] && {
