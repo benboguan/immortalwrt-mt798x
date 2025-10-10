@@ -1734,6 +1734,7 @@ return view.extend({
 					o.rmempty = true; */
 
 					o = ss.taboption('encryption', form.Flag, 'bss_transition', _('BSS Transition Management'), _('802.11v: Basic Service Set (BSS) transition management.'));
+					o.depends('mode', 'ap');
 					o.default = o.disabled;
 					//o.depends({ ieee80211v: '1' });
 					o.rmempty = true;
