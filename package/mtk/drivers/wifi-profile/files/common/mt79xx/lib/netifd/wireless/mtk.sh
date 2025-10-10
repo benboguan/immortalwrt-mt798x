@@ -1316,7 +1316,7 @@ WdsTxMcs=33
 WHNAT=${whnat:-1}
 WifiCert=1
 WiFiTest=0
-WirelessEvent=1
+WirelessEvent=0
 WscModelName=${hostname}
 BSSColorValue=255
 QoSR1Enable=1
@@ -1468,8 +1468,6 @@ EOF
 		echo "RTSThreshold=${ApRts%?}"
 		echo "DtimPeriod=${ApDtim%?}"
 		echo "TxPreamble=${short_preamble}"
-		echo "KickStaRssiLow=${kicklow}"
-		echo "AssocReqRssiThres=${assocthres}"
 		echo "WscConfMode=${ApWscConfMode%?}"
 		echo "WscConfStatus=${ApWscConfStatus%?}"
 		echo "Wsc4digitPinCode=${ApWsc4digitPinCode%?}"
