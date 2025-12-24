@@ -63,28 +63,7 @@
  	UINT8 andlink_ip_hostname_en[DBDC_BAND_NUM];
 --- a/mt_wifi/embedded/mcu/andes_mt.c
 +++ b/mt_wifi/embedded/mcu/andes_mt.c
-@@ -2997,11 +2997,10 @@ static VOID ExtEventGetAllStaStats(RTMP_
- #endif
- 	}
- 	break;
-+
- 	case EVENT_PHY_PER_STA_TX_STAT:
--#ifdef RT_CFG80211_SUPPORT
-+#ifdef EAP_STATS_SUPPORT
- 	if (!pAd->CommonCfg.bEapStatsDisabled) {
--#endif
--#ifdef EAP_STATS_SUPPORT
- 		P_EXT_EVENT_TX_STAT_RESULT_T prEventExtCmdResult = (P_EXT_EVENT_TX_STAT_RESULT_T)Data;
- 
- 		prEventExtCmdResult->u2StaNum = le2cpu16(prEventExtCmdResult->u2StaNum);
-@@ -3022,19 +3021,15 @@ static VOID ExtEventGetAllStaStats(RTMP_
- 			}
- 
- 		}
--#endif
--#ifdef RT_CFG80211_SUPPORT
- 	}
- #endif
+@@ -3032,12 +3032,10 @@ static VOID ExtEventGetAllStaStats(RTMP_
  	break;
  
  	case EVENT_PHY_RX_STAT:
@@ -99,7 +78,7 @@
  
  		for (Idx = 0; Idx < concurrent_bands; Idx++) {
  			P_EXT_EVENT_RX_STAT_T rRxStatResult = &prEventExtCmdResult->rRxStatResult[Idx];
-@@ -3044,10 +3039,8 @@ static VOID ExtEventGetAllStaStats(RTMP_
+@@ -3047,10 +3045,8 @@ static VOID ExtEventGetAllStaStats(RTMP_
  			pAd->OneSecMibBucket.MdrdyCount[Idx] = le2cpu16(rRxStatResult->u2PhyRxMdrdyCntCck) +
  													le2cpu16(rRxStatResult->u2PhyRxMdrdyCntOfdm);
  		}

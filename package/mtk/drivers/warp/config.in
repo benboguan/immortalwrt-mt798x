@@ -39,7 +39,7 @@ config WARP_WO_EMBEDDED_LOAD
 choice
 	prompt "MT7981 custom WOCPU firmware"
 	depends on WARP_CHIPSET="mt7981"
-	default WARP_MT7981_20240823
+#	default WARP_MT7981_20240823
 
 	config WARP_MT7981_DEFAULT_FIRMWARE
 	bool "default warp firmware"
@@ -60,7 +60,7 @@ endchoice
 choice
 	prompt "MT7986 custom WOCPU firmware"
 	depends on WARP_CHIPSET="mt7986"
-	default WARP_MT7986_20240823
+#	default WARP_MT7986_20240823
 
 	config WARP_MT7986_DEFAULT_FIRMWARE
 	bool "default warp firmware"
