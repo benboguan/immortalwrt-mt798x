@@ -55,6 +55,9 @@ choice
 
 	config WARP_MT7981_20241218
 	bool "mt7981-fw-20241218"
+
+	config WARP_MT7981_20260323
+	bool "mt7981-fw-20260323"
 endchoice
 
 choice
@@ -78,6 +81,7 @@ config WARP_FIRMWARE_PATH
 	default "mt7981-fw-20240613" if WARP_MT7981_20240613
 	default "mt7981-fw-20240823" if WARP_MT7981_20240823
 	default "mt7981-fw-20241218" if WARP_MT7981_20241218
+	default "mt7981-fw-20260323" if WARP_MT7981_20260323
 	default "mt7986-fw-20230814" if WARP_MT7986_20230814
 	default "mt7986-fw-20240823" if WARP_MT7986_20240823
 endif
