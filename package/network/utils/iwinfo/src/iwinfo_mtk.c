@@ -628,17 +628,10 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 
 		memcpy(e->mac, pe->Addr, 6);
 
-		if (chband == MTK_CH_BAND_24G) {
-			e->signal = (pe->AvgRssi0 > pe->AvgRssi1) ? pe->AvgRssi0 : pe->AvgRssi1;
-			//e->signal = pe->AvgRssi0;
-		} else {
-			if (pe->AvgRssi0 > pe->AvgRssi1 && pe->AvgRssi1 > pe->AvgRssi2)
-				e->signal = pe->AvgRssi0;
-			else if (pe->AvgRssi1 > pe->AvgRssi0 && pe->AvgRssi0 > pe->AvgRssi2)
-				e->signal = pe->AvgRssi1;
-			else
-				e->signal = pe->AvgRssi2;
-		}
+		if (chband == MTK_CH_BAND_24G)
+			e->signal = MAX(pe->AvgRssi0, pe->AvgRssi1);
+		else
+			e->signal = MAX(pe->AvgRssi0, MAX(pe->AvgRssi1, pe->AvgRssi2));
 		e->signal_avg = pe->AvgRssi1;
 		e->noise = pe->AvgRssi1 - 19;
 		e->inactive = pe->InactiveTime;
@@ -1070,7 +1063,8 @@ uciout:
 		if (!strcmp(band,"2g"))
 			*buf = (IWINFO_HTMODE_HT20 | IWINFO_HTMODE_HT40 | IWINFO_HTMODE_HE20 | IWINFO_HTMODE_HE40);
 		else if (!strcmp(band,"5g"))
-			*buf = (IWINFO_HTMODE_VHT20 | IWINFO_HTMODE_VHT40 | IWINFO_HTMODE_VHT80 | IWINFO_HTMODE_VHT80_80 | IWINFO_HTMODE_VHT160 
+			*buf = (IWINFO_HTMODE_HT20 | IWINFO_HTMODE_HT40
+			| IWINFO_HTMODE_VHT20 | IWINFO_HTMODE_VHT40 | IWINFO_HTMODE_VHT80 | IWINFO_HTMODE_VHT80_80 | IWINFO_HTMODE_VHT160 
 			| IWINFO_HTMODE_HE20 | IWINFO_HTMODE_HE40 | IWINFO_HTMODE_HE80 | IWINFO_HTMODE_HE80_80 | IWINFO_HTMODE_HE160);
 		else if (!strcmp(band,"6g"))
 			*buf = (IWINFO_HTMODE_HE20 | IWINFO_HTMODE_HE40 | IWINFO_HTMODE_HE80 | IWINFO_HTMODE_HE80_80 | IWINFO_HTMODE_HE160);
@@ -1088,7 +1082,8 @@ uciout:
 			*buf = (IWINFO_HTMODE_HT20 | IWINFO_HTMODE_HT40 | IWINFO_HTMODE_HE20 | IWINFO_HTMODE_HE40);
 			break;
 		case MTK_CH_BAND_5G:
-			*buf = (IWINFO_HTMODE_VHT20 | IWINFO_HTMODE_VHT40 | IWINFO_HTMODE_VHT80 | IWINFO_HTMODE_VHT80_80 | IWINFO_HTMODE_VHT160 
+			*buf = (IWINFO_HTMODE_HT20 | IWINFO_HTMODE_HT40
+			| IWINFO_HTMODE_VHT20 | IWINFO_HTMODE_VHT40 | IWINFO_HTMODE_VHT80 | IWINFO_HTMODE_VHT80_80 | IWINFO_HTMODE_VHT160 
 			| IWINFO_HTMODE_HE20 | IWINFO_HTMODE_HE40 | IWINFO_HTMODE_HE80 | IWINFO_HTMODE_HE80_80 | IWINFO_HTMODE_HE160);
 			break;
 		case MTK_CH_BAND_6G:
