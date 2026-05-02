@@ -37,6 +37,9 @@ msgstr "必须使用 %s 格式。"
 msgid "Format:"
 msgstr "格式："
 
+msgid "Time zone"
+msgstr "时区"
+
 msgid "string (UTF-8)"
 msgstr "编码 (UTF-8)"
 
@@ -69,13 +72,22 @@ msgid ""
 "even if the STA doesn't send OCI or negotiate PMF."
 msgstr ""
 "注：权宜模式允许宣称具有 OCV 能力的 STA 进行连接，即使该 STA 并不发送 OCI 或"
-"协商 PMF."
+"协商 PMF。"
 
 msgid "Workaround mode can only be used when acting as an access point."
 msgstr "权宜模式只能用于接入点 AP 模式。"
 
-msgid "Dynamic Frequency Selection(DFS)"
+msgid "Zero-Wait DFS"
+msgstr "零等待 DFS"
+
+msgid "Dynamic Frequency Selection (DFS)"
 msgstr "动态频率选择（DFS）"
+
+msgid "Enable or disable IEEE 802.11h support (DFS)"
+msgstr "启用或禁用 IEEE 802.11h 以支持（DFS）"
+
+msgid "Advanced Dynamic Frequency Selection (DFS) technology is designed to seamlessly switch DFS channels without interrupting client connections."
+msgstr "高级动态频率选择（DFS）技术，旨在‌无缝切换 DFS 信道而不中断客户端连接‌。"
 
 msgid "Kick low RSSI station threshold"
 msgstr "弱信号剔除阈值"
@@ -149,9 +161,6 @@ msgstr "未覆盖"
 msgid "randomly generated"
 msgstr "随机生成"
 
-msgid "WFA 802.11v Spec"
-msgstr "WFA 802.11v 规范"
-
 msgid "WDS Mode"
 msgstr "WDS 模式"
 
@@ -194,6 +203,33 @@ msgstr "WNM 通知"
 msgid "802.11v: Enable WNM notification."
 msgstr "802.11v: 启用 WNM 通知。"
 
+msgid "The client has successfully disconnected"
+msgstr "客户端已成功断开"
+
+msgid "Failed to disconnect client: %s"
+msgstr "断开客户端失败：%s"
+
+msgid "Disconnect client: %s"
+msgstr "断开客户端：%s"
+
+msgid "Background Scan"
+msgstr "后台扫描"
+
+msgid "Partial scan"
+msgstr "部分扫描"
+
+msgid "Continuous scan"
+msgstr "连续扫描"
+
+msgid "Continuous scan and then switch channel"
+msgstr "连续扫描并切换信道"
+
+msgid "Configures different background scanning methods according to the options."
+msgstr "根据选项，配置不同的后台扫描方式。"
+
+msgid "MWDS feature, used to process those 4-addr of connected APClient or STA."
+msgstr "MWDS功能，用于处理已连接的 AP 客户端或 STA 的4地址帧。"
+
 msgid ""
 "802.11v: Proxy ARP enables non-AP STA to remain in power-save for longer."
 msgstr "802.11v: 代理 ARP 允许非 AP STA 在 power-save 中停留更长时间。"
@@ -202,13 +238,6 @@ msgid ""
 "Name for OpenWrt network configuration. (No relation to wireless network "
 "name/SSID)"
 msgstr "OpenWrt 网络配置名称（和无线网络名/SSID 无关）"
-
-msgid ""
-"WFA 802.11v Spec - If one of the Dot11vMbssid is enabled "
-"the whole MBSSID will follow the 802.11v Spec "
-msgstr ""
-"WFA 802.11v规范-如果启用了其中一个Dot11vMbssid"
-"则整个MBSSID将遵循802.11v规范"
 
 msgid ""
 "Robust Security Network (RSN): Allow roaming preauth for WPA2-EAP networks "

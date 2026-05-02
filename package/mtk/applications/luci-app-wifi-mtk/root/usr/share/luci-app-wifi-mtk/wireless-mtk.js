@@ -711,9 +711,11 @@ return view.extend({
 				timestr
 			];
 
+			/* Add DisConnectSta support by nanchuci */
+			if (table.firstElementChild.childNodes.length < 8)
+				table.firstElementChild.appendChild(E('th', { 'class': 'th cbi-section-actions'}));
+
 			if (bss.network.isClientDisconnectSupported()) {
-				if (table.firstElementChild.childNodes.length < 7)
-					table.firstElementChild.appendChild(E('th', { 'class': 'th cbi-section-actions'}));
 
 				row.push(E('button', {
 					'class': 'cbi-button cbi-button-remove',
@@ -729,7 +731,27 @@ return view.extend({
 				}, [ _('Disconnect') ]));
 			}
 			else {
-				row.push('-');
+				row.push(E('button', {
+					'class': 'cbi-button cbi-button-remove',
+					'click': ui.createHandlerFn(this, function(ev) {
+						var rowElement = dom.parent(ev.currentTarget, '.tr');
+						var button = ev.currentTarget;
+						var ifname = bss.network.getIfname();
+						var mac = bss.mac;
+
+						rowElement.style.opacity = 0.5;
+						button.classList.add('spinning');
+						button.disabled = true;
+
+						var url = "/cgi-bin/luci/admin/kicksta?ifname=" + ifname + "&mac=" + mac;
+						XHR.get(url, {}, function() {
+							button.classList.remove('spinning');
+							button.disabled = false;
+						});
+					}),
+					'disabled': isReadonlyView || null,
+					'title': _('Disconnect client: %s').format(bss.mac)
+				}, [ _('Disconnect') ]));
 			}
 
 			trows.push(row);
@@ -921,6 +943,7 @@ return view.extend({
 			return network.getWifiNetwork(s.section).then(function(radioNet) {
 				var hwtype = uci.get('wireless', radioNet.getWifiDeviceName(), 'type');
 				var band = uci.get('wireless', radioNet.getWifiDeviceName(), 'band');
+				var ifmode = radioNet.getMode();
 				var o, ss;
 
 				o = s.option(form.SectionValue, '_device', form.NamedSection, radioNet.getWifiDeviceName(), 'wifi-device', _('Device Configuration'));
@@ -960,31 +983,31 @@ return view.extend({
 					o.depends({'_freq': '2g', '!contains': true});
 					o.default = o.enabled;
 
-					o = ss.taboption('general', form.Flag, 'vht_1024', _('Enable 1024-QAM'), _('802.11ac/ax 5Ghz Only'));
+					o = ss.taboption('general', form.Flag, 'vht_1024', _('Enable 1024-QAM'), _('802.11ax WiFi6 Only'));
 					o.depends({'_freq': '5g', '!contains': true});
 					o.default = o.enabled;
 
 					o = ss.taboption('general', CBIWifiTxPowerValue, 'txpower', _('Maximum transmit power'), _('Specifies the maximum transmit power the wireless radio may use. Depending on regulatory requirements and wireless usage, the actual transmit power may be reduced by the driver.'));
 					o.wifiNetwork = radioNet;
 
-					/*o = ss.taboption('general', form.ListValue, 'txpower', _('Maximum transmit power'), _('Specifies the maximum transmit power the wireless radio may use. Depending on regulatory requirements and wireless usage, the actual transmit power may be reduced by the driver.'));
-					o.value('100', _('91~100%'));
-					o.value('79', _('61~90%'));
-					o.value('50', _('31~60%'));
-					o.value('25', _('16~30%'));
-					o.value('12', _('10~15%'));
-					o.value('6', _('1~9%'));
-					o.optional = true;
-					o.default  = '100';*/
+					o = ss.taboption('general', form.ListValue, 'bgnd_scantype', _('Background Scan'), _('Configures different background scanning methods according to the options.'));
+					o.value('0', _('Disabled'));
+					o.value('1', _('Partial scan'));
+					o.value('2', _('Continuous scan'));
+					o.value('3', _('Continuous scan and then switch channel'));
 
 					o = ss.taboption('advanced', CBIWifiCountryValue, 'country', _('Country Code'));
 					o.wifiNetwork = radioNet;
 
-					/* o = ss.taboption('advanced', form.ListValue, 'cell_density', _('Coverage cell density'), _('Configures data rates based on the coverage cell density. Normal configures basic rates to 6, 12, 24 Mbps if legacy 802.11b rates are not used else to 5.5, 11 Mbps. High configures basic rates to 12, 24 Mbps if legacy 802.11b rates are not used else to the 11 Mbps rate. Very High configures 24 Mbps as the basic rate. Supported rates lower than the minimum basic rate are not offered.'));
+					o = ss.taboption('advanced', form.ListValue, 'cell_density', _('Coverage cell density'), _('Configures data rates based on the coverage cell density. Normal configures basic rates to 6, 12, 24 Mbps if legacy 802.11b rates are not used else to 5.5, 11 Mbps. High configures basic rates to 12, 24 Mbps if legacy 802.11b rates are not used else to the 11 Mbps rate. Very High configures 24 Mbps as the basic rate. Supported rates lower than the minimum basic rate are not offered.'));
 					o.value('0', _('Disabled'));
 					o.value('1', _('Normal'));
 					o.value('2', _('High'));
-					o.value('3', _('Very High')); */
+					o.value('3', _('Very High'));
+
+					o = ss.taboption('advanced', form.Value, 'distance', _('Distance Optimization'), _('Distance to farthest network member in meters.'));
+					o.datatype = 'or(range(0,114750),"auto")';
+					o.placeholder = 'auto';
 
 					o = ss.taboption('advanced', form.ListValue, 'mu_beamformer', _('MU-MIMO'));
 					o.value('0', _('Disable'));
@@ -992,28 +1015,38 @@ return view.extend({
 					o.value('3', _('Enable for MTK Repeater mode'));
 					o.default = '1';
 
-					/*o = ss.taboption('advanced', form.Value, 'distance', _('Distance Optimization'), _('Distance to farthest network member in meters.'));
-					o.datatype = 'or(range(0,114750),"auto")';
-					o.placeholder = 'auto';*/
-
-					o = ss.taboption('advanced', form.Flag, 'doth', _('802.11h'));
+					o = ss.taboption('advanced', form.Flag, 'doth', _('802.11h'), _('Enable or disable IEEE 802.11h support (DFS)'));
 					o.default = o.disabled;
+					o.rmempty = false;
+					//o.optional = false;
 
-					o = ss.taboption('advanced', form.Flag, 'dfs', _('Dynamic Frequency Selection(DFS)'));
+					o = ss.taboption('advanced', form.Flag, 'dfs', _('DFS'), _('Dynamic Frequency Selection (DFS)'));
+					o.depends({'_freq': '5g', '!contains': true, 'doth': '1'});
 					o.default = o.disabled;
-					o.depends('doth', '1');
+					o.rmempty = false;
+
+					o = ss.taboption('advanced', form.Flag, 'zw_dfs', _('Zero-Wait DFS'), _('Advanced Dynamic Frequency Selection (DFS) technology is designed to seamlessly switch DFS channels without interrupting client connections.'));
+					o.depends({'_freq': '5g', '!contains': true, 'doth': '1'});
+					o.default = o.disabled;
+					o.rmempty = false;
 
 					o = ss.taboption('advanced', form.Flag, 'txburst', _('TxBurst'));
 					o.default = o.enabled;
 
 					o = ss.taboption('advanced', form.Flag, 'whnat', _('Wireless HWNAT'));
 					o.default = o.enabled;
+					o.rmempty = false;
+					o.optional = false;
 
 					o = ss.taboption('advanced', form.Flag, 'mlr', _('Wireless MLR'));
 					o.default = o.disabled;
 
 					o = ss.taboption('advanced', form.Flag, 'bandsteering', _('Band Steering'));
 					o.default = o.disabled;
+
+					o = ss.taboption('advanced', form.Flag, 'short_preamble', _('Short Preamble'));
+					o.default = o.enabled;
+					o.rmempty = false;
 
 					o = ss.taboption('advanced', form.Value, 'maxassoc', _('Connection Limit'), _('The default number of single frequency connections for drivers is 64'));
 					o.optional = true;
@@ -1210,12 +1243,8 @@ return view.extend({
 					o.value('4', _('Cert'));
 					o.default = '0';
 
-					o = ss.taboption('general', form.Flag, 'mwds', _('MWDS'));
+					o = ss.taboption('general', form.Flag, 'mwds', _('MWDS'), _('MWDS feature, used to process those 4-addr of connected APClient or STA.'));
 					o.depends('mode', 'ap');
-					o.depends('mode', 'sta');
-					o.default = o.disabled;
-
-					o = ss.taboption('general', form.Flag, 'apclipe', _('APCLI interface Random MAC'), _('When enabled, the ApCli interface Mac address changes randomly.'));
 					o.depends('mode', 'sta');
 					o.default = o.disabled;
 
@@ -1259,6 +1288,7 @@ return view.extend({
 					o = ss.taboption('advanced', form.Flag, 'isolate', _('Isolate Clients'), _('Prevents client-to-client communication'));
 					o.depends('mode', 'ap');
 					o.depends('mode', 'ap-wds');
+					o.default = o.disabled;
 
 					/* o = ss.taboption('advanced', form.Value, 'ifname', _('Interface name'), _('Override default interface name'));
 					o.optional = true;
@@ -1275,10 +1305,6 @@ return view.extend({
 					o.depends('mode', 'ap');
 					o.depends('mode', 'sta');
 					o.depends('mode', 'wds');
-
-					o = ss.taboption('advanced', form.Flag, 'short_preamble', _('Short Preamble'));
-					o.default = o.enabled;
-					o.depends('mode', 'ap');
 
 					o = ss.taboption('advanced', form.Value, 'frag', _('Fragmentation Threshold'));
 					o.datatype = 'min(256)';
@@ -1332,33 +1358,41 @@ return view.extend({
 					o.depends('mode', 'ap');
 					o.depends('mode', 'sta');
 					o.default = o.disabled;
+					o.rmempty = false;
 
 					o = ss.taboption('advanced', form.Flag, 'mumimo_ul', _('MU-MIMO UL'));
 					o.depends('mode', 'ap');
 					o.depends('mode', 'sta');
 					o.default = o.disabled;
+					o.rmempty = false;
 
 					o = ss.taboption('advanced', form.Flag, 'ofdma_dl', _('OFDMA DL'));
 					o.depends('mode', 'ap');
 					o.depends('mode', 'sta');
 					o.default = o.enabled;
+					o.rmempty = false;
 
 					o = ss.taboption('advanced', form.Flag, 'ofdma_ul', _('OFDMA UL'));
 					o.depends('mode', 'ap');
 					o.depends('mode', 'sta');
 					o.default = o.enabled;
+					o.rmempty = false;
 
 					o = ss.taboption('advanced', form.Flag, 'amsdu', _('A-MSDU'));
 					o.depends('mode', 'ap');
 					o.default = o.enabled;
+					o.rmempty = false;
 
 					o = ss.taboption('advanced', form.Flag, 'autoba', _('Auto Block ACK'));
 					o.depends('mode', 'ap');
 					o.default = o.enabled;
+					o.rmempty = false;
 
 					o = ss.taboption('advanced', form.Flag, 'uapsd', _('U-APSD'));
 					o.depends('mode', 'ap');
+					o.depends('mode', 'sta');
 					o.default = o.enabled;
+					o.rmempty = false;
 
 					o = ss.taboption('advanced', form.Flag, 'disassoc_low_ack', _('Disassociate On Low Acknowledgement'), _('Allow AP mode to disconnect STAs based on low ACK condition'));
 					o.default = o.disabled;
@@ -1413,9 +1447,7 @@ return view.extend({
 				o = ss.taboption('encryption', form.ListValue, 'cipher', _('Cipher'));
 				o.depends('encryption', 'wpa');
 				o.depends('encryption', 'wpa2');
-				o.depends('encryption', 'wpa3');
-				o.depends('encryption', 'wpa3-mixed');
-				o.depends('encryption', 'wpa3-192');
+				o.depends('encryption', 'sae');
 				o.depends('encryption', 'psk');
 				o.depends('encryption', 'psk2');
 				o.depends('encryption', 'wpa-mixed');
@@ -1444,14 +1476,7 @@ return view.extend({
 
 				var crypto_modes = [];
 
-				if (hwtype == 'broadcom') {
-					crypto_modes.push(['psk2',     'WPA2-PSK',                    33]);
-					crypto_modes.push(['psk+psk2', 'WPA-PSK/WPA2-PSK Mixed Mode', 22]);
-					crypto_modes.push(['psk',      'WPA-PSK',                     12]);
-					crypto_modes.push(['wep-open',   _('WEP Open System'),        11]);
-					crypto_modes.push(['wep-shared', _('WEP Shared Key'),         10]);
-				}
-				else if (hwtype == 'mtk') {
+				if (hwtype == 'mtk') {
 					crypto_modes.push(['wpa3-192', 'WPA3-EAP 192-bit Mode', 36]);
 					crypto_modes.push(['wpa3', 'WPA3-EAP', 33]);
 					crypto_modes.push(['sae',       'WPA3-SAE',                     31]);
@@ -1708,35 +1733,27 @@ return view.extend({
 					o.default = o.enabled;
 					o.depends({ ieee80211k: '1' });
 					o.rmempty = true;
-					// End of 802.11k options
+					// End of 802.11k options*/
 
 					// Probe 802.11v support
-					//o = ss.taboption('encryption', form.Flag, 'ieee80211v', _('802.11v'), _('Enables 802.11v allows client devices to exchange information about the network topology,tating overall improvement of the wireless network.'));
-					//o.depends('mode', 'ap');
-					//o.rmempty = true;
-
-					o = ss.taboption('encryption', form.Flag, 'wnm_sleep_mode', _('extended sleep mode for stations'));
-					o.default = o.enabled;
+					o = ss.taboption('encryption', form.Flag, 'bss_transition', _('BSS Transition Management'), _('802.11v: Basic Service Set (BSS) transition management.'));
+					o.depends('mode', 'ap');
+					o.default = o.disabled;
 					//o.depends({ ieee80211v: '1' });
 					o.rmempty = true;
 
 					o = ss.taboption('encryption', form.ListValue, 'time_advertisement', _('Time advertisement'));
-					//o.depends({ ieee80211v: '1' });
-					o.value('0', _('disabled'));
+					add_dependency_permutations(o, { bss_transition: ['1'], mode: ['ap'] });
+					o.value('0', _('Disabled'));
 					o.value('2', _('UTC time at which the TSF timer is 0'));
 					o.write = function (section_id, value) {
 						return this.super('write', [section_id, (value == 2) ? value: null]);
 					}
 
-					o = ss.taboption('encryption', form.Value, 'time_zone', _('Local time zone as specified in 8.3 of IEEE Std 1003.1-2004'));
-					o.depends({ time_advertisement: '2' });
+					//Pull current System TZ setting
+					o = ss.taboption('encryption', form.Value, 'time_zone', _('Time zone'), _('Local time zone as specified in 8.3 of IEEE Std 1003.1-2004'));
+					add_dependency_permutations(o, { time_advertisement: ['2'], mode: ['ap'] });
 					o.placeholder = 'UTC8';
-					o.rmempty = true; */
-
-					o = ss.taboption('encryption', form.Flag, 'bss_transition', _('BSS Transition Management'), _('802.11v: Basic Service Set (BSS) transition management.'));
-					o.depends('mode', 'ap');
-					o.default = o.disabled;
-					//o.depends({ ieee80211v: '1' });
 					o.rmempty = true;
 
 					o = ss.taboption('encryption', form.Flag, 'wnm_notify', _('WNMNotify'), _('802.11v: Enable WNM notification.'));
@@ -1751,11 +1768,11 @@ return view.extend({
 					// End of 802.11v options*/
 
 					// Probe 802.11r support (and EAP support as a proxy for Openwrt)
-					var has_80211r = L.hasSystemFeature('hostapd', '11r') || L.hasSystemFeature('hostapd', 'eap');
+					//var has_80211r = L.hasSystemFeature('hostapd', '11r') || L.hasSystemFeature('hostapd', 'eap');
 
 					o = ss.taboption('encryption', form.Flag, 'ieee80211r', _('802.11r Fast Transition'), _('Enables fast roaming among access points that belong to the same Mobility Domain'));
 					add_dependency_permutations(o, { mode: ['ap'], encryption: ['wpa', 'wpa-mixed', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
-					if (has_80211r)
+					//if (has_80211r)
 						add_dependency_permutations(o, { mode: ['ap'], encryption: ['psk', 'psk2', 'psk-mixed', 'sae', 'sae-mixed'] });
 					o.rmempty = true;
 
@@ -1783,10 +1800,10 @@ return view.extend({
 					o.value('1', _('FT over DS'));
 					o.rmempty = true;
 
-					o = ss.taboption('encryption', form.Flag, 'ft_psk_generate_local', _('Generate PMK locally'), _('When using a PSK, the PMK can be automatically generated. When enabled, the R0/R1 key options below are not applied. Disable this to use the R0 and R1 key options.'));
-					add_dependency_permutations(o, { ieee80211r: ['1'], mode: ['ap'], encryption: ['psk2', 'psk-mixed'] });
-					o.default = o.enabled;
-					o.rmempty = false;
+					/*o = ss.taboption('encryption', form.Flag, 'ft_psk_generate_local', _('Generate PMK locally'), _('When using a PSK, the PMK can be automatically generated. When enabled, the R0/R1 key options below are not applied. Disable this to use the R0 and R1 key options.'));
+					add_dependency_permutations(o, { ieee80211r: ['1'], mode: ['ap', 'ap-wds'], encryption: ['psk2', 'psk-mixed'] });
+					o.default = o.disabled;
+					o.rmempty = false; */
 
 					o = ss.taboption('encryption', form.Value, 'r0_key_lifetime', _('R0 Key Lifetime'), _('minutes'));
 					o.depends({ ieee80211r: '1' });
@@ -1820,7 +1837,7 @@ return view.extend({
 						o.value('0', _('Disabled'));
 						o.value('1', _('Optional'));
 						o.value('2', _('Required'));
-						add_dependency_permutations(o, { mode: ['ap'], encryption: ['owe', 'psk2', 'psk-mixed', 'sae', 'sae-mixed', 'wpa-mixed', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
+						add_dependency_permutations(o, { mode: ['ap', 'sta'], encryption: ['owe', 'psk2', 'psk-mixed', 'sae', 'sae-mixed', 'wpa-mixed', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 
 						o.defaults = {
 							'2': [{ encryption: 'sae' }, { encryption: 'owe' }, { encryption: 'wpa3' }, { encryption: 'wpa3-192' }],
@@ -1835,7 +1852,7 @@ return view.extend({
 								return form.ListValue.prototype.remove.call(this, section_id);
 						};
 
-						/*o = ss.taboption('encryption', form.Value, 'ieee80211w_max_timeout', _('802.11w maximum timeout'), _('802.11w Association SA Query maximum timeout'));
+						o = ss.taboption('encryption', form.Value, 'ieee80211w_max_timeout', _('802.11w maximum timeout'), _('802.11w Association SA Query maximum timeout'));
 						o.depends('ieee80211w', '1');
 						o.depends('ieee80211w', '2');
 						o.datatype = 'uinteger';
@@ -1847,7 +1864,7 @@ return view.extend({
 						o.depends('ieee80211w', '2');
 						o.datatype = 'uinteger';
 						o.placeholder = '201';
-						o.rmempty = true; */
+						o.rmempty = true;
 
 						o = ss.taboption('encryption', form.ListValue, 'ocv', _('Operating Channel Validation'), _("Note: Workaround mode allows a STA that claims OCV capability to connect even if the STA doesn't send OCI or negotiate PMF."));
 						o.value('0', _('Disabled'));
