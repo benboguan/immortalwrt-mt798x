@@ -1,6 +1,6 @@
 --- a/mt_wifi/embedded/common/multi_profile.c
 +++ b/mt_wifi/embedded/common/multi_profile.c
-@@ -1767,9 +1767,9 @@ static INT multi_profile_merge_mbss(
+@@ -1771,9 +1771,9 @@ static INT multi_profile_merge_mbss(
  	/*merge security*/
  	multi_profile_merge_security(ad, data, buf1, buf2, final);
  	/*merge WmmCapable*/
@@ -12,7 +12,7 @@
  	/*merge StationKeepAlive*/
  	multi_profile_merge_perbss(data, "StationKeepAlive", buf1, buf2, final, MPF_APPEND_BSS0);
  	/*merge HideSSID*/
-@@ -3628,6 +3628,21 @@ #ifdef TXBF_SUPPORT
+@@ -3636,6 +3636,21 @@ #ifdef TXBF_SUPPORT
  
  	return NDIS_STATUS_SUCCESS;
  }
@@ -34,7 +34,7 @@
  #endif /* DOT11_HE_AX */
  #endif /* TXBF_SUPPORT */
  #endif /* n MBSS_SUPPORT */
-@@ -3649,12 +3664,13 @@
+@@ -3657,12 +3672,13 @@
  
  #ifdef MWDS
  static INT multi_profile_merge_mwds(
@@ -49,7 +49,7 @@
  	/*merge ApCliMWDS*/
  	multi_profile_merge_separate("ApCliMWDS", buf1, buf2, final);
  	return NDIS_STATUS_SUCCESS;
-@@ -3747,6 +3763,14 @@ static INT multi_profile_merge_ft(
+@@ -3755,6 +3771,14 @@ static INT multi_profile_merge_ft(
  {
  	/*merge FtMdId*/
  	multi_profile_merge_increase(data, 1, "FtMdId", buf1, buf2, final);
@@ -64,7 +64,7 @@
  	/*merge FtSupport */
  	multi_profile_merge_perbss(data, "FtSupport", buf1, buf2, final, MPF_APPEND_BSS0);
  	/*merge FtOnly */
-@@ -3766,12 +3790,28 @@ static INT multi_profile_merge_rrm(
+@@ -3774,12 +3798,28 @@ static INT multi_profile_merge_rrm(
  	CHAR *buf2,
  	CHAR *final)
  {
@@ -95,7 +95,7 @@
  #ifdef DSCP_PRI_SUPPORT
  INT multi_profile_merge_dscp_pri(
  	struct mpf_data *data,
-@@ -4086,6 +4126,11 @@
+@@ -4094,6 +4134,11 @@
  	if (multi_profile_merge_ersu(buf1, buf2, final) != NDIS_STATUS_SUCCESS)
  		return retval;
  #endif /* DOT11_HE_AX */
@@ -107,7 +107,7 @@
  
  #ifdef DYNAMIC_WMM_SUPPORT
  	if multi_profile_merge_separate("DynWmmEnable", buf1, buf2, final) != NDIS_STATUS_SUCCESS)
-@@ -4110,7 +4154,7 @@
+@@ -4118,7 +4162,7 @@
  #endif /* LINK_TEST_SUPPORT */
  
  #ifdef MWDS
@@ -116,7 +116,7 @@
  		return retval;
  #endif
  
-@@ -4147,6 +4192,11 @@ #ifdef DOT11K_RRM_SUPPORT
+@@ -4155,6 +4200,11 @@ #ifdef DOT11K_RRM_SUPPORT
  		return retval;
  #endif
  
