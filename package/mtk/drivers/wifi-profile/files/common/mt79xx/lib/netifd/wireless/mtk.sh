@@ -59,7 +59,7 @@ drv_mtk_init_device_config() {
 	config_add_string distance
 	config_add_int beacon_int chanbw vendor_vht vht_1024 mu_beamformer whnat mlr short_preamble
 	config_add_int rxantenna txantenna antenna_gain txpower min_tx_power
-	config_add_int num_global_macaddr multiple_bssid cell_density bgnd_scantype
+	config_add_int num_global_macaddr multiple_bssid cell_density
 	config_add_int powersave maxassoc
 	config_add_boolean greenap diversity noscan ht_coex acs_exclude_dfs background_radar legacy_rates
 	config_add_boolean hidessid bndstrg isolate dfs bandsteering band noscan txburst doth dfs zw_dfs
@@ -80,9 +80,9 @@ drv_mtk_init_iface_config() {
 
 	config_add_boolean wmm wnm_sleep_mode bss_transition proxy_arp mbo rrm_neighbor_report rrm_beacon_report pmk_r1_push
 	config_add_int frag rts dtim_period wpa_group_rekey rsn_preauth ocv
-	config_add_int max_listen_int ieee80211w ieee80211w_max_timeout ieee80211w_retry_timeout time_advertisement 'port:port'
+	config_add_int max_listen_int ieee80211w ieee80211w_max_timeout ieee80211w_retry_timeout 'port:port'
 	config_add_int disassoc_low_ack kicklow assocthres
-	config_add_string wdsenctype wdskey wdsphymode macaddr time_zone
+	config_add_string wdsenctype wdskey wdsphymode macaddr
 	config_add_int wdsen mumimo_dl mumimo_ul ofdma_dl ofdma_ul uapsd start_disabled
 }
 
@@ -184,9 +184,9 @@ mtk_ap_vif_pre_config() {
 			crypto="AES"
 			case "$encryption" in
 				*tkipaes*|*tkip+ccmp*|*tkip+aes*|*aes+tkip*|*ccmp+tkip*) crypto="TKIPAES" ;;
+				*aes+gcmp256*|*ccmp+gcmp256*) crypto="AES_GCMP256" ;;
 				*gcmp256*) crypto="GCMP256" ;;
 				*ccmp256*) crypto="CCMP256" ;;
-				*aes+gcmp256*|*ccmp128+gcmp256*) crypto="AES_GCMP256" ;;
 				*gcmp*|*gcmp128*) crypto="GCMP128" ;;
 				*aes*|*ccmp*|*ccmp128*) crypto="AES" ;;
 				*tkip*) crypto="TKIP" ;;
@@ -265,8 +265,6 @@ mtk_ap_vif_pre_config() {
 	ApRRMNeighbor="${ApRRMNeighbor}${rrm_neighbor_report:-0};"
 	ApWNMEnable="${ApWNMEnable}${bss_transition:-0};"
 	ApWNMNotifyEnable="${ApWNMNotifyEnable}${wnm_notify:-0};"
-	ApTimeadvertisement="${ApTimeadvertisement}${time_advertisement:-0};"
-	ApTimezone="${ApTimezone}${time_zone};"
 	ApARP="${ApARP}${proxy_arp:-0};"
 	ApFtSupport="${ApFtSupport}${ieee80211r:-0};"
 	ApFtOtd="${ApFtOtd}${ft_over_ds:-0};"
@@ -280,7 +278,6 @@ mtk_ap_vif_pre_config() {
 	Apamsdu="${Apamsdu}${amsdu:-1};"
 	Apautoba="${Apautoba}${autoba:-1};"
 	Apuapsd="${Apuapsd}${uapsd:-1};"
-	Apocv="${Apocv}${ocv:-0};"
 	
 	{
 		echo "FtMdId${config_index}=${mobility_domain:-4f57}"
@@ -300,6 +297,12 @@ mtk_ap_vif_pre_config() {
 	else
 		ApPMFMFPC="${ApPMFMFPC}0;"
 		ApPMFMFPR="${ApPMFMFPR}0;"
+	fi
+
+	if [ "$ieee80211w" != "0" ]; then
+		Apw_max_timeout="${Apw_max_timeout}${ieee80211w_max_timeout:-1000};"
+		Apw_retry_timeout="${Apw_retry_timeout}${ieee80211w_retry_timeout:-201};"
+		Apocv="${Apocv}${ocv:-0};"
 	fi
 
 	if [ "$wps_pushbutton" = "1" ] && [ "$encryption" != "none" ]; then
@@ -438,6 +441,7 @@ mtk_sta_vif_pre_config() {
 			crypto="AES"
 			case "$encryption" in
 				*tkipaes*|*tkip+ccmp*|*tkip+aes*|*aes+tkip*|*ccmp+tkip*) crypto="TKIPAES" ;;
+				*aes+gcmp256*|*ccmp+gcmp256*) crypto="AES_GCMP256" ;;
 				*gcmp256*) crypto="GCMP256" ;;
 				*ccmp256*) crypto="CCMP256" ;;
 				*gcmp*|*gcmp128*) crypto="GCMP128" ;;
@@ -529,6 +533,12 @@ mtk_sta_vif_pre_config() {
 	else
 		ApCliPMFMFPC="${ApCliPMFMFPC:-0}"
 		ApCliPMFMFPR="${ApCliPMFMFPR:-0}"
+	fi
+
+	if [ "$ieee80211w" != "0" ]; then
+		ApCliSAQueryTimer="${ieee80211w_max_timeout:-1000}"
+		ApCliSAQueryConfirmTimer="${ieee80211w_retry_timeout:-201}"
+		ApCliOCVSupport="${ocv:-0}"
 	fi
 
 	ApCliMWDS="${mwds:-0}"
@@ -642,7 +652,7 @@ is_ax6000_dev() {
 }
 
 mtk_vif_down() {
-	phy_name=${1}
+	local phy_name=${1}
 	case "$phy_name" in
 		rax0)
 			for vif in ra0 ra1 ra2 ra3 ra4 ra5 ra6 ra7 ra8 ra9 ra10 \
@@ -656,12 +666,11 @@ mtk_vif_down() {
 				[ -d "/sys/class/net/$vif" ] && ifconfig $vif down 2>/dev/null
 			done
 		;;
-		*) return ;;
 	esac
 }
 
 drv_mtk_teardown() {
-	phy_name=${1}
+	local phy_name=${1}
 	case "$phy_name" in
 		ra0)
 			for vif in ra0 ra1 ra2 ra3 ra4 ra5 ra6 ra7 ra8 ra9 ra10 \
@@ -675,7 +684,6 @@ drv_mtk_teardown() {
 				[ -d "/sys/class/net/$vif" ] && ifconfig $vif down 2>/dev/null
 			done
 		;;
-		*) return ;;
 	esac
 }
 
@@ -701,7 +709,6 @@ drv_mtk_setup() {
 			legacy_rates:0 \
 			maxassoc:64 \
 			distance:auto \
-			bgnd_scantype:0 \
 			beacon_int:100 \
 			greenfield:0 \
 			short_gi_20:1 \
@@ -801,7 +808,6 @@ drv_mtk_setup() {
 	HT_HTC=1
 	case "$band" in
 		5g)
-			band_idx=1
 			case "$htmode" in
 				HE160|HE80|HE40|HE20) WirelessMode=17; HT_BAWinSize=256 ;;
 				VHT160|VHT80|VHT40|VHT20) WirelessMode=14; HT_BAWinSize=64 ;;
@@ -810,7 +816,6 @@ drv_mtk_setup() {
 			esac
 			;;
 		2g)
-			band_idx=0
 			case "$htmode" in
 				HE40|HE20) WirelessMode=16; HT_BAWinSize=256 ;;
 				HT40|HT20) WirelessMode=9; HT_BAWinSize=64 ;;
@@ -842,13 +847,6 @@ drv_mtk_setup() {
 #HT HTC
 		HT_HTC=1
 	}
-
-#Background Scan
-	if [ "$bgnd_scantype" = "0" ]; then
-		BgndScanType=0
-	else
-		BgndScanType=$((band_idx * 16 + bgnd_scantype))
-	fi
 
 #distance距离优化
 	if [ -n "$distance" ] && [ "$distance" != "auto" ]; then
@@ -1004,7 +1002,6 @@ BasicRate=${basic_rate:-15}
 BeaconPeriod=${beacon_int:-100}
 BFBACKOFFenable=0
 BgndScanSkipCh=
-BgndScanType=${BgndScanType:-0}
 BGProtection=${legacy_rates:-0}
 BndStrgBssIdx=${bandsteering}
 BSSACM=0;0;0;0
@@ -1329,8 +1326,6 @@ EOF
 	ApPMFMFPC=""
 	ApPMFMFPR=""
 	ApWNMEnable=""
-	ApTimeadvertisement=""
-	ApTimezone=""
 	ApWNMNotifyEnable=""
 	ApARP=""
 	ApFtOtd=""
@@ -1345,6 +1340,8 @@ EOF
 	Apamsdu=""
 	Apautoba=""
 	Apuapsd=""
+	Apw_max_timeout=""
+	Apw_retry_timeout=""
 	Apocv=""
 	ApIEEE8021X=""
 	ApWscConfMode=""
@@ -1378,8 +1375,6 @@ EOF
 		echo "RekeyMethod=${ApRekeyMethod%?}"
 		echo "WNMEnable=${ApWNMEnable%?}"
 		echo "WNMNotifyEnable=${ApWNMNotifyEnable%?}"
-		echo "Timeadvertisement=${ApTimeadvertisement%?}"
-		echo "Timezone=${ApTimezone%?}"
 		echo "ProxyARPEnable=${ApARP%?}"
 		echo "RRMEnable=${ApRRMEnable%?}"
 		echo "RRMNeighbor=${ApRRMNeighbor%?}"
@@ -1393,6 +1388,8 @@ EOF
 		echo "HT_AMSDU=${Apamsdu%?}"
 		echo "HT_AutoBA=${Apautoba%?}"
 		echo "APSDCapable=${Apuapsd%?}"
+		echo "SAQueryTimer=${Apw_max_timeout%?}"
+		echo "SAQueryConfirmTimer=${Apw_retry_timeout%?}"
 		echo "OCVSupport=${Apocv%?}"
 		echo "IEEE8021X=${ApIEEE8021X%?}"
 		echo "PMFMFPC=${ApPMFMFPC%?}"
@@ -1460,6 +1457,8 @@ EOF
 	ApCliMuOfdmaDlEnable=""
 	ApCliMuOfdmaUlEnable=""
 	ApCliUAPSDCapable=""
+	ApCliSAQueryTimer=""
+	ApCliSAQueryConfirmTimer=""
 	ApCliOCVSupport=""
 	for_each_interface "sta" mtk_sta_vif_pre_config
 
@@ -1490,6 +1489,8 @@ EOF
 		echo "ApCliMuOfdmaDlEnable=${ApCliMuOfdmaDlEnable:-1}"
 		echo "ApCliMuOfdmaUlEnable=${ApCliMuOfdmaUlEnable:-1}"
 		echo "ApCliUAPSDCapable=${ApCliUAPSDCapable:-1}"
+		echo "ApCliSAQueryTimer=${ApCliSAQueryTimer:-1000}"
+		echo "ApCliSAQueryConfirmTimer=${ApCliSAQueryConfirmTimer:-201}"
 		echo "ApCliOCVSupport=${ApCliOCVSupport:-0}"
 	} >> "$MTWIFI_PROFILE_PATH"
 
