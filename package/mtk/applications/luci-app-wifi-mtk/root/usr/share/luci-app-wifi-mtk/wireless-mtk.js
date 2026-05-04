@@ -942,7 +942,6 @@ return view.extend({
 			return network.getWifiNetwork(s.section).then(function(radioNet) {
 				var hwtype = uci.get('wireless', radioNet.getWifiDeviceName(), 'type');
 				var band = uci.get('wireless', radioNet.getWifiDeviceName(), 'band');
-				var ifmode = radioNet.getMode();
 				var o, ss;
 
 				o = s.option(form.SectionValue, '_device', form.NamedSection, radioNet.getWifiDeviceName(), 'wifi-device', _('Device Configuration'));
@@ -986,16 +985,10 @@ return view.extend({
 					o.depends({'_freq': '5g', '!contains': true});
 					o.default = o.enabled;
 
-					o = ss.taboption('general', CBIWifiTxPowerValue, 'txpower', _('Maximum transmit power'), _('Specifies the maximum transmit power the wireless radio may use. Depending on regulatory requirements and wireless usage, the actual transmit power may be reduced by the driver.'));
+					o = ss.taboption('general', CBIWifiCountryValue, 'country', _('Country Code'));
 					o.wifiNetwork = radioNet;
 
-					o = ss.taboption('general', form.ListValue, 'bgnd_scantype', _('Background Scan'), _('Configures different background scanning methods according to the options.'));
-					o.value('0', _('Disabled'));
-					o.value('1', _('Partial scan'));
-					o.value('2', _('Continuous scan'));
-					o.value('3', _('Continuous scan and then switch channel'));
-
-					o = ss.taboption('advanced', CBIWifiCountryValue, 'country', _('Country Code'));
+					o = ss.taboption('general', CBIWifiTxPowerValue, 'txpower', _('Maximum transmit power'), _('Specifies the maximum transmit power the wireless radio may use. Depending on regulatory requirements and wireless usage, the actual transmit power may be reduced by the driver.'));
 					o.wifiNetwork = radioNet;
 
 					o = ss.taboption('advanced', form.ListValue, 'cell_density', _('Coverage cell density'), _('Configures data rates based on the coverage cell density. Normal configures basic rates to 6, 12, 24 Mbps if legacy 802.11b rates are not used else to 5.5, 11 Mbps. High configures basic rates to 12, 24 Mbps if legacy 802.11b rates are not used else to the 11 Mbps rate. Very High configures 24 Mbps as the basic rate. Supported rates lower than the minimum basic rate are not offered.'));
@@ -1741,20 +1734,6 @@ return view.extend({
 					//o.depends({ ieee80211v: '1' });
 					o.rmempty = true;
 
-					o = ss.taboption('encryption', form.ListValue, 'time_advertisement', _('Time advertisement'));
-					add_dependency_permutations(o, { bss_transition: ['1'], mode: ['ap'] });
-					o.value('0', _('Disabled'));
-					o.value('2', _('UTC time at which the TSF timer is 0'));
-					o.write = function (section_id, value) {
-						return this.super('write', [section_id, (value == 2) ? value: null]);
-					}
-
-					//Pull current System TZ setting
-					o = ss.taboption('encryption', form.Value, 'time_zone', _('Time zone'), _('Local time zone as specified in 8.3 of IEEE Std 1003.1-2004'));
-					add_dependency_permutations(o, { time_advertisement: ['2'], mode: ['ap'] });
-					o.placeholder = 'UTC8';
-					o.rmempty = true;
-
 					o = ss.taboption('encryption', form.Flag, 'wnm_notify', _('WNMNotify'), _('802.11v: Enable WNM notification.'));
 					add_dependency_permutations(o, { bss_transition: ['1'], mode: ['ap'] });
 					o.default = o.disabled;
@@ -1851,7 +1830,7 @@ return view.extend({
 								return form.ListValue.prototype.remove.call(this, section_id);
 						};
 
-						/*o = ss.taboption('encryption', form.Value, 'ieee80211w_max_timeout', _('802.11w maximum timeout'), _('802.11w Association SA Query maximum timeout'));
+						o = ss.taboption('encryption', form.Value, 'ieee80211w_max_timeout', _('802.11w maximum timeout'), _('802.11w Association SA Query maximum timeout'));
 						o.depends('ieee80211w', '1');
 						o.depends('ieee80211w', '2');
 						o.datatype = 'uinteger';
@@ -1863,7 +1842,7 @@ return view.extend({
 						o.depends('ieee80211w', '2');
 						o.datatype = 'uinteger';
 						o.placeholder = '201';
-						o.rmempty = true; */
+						o.rmempty = true;
 
 						o = ss.taboption('encryption', form.ListValue, 'ocv', _('Operating Channel Validation'), _("Note: Workaround mode allows a STA that claims OCV capability to connect even if the STA doesn't send OCI or negotiate PMF."));
 						o.value('0', _('Disabled'));

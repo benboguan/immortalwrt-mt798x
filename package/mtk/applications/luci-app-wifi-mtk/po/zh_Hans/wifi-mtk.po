@@ -212,21 +212,6 @@ msgstr "断开客户端失败：%s"
 msgid "Disconnect client: %s"
 msgstr "断开客户端：%s"
 
-msgid "Background Scan"
-msgstr "后台扫描"
-
-msgid "Partial scan"
-msgstr "部分扫描"
-
-msgid "Continuous scan"
-msgstr "连续扫描"
-
-msgid "Continuous scan and then switch channel"
-msgstr "连续扫描并切换信道"
-
-msgid "Configures different background scanning methods according to the options."
-msgstr "根据选项，配置不同的后台扫描方式。"
-
 msgid "MWDS feature, used to process those 4-addr of connected APClient or STA."
 msgstr "MWDS功能，用于处理已连接的 AP 客户端或 STA 的4地址帧。"
 
