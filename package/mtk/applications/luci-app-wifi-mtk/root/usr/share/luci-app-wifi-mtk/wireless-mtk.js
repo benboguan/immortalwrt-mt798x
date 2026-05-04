@@ -716,7 +716,6 @@ return view.extend({
 				table.firstElementChild.appendChild(E('th', { 'class': 'th cbi-section-actions'}));
 
 			if (bss.network.isClientDisconnectSupported()) {
-
 				row.push(E('button', {
 					'class': 'cbi-button cbi-button-remove',
 					'click': L.bind(function(net, mac, ev) {
@@ -1852,7 +1851,7 @@ return view.extend({
 								return form.ListValue.prototype.remove.call(this, section_id);
 						};
 
-						o = ss.taboption('encryption', form.Value, 'ieee80211w_max_timeout', _('802.11w maximum timeout'), _('802.11w Association SA Query maximum timeout'));
+						/*o = ss.taboption('encryption', form.Value, 'ieee80211w_max_timeout', _('802.11w maximum timeout'), _('802.11w Association SA Query maximum timeout'));
 						o.depends('ieee80211w', '1');
 						o.depends('ieee80211w', '2');
 						o.datatype = 'uinteger';
@@ -1864,7 +1863,7 @@ return view.extend({
 						o.depends('ieee80211w', '2');
 						o.datatype = 'uinteger';
 						o.placeholder = '201';
-						o.rmempty = true;
+						o.rmempty = true; */
 
 						o = ss.taboption('encryption', form.ListValue, 'ocv', _('Operating Channel Validation'), _("Note: Workaround mode allows a STA that claims OCV capability to connect even if the STA doesn't send OCI or negotiate PMF."));
 						o.value('0', _('Disabled'));
