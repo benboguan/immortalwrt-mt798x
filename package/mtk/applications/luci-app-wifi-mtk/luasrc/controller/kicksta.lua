@@ -12,5 +12,5 @@ function action_kicksta()
 		return
 	end
 	os.execute(string.format("iwpriv %s set DisConnectSta=%s", ifname, mac))
-	luci.http.write("ok")
+	luci.http.write("debug: ifname=" .. tostring(ifname) .. " mac=" .. tostring(mac))
 end

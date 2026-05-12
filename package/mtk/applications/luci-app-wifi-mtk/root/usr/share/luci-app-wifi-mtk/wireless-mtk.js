@@ -730,26 +730,27 @@ return view.extend({
 				}, [ _('Disconnect') ]));
 			}
 			else {
+				const staIfname = bss.network.getIfname();
+				const staMac = bss.mac;
+
 				row.push(E('button', {
 					'class': 'cbi-button cbi-button-remove',
 					'click': ui.createHandlerFn(this, function(ev) {
 						var rowElement = dom.parent(ev.currentTarget, '.tr');
 						var button = ev.currentTarget;
-						var ifname = bss.network.getIfname();
-						var mac = bss.mac;
 
 						rowElement.style.opacity = 0.5;
 						button.classList.add('spinning');
 						button.disabled = true;
 
-						var url = "/cgi-bin/luci/admin/kicksta?ifname=" + ifname + "&mac=" + mac;
+						var url = "/cgi-bin/luci/admin/kicksta?ifname=" + staIfname + "&mac=" + staMac;
 						XHR.get(url, {}, function() {
 							button.classList.remove('spinning');
 							button.disabled = false;
 						});
 					}),
 					'disabled': isReadonlyView || null,
-					'title': _('Disconnect client: %s').format(bss.mac)
+					'title': _('Disconnect client: %s').format(staMac)
 				}, [ _('Disconnect') ]));
 			}
 
