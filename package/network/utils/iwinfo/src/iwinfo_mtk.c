@@ -631,7 +631,7 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 		if (chband == MTK_CH_BAND_24G)
 			e->signal = MAX(pe->AvgRssi0, pe->AvgRssi1);
 		else
-			e->signal = MAX(pe->AvgRssi0, MAX(pe->AvgRssi1, pe->AvgRssi2));
+			e->signal = (pe->AvgRssi2 > -70) ? pe->AvgRssi2 : MAX(pe->AvgRssi2, MAX(pe->AvgRssi0, pe->AvgRssi1));
 		e->signal_avg = pe->AvgRssi1;
 		e->noise = pe->AvgRssi1 - 19;
 		e->inactive = pe->InactiveTime;
