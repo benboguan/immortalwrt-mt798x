@@ -651,6 +651,30 @@ is_ax6000_dev() {
 	grep -q "mt7986-ax6000" /etc/wireless/l1profile.dat 2>/dev/null && echo yes
 }
 
+get_mtwifi_base() {
+	local phy="$1"
+	local suffix
+	case "$phy" in
+		ra0) suffix="b0" ;;
+		rax0) suffix="b1" ;;
+		*) return 1 ;;
+	esac
+	if is_ax4200_dev; then
+		echo "mt7986-ax4200.dbdc.${suffix}"
+	elif is_ax6000_dev; then
+		echo "mt7986-ax6000.dbdc.${suffix}"
+	else
+		echo "mt7981.dbdc.${suffix}"
+	fi
+}
+
+get_mtwifi_cmd_path() {
+	local phy="$1"
+	local base
+	base=$(get_mtwifi_base "$phy") || return 1
+	echo "${MTWIFI_PROFILE_DIR}${base}.cmd.sh"
+}
+
 mtk_vif_down() {
 	local phy_name=${1}
 	case "$phy_name" in
@@ -1574,8 +1598,32 @@ EOF
 	# startwapp.sh start
 	
 #解锁
+	# 解锁
 	lock -u "$WIFI_OP_LOCK"
 	echo "WiFi reload completed successfully"
+
+	# --- 修复：mtk_vif_down 交叉关闭对端射频后，netifd 不会自动恢复被关闭的射频。
+	# 延迟几秒让本次 setup 内部的 apcli0 连接流程先跑起来，再按 operstate 逐个补齐。
+	(
+		sleep 3
+
+		# 1) AP 射频：ra0 / rax0，用各自 cmd 文件恢复，避免触发 wireless 重载
+		for phy in ra0 rax0; do
+			[ "$(uci -q get wireless.${phy}.disabled)" = "1" ] && continue
+			_iface="$phy"
+			[ -d "/sys/class/net/${_iface}" ] || continue
+			_state=$(cat "/sys/class/net/${_iface}/operstate" 2>/dev/null)
+			if [ "$_state" != "up" ]; then
+				logger -t "mtk" "${phy} (${_iface}) operstate=${_state}, bringing up..."
+				_cmd=$(get_mtwifi_cmd_path "$phy")
+				if [ -f "$_cmd" ]; then
+					sh "$_cmd"
+				else
+					ifconfig "$_iface" up
+				fi
+			fi
+		done
+	) &
 }
 
 add_driver mtk
