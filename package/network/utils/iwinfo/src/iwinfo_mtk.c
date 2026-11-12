@@ -737,7 +737,7 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 
 	while (1) {
 		memset(data, 0, data_len);
-		if (mtk_get_scanlist_dump(ifname, index, data, sizeof(data))) {
+		if (mtk_get_scanlist_dump(ifname, index, data, data_len)) {
 			free(data);
 			return -1;
 		}
@@ -890,7 +890,12 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 				mac + 0, mac + 1, mac + 2, mac + 3, mac + 4, mac + 5);
 
 			sscanf(pos + offsets[SCAN_DATA_SSID_LEN], "%d", &ssid_len);
+			if (ssid_len < 0)
+				ssid_len = 0;
+			if (ssid_len > IWINFO_ESSID_MAX_SIZE)
+				ssid_len = IWINFO_ESSID_MAX_SIZE;
 			memcpy(e->ssid, pos + offsets[SCAN_DATA_SSID], ssid_len);
+			e->ssid[ssid_len] = '\0';
 
 			*len += sizeof(struct iwinfo_scanlist_entry);
 			e++;
@@ -1014,9 +1019,6 @@ static int mtk_get_hwmodelist(const char *ifname, int *buf)
 	
 	band = uci_lookup_option_string(uci_ctx, s, "band");
 
-uciout:
-	iwinfo_uci_free();
-
 	if (band) {
 		if (!strcmp(band,"2g"))
 			*buf = (IWINFO_80211_B | IWINFO_80211_G | IWINFO_80211_N | IWINFO_80211_AX);
@@ -1024,8 +1026,13 @@ uciout:
 			*buf = (IWINFO_80211_A | IWINFO_80211_N | IWINFO_80211_AC | IWINFO_80211_AX);
 		else if (!strcmp(band,"6g"))
 			*buf = IWINFO_80211_AX;
+
+		iwinfo_uci_free();
 		return 0;
 	}
+
+uciout:
+	iwinfo_uci_free();
 
 	chband = mtk_get_band(ifname);
 	if (chband < 0)
@@ -1056,9 +1063,6 @@ static int mtk_get_htmodelist(const char *ifname, int *buf)
 	
 	band = uci_lookup_option_string(uci_ctx, s, "band");
 
-uciout:
-	iwinfo_uci_free();
-
 	if (band) {
 		if (!strcmp(band,"2g"))
 			*buf = (IWINFO_HTMODE_HT20 | IWINFO_HTMODE_HT40 | IWINFO_HTMODE_HE20 | IWINFO_HTMODE_HE40);
@@ -1069,8 +1073,12 @@ uciout:
 		else if (!strcmp(band,"6g"))
 			*buf = (IWINFO_HTMODE_HE20 | IWINFO_HTMODE_HE40 | IWINFO_HTMODE_HE80 | IWINFO_HTMODE_HE80_80 | IWINFO_HTMODE_HE160);
 
+		iwinfo_uci_free();
 		return 0;
 	}
+
+uciout:
+	iwinfo_uci_free();
 
 	chband = mtk_get_band(ifname);
 	if (chband < 0)
