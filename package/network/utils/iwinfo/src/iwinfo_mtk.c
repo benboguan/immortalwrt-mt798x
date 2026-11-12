@@ -167,7 +167,7 @@ static int mtk_is_ifup(const char *ifname)
 
 static int mtk_get_band(const char *ifname)
 {
-	unsigned char ch_band = 0;
+	unsigned char chband = 0;
 	struct iwreq wrq = {};
 
 	if (!mtk_is_ifup(ifname))
@@ -178,7 +178,7 @@ static int mtk_get_band(const char *ifname)
 	wrq.u.data.flags = OID_GET_WIRELESS_BAND;
 
 	if (mtk_ioctl(ifname, RT_PRIV_IOCTL, &wrq) >= 0) {
-		switch (ch_band) {
+		switch (chband) {
 			case MTK_CH_BAND_24G: return IWINFO_BAND_24;
 			case MTK_CH_BAND_5G:  return IWINFO_BAND_5;
 			case MTK_CH_BAND_6G:  return IWINFO_BAND_6;
@@ -890,7 +890,7 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 			}
 
 			sscanf(pos + offsets[SCAN_DATA_CH], "%"SCNu8, &e->channel);
-			e->mhz = mtk_channel2freq(e->channel, chband);
+			e->mhz = mtk_channel2freq(e->channel, op_band);
 
 			ht_chan_info->primary_chan = e->channel;
 			if (strncmp(pos + offsets[SCAN_DATA_EXTCH], "ABOVE", 5) == 0)
