@@ -638,7 +638,7 @@ int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 		else
 			e->signal = MAX(pe->AvgRssi0, MAX(pe->AvgRssi1, pe->AvgRssi2));
 		e->signal_avg = pe->AvgRssi1;
-		e->noise = pe->AvgRssi1 - 19;
+		e->noise = pe->noise ? pe->noise : pe->AvgRssi1 - 19;
 		e->inactive = pe->InactiveTime;
 		e->connected_time = pe->ConnectedTime;
 
