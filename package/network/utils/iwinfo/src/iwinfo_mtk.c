@@ -167,8 +167,8 @@ static int mtk_is_ifup(const char *ifname)
 
 static int mtk_get_band(const char *ifname)
 {
-	unsigned char chband = 0;
-	struct iwreq wrq = {};
+	struct iwreq wrq;
+	int chband;
 
 	if (!mtk_is_ifup(ifname))
 		return -1;
@@ -177,15 +177,10 @@ static int mtk_get_band(const char *ifname)
 	wrq.u.data.pointer = &chband;
 	wrq.u.data.flags = OID_GET_WIRELESS_BAND;
 
-	if (mtk_ioctl(ifname, RT_PRIV_IOCTL, &wrq) >= 0) {
-		switch (chband) {
-			case MTK_CH_BAND_24G: return IWINFO_BAND_24;
-			case MTK_CH_BAND_5G:  return IWINFO_BAND_5;
-			case MTK_CH_BAND_6G:  return IWINFO_BAND_6;
-		}
-	}
+	if (mtk_ioctl(ifname, RT_PRIV_IOCTL, &wrq) >= 0)
+		return chband;
 
-	return 0;
+	return -1;
 }
 
 static int mtk_channel2freq(int channel, enum MTK_CH_BAND band)
@@ -762,6 +757,8 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 
 	*len = 0;
 	op_band = mtk_get_band(ifname);
+	if (op_band < 0)
+		return -1;
 
 	mtk_cleanup_partial_scan(ifname);
 	mtk_init_partial_scan(ifname, op_band);
@@ -872,9 +869,6 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 				e->mode = IWINFO_OPMODE_MESHPOINT;
 			else
 				e->mode = IWINFO_OPMODE_MASTER;
-
-			if (op_band < 0)
-				return -1;
 
 			switch (op_band)
 			{
