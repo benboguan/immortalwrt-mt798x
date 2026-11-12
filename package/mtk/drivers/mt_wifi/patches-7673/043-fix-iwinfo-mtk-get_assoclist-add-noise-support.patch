@@ -1,0 +1,18 @@
+--- a/mt_wifi/embedded/common/cmm_info.c
++++ b/mt_wifi/embedded/common/cmm_info.c
+@@ -7249,6 +7249,7 @@ typedef struct _RT_802_11_MAC_ENTRY_FIX
+ 	CHAR AvgRssi1;
+ 	CHAR AvgRssi2;
+ 	CHAR AvgRssi3;
++	UCHAR noise;
+ 	UINT32 ConnectedTime;
+ 	HTTRANSMIT_SETTING_FIX TxRate;
+ 	HTTRANSMIT_SETTING_FIX LastRxRate;
+@@ -7389,6 +7390,7 @@ VOID RTMPIoctlGetMacTableStaInfo(
+ 			pDst->LastRxRate.word = RTMPGetLastRxRate(pAd, pEntry);
+ 			pDst->EncryMode = pEntry->SecConfig.PairwiseCipher;
+ 			pDst->AuthMode = pEntry->SecConfig.AKMMap;
++			pDst->noise = pEntry->wdev->RssiSample.AvgRssi[0] - pEntry->wdev->LastSNR0;
+ 			if (CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE))
+ 				pDst->wme = 1;
+ 			if (pEntry->SecConfig.PmfCfg.UsePMFConnect)
